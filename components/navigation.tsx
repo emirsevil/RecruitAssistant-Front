@@ -63,7 +63,7 @@ export function Navigation() {
               <span className="hidden text-lg font-semibold sm:inline-block">RecruitAssistant</span>
             </Link>
 
-            {/* Desktop Navigation */}
+            {/* Desktop Navigation - hidden on mobile, shown on lg+ */}
             <nav className="hidden lg:flex lg:gap-1">
               {navItems.map((item) => (
                 <Link key={item.href} href={item.href}>
@@ -94,35 +94,32 @@ export function Navigation() {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <User className="mr-2 h-4 w-4" />
-                Profile
+              <DropdownMenuItem asChild>
+                <Link href="/profile" className="flex cursor-pointer">
+                  <User className="mr-2 h-4 w-4" />
+                  Profile
+                </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Settings className="mr-2 h-4 w-4" />
-                Settings
+              <DropdownMenuItem asChild>
+                <Link href="/settings" className="flex cursor-pointer">
+                  <Settings className="mr-2 h-4 w-4" />
+                  Settings
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <LogOut className="mr-2 h-4 w-4" />
-                Log out
+              <DropdownMenuItem asChild>
+                <Link href="/login" className="flex cursor-pointer">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Log out
+                </Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </header>
 
-      {/* Desktop Sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-16 flex-col border-r border-border bg-background lg:flex">
-        <div className="flex h-16 items-center justify-center border-b border-border">
-          <Link
-            href="/dashboard"
-            className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground"
-          >
-            <span className="text-lg font-bold">R</span>
-          </Link>
-        </div>
-        <nav className="flex flex-1 flex-col items-center gap-2 py-4">
+      <aside className="fixed inset-y-0 left-0 top-16 z-40 hidden w-20 flex-col border-r border-border bg-background lg:flex">
+        <nav className="flex flex-1 flex-col items-center gap-2 py-6">
           {navItems.map((item) => (
             <Link key={item.href} href={item.href}>
               <Button variant="ghost" size="icon" className="h-12 w-12" title={item.label}>
