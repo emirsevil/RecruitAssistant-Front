@@ -1,4 +1,7 @@
+"use client"
+
 import type React from "react"
+import { useTranslation } from "react-i18next"
 import { Navigation } from "@/components/navigation"
 import { PageContainer, PageHeader } from "@/components/page-container"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -9,41 +12,42 @@ import { ArrowUpRight, MessageSquare, FileText, Brain, TrendingUp, Clock, CheckC
 import Link from "next/link"
 
 export default function DashboardPage() {
+  const { t } = useTranslation()
   return (
     <>
       <Navigation />
       <PageContainer>
-        <PageHeader title="Good evening, Deniz" description="Here's your progress overview" />
+        <PageHeader title={t('dashboard.greeting', { name: 'Deniz' })} description={t('dashboard.progressOverview')} />
 
         {/* KPI Cards */}
         <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <KPICard
-            title="Mock Interviews"
+            title={t('dashboard.mockInterviews')}
             value="12"
-            subtitle="Completed"
+            subtitle={t('dashboard.completed')}
             icon={<MessageSquare className="h-5 w-5" />}
             trend="+3 this week"
           />
           <KPICard
-            title="Avg HR Score"
+            title={t('dashboard.avgHRScore')}
             value="82%"
-            subtitle="Last 5 interviews"
+            subtitle={t('dashboard.last5')}
             icon={<Target className="h-5 w-5" />}
-            trend="+5% improvement"
+            trend={t('dashboard.trend', { val: '+5%', context: 'improvement' })}
             trendUp
           />
           <KPICard
-            title="Avg Technical Score"
+            title={t('dashboard.avgTechScore')}
             value="78%"
-            subtitle="Last 5 interviews"
+            subtitle={t('dashboard.last5')}
             icon={<Brain className="h-5 w-5" />}
-            trend="+8% improvement"
+            trend={t('dashboard.trend', { val: '+8%', context: 'improvement' })}
             trendUp
           />
           <KPICard
-            title="CV Readiness"
+            title={t('dashboard.cvReadiness')}
             value="85%"
-            subtitle="ATS optimized"
+            subtitle={t('dashboard.atsOptimized')}
             icon={<FileText className="h-5 w-5" />}
             progress={85}
           />
@@ -55,29 +59,29 @@ export default function DashboardPage() {
             {/* Recommended Actions */}
             <Card>
               <CardHeader>
-                <CardTitle>Recommended Next Actions</CardTitle>
-                <CardDescription>Continue your preparation journey</CardDescription>
+                <CardTitle>{t('dashboard.recommendedActions')}</CardTitle>
+                <CardDescription>{t('dashboard.continueJourney')}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 <ActionCard
-                  title="Practice Behavioral Questions"
-                  description="You scored 75% on communication last time. Let's improve it!"
-                  action="Start Interview"
+                  title={t('dashboard.actions.practiceBehavioral')}
+                  description={t('dashboard.actions.practiceBehavioralDesc', { score: 75 })}
+                  action={t('dashboard.actions.startInterview')}
                   href="/mock-interview"
                   icon={<MessageSquare className="h-5 w-5" />}
                   priority="high"
                 />
                 <ActionCard
-                  title="Complete Algorithms Quiz"
-                  description="Test your data structures knowledge with 15 questions"
-                  action="Take Quiz"
+                  title={t('dashboard.actions.completeAlgorithms')}
+                  description={t('dashboard.actions.completeAlgorithmsDesc', { count: 15 })}
+                  action={t('dashboard.actions.takeQuiz')}
                   href="/quizzes"
                   icon={<Brain className="h-5 w-5" />}
                 />
                 <ActionCard
-                  title="Update Your CV"
-                  description="Add your latest project to boost your CV score"
-                  action="Edit CV"
+                  title={t('dashboard.actions.updateCV')}
+                  description={t('dashboard.actions.updateCVDesc')}
+                  action={t('dashboard.actions.editCV')}
                   href="/cv-studio"
                   icon={<FileText className="h-5 w-5" />}
                 />
@@ -87,39 +91,39 @@ export default function DashboardPage() {
             {/* Activity Timeline */}
             <Card>
               <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
-                <CardDescription>Your latest actions and milestones</CardDescription>
+                <CardTitle>{t('dashboard.recentActivity')}</CardTitle>
+                <CardDescription>{t('dashboard.latestActions')}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <TimelineItem
-                    title="Completed HR Mock Interview"
-                    description="Scored 85% on behavioral questions"
-                    time="2 hours ago"
+                    title={t('dashboard.activity.completedHRMock')}
+                    description={t('dashboard.activity.completedHRMockDesc', { score: 85 })}
+                    time={t('dashboard.time.hoursAgo', { count: 2 })}
                     icon={<CheckCircle2 className="h-4 w-4 text-success" />}
                   />
                   <TimelineItem
-                    title="Updated CV - Added Experience"
-                    description="Added Software Engineering Intern at TechCorp"
-                    time="1 day ago"
+                    title={t('dashboard.activity.updatedCV')}
+                    description={t('dashboard.activity.updatedCVDesc')}
+                    time={t('dashboard.time.dayAgo')}
                     icon={<FileText className="h-4 w-4 text-primary" />}
                   />
                   <TimelineItem
-                    title="Passed System Design Quiz"
-                    description="8/10 correct - Great improvement!"
-                    time="2 days ago"
+                    title={t('dashboard.activity.passedSystemDesign')}
+                    description={t('dashboard.activity.passedSystemDesignDesc', { score: 8, total: 10 })}
+                    time={t('dashboard.time.daysAgo', { count: 2 })}
                     icon={<CheckCircle2 className="h-4 w-4 text-success" />}
                   />
                   <TimelineItem
-                    title="Started Technical Interview Practice"
-                    description="Completed coding challenges on arrays"
-                    time="3 days ago"
+                    title={t('dashboard.activity.startedTechnical')}
+                    description={t('dashboard.activity.startedTechnicalDesc')}
+                    time={t('dashboard.time.daysAgo', { count: 3 })}
                     icon={<Brain className="h-4 w-4 text-primary" />}
                   />
                   <TimelineItem
-                    title="Created Your Profile"
-                    description="Welcome to RecruitAssistant!"
-                    time="1 week ago"
+                    title={t('dashboard.activity.createdProfile')}
+                    description={t('dashboard.activity.createdProfileDesc')}
+                    time={t('dashboard.time.weekAgo')}
                     icon={<Target className="h-4 w-4 text-muted-foreground" />}
                   />
                 </div>
@@ -132,32 +136,32 @@ export default function DashboardPage() {
             {/* Quick Stats */}
             <Card>
               <CardHeader>
-                <CardTitle>This Week</CardTitle>
+                <CardTitle>{t('dashboard.thisWeek')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Interviews</span>
+                    <span className="text-muted-foreground">{t('dashboard.interviews')}</span>
                     <span className="font-semibold">3</span>
                   </div>
                   <Progress value={60} className="h-2" />
-                  <p className="text-xs text-muted-foreground">Goal: 5 per week</p>
+                  <p className="text-xs text-muted-foreground">{t('dashboard.goal', { target: t('dashboard.units.perWeek', { count: 5 }) })}</p>
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Quizzes</span>
+                    <span className="text-muted-foreground">{t('dashboard.quizzes')}</span>
                     <span className="font-semibold">2</span>
                   </div>
                   <Progress value={100} className="h-2" />
-                  <p className="text-xs text-success">Goal achieved!</p>
+                  <p className="text-xs text-success">{t('dashboard.goalAchieved')}</p>
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Practice Time</span>
+                    <span className="text-muted-foreground">{t('dashboard.practiceTime')}</span>
                     <span className="font-semibold">4.5h</span>
                   </div>
                   <Progress value={90} className="h-2" />
-                  <p className="text-xs text-muted-foreground">Goal: 5 hours</p>
+                  <p className="text-xs text-muted-foreground">{t('dashboard.goal', { target: t('dashboard.units.hours', { count: 5 }) })}</p>
                 </div>
               </CardContent>
             </Card>
@@ -165,35 +169,35 @@ export default function DashboardPage() {
             {/* Skill Focus */}
             <Card>
               <CardHeader>
-                <CardTitle>Skills to Focus On</CardTitle>
-                <CardDescription>Based on your recent performance</CardDescription>
+                <CardTitle>{t('dashboard.skillsToFocus')}</CardTitle>
+                <CardDescription>{t('dashboard.basedOnPerformance')}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-2">
-                <SkillBadge skill="Communication" score={75} />
-                <SkillBadge skill="System Design" score={70} />
-                <SkillBadge skill="Behavioral Answers" score={80} />
-                <SkillBadge skill="Code Optimization" score={72} />
+                <SkillBadge skill={t('dashboard.skills.communication')} score={75} />
+                <SkillBadge skill={t('dashboard.skills.systemDesign')} score={70} />
+                <SkillBadge skill={t('dashboard.skills.behavioralAnswers')} score={80} />
+                <SkillBadge skill={t('dashboard.skills.codeOptimization')} score={72} />
               </CardContent>
             </Card>
 
             {/* Upcoming */}
             <Card>
               <CardHeader>
-                <CardTitle>Upcoming</CardTitle>
+                <CardTitle>{t('dashboard.upcoming')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex items-start gap-3 rounded-lg border border-border bg-secondary/50 p-3">
                   <Clock className="mt-0.5 h-4 w-4 text-muted-foreground" />
                   <div className="flex-1">
-                    <p className="text-sm font-medium">Practice Reminder</p>
-                    <p className="text-xs text-muted-foreground">Daily interview in 2 hours</p>
+                    <p className="text-sm font-medium">{t('dashboard.practiceReminder')}</p>
+                    <p className="text-xs text-muted-foreground">{t('dashboard.dailyIn', { hours: 2 })}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3 rounded-lg border border-border bg-secondary/50 p-3">
                   <TrendingUp className="mt-0.5 h-4 w-4 text-muted-foreground" />
                   <div className="flex-1">
-                    <p className="text-sm font-medium">Weekly Report</p>
-                    <p className="text-xs text-muted-foreground">Available in 3 days</p>
+                    <p className="text-sm font-medium">{t('dashboard.weeklyReport')}</p>
+                    <p className="text-xs text-muted-foreground">{t('dashboard.availableIn', { days: 3 })}</p>
                   </div>
                 </div>
               </CardContent>
@@ -249,9 +253,8 @@ interface ActionCardProps {
 function ActionCard({ title, description, action, href, icon, priority }: ActionCardProps) {
   return (
     <div
-      className={`flex items-start gap-4 rounded-lg border p-4 transition-colors hover:border-primary/50 ${
-        priority === "high" ? "border-primary/20 bg-primary/5" : ""
-      }`}
+      className={`flex items-start gap-4 rounded-lg border p-4 transition-colors hover:border-primary/50 ${priority === "high" ? "border-primary/20 bg-primary/5" : ""
+        }`}
     >
       <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-secondary text-foreground">
         {icon}

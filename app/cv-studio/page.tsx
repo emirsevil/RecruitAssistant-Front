@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 import { Navigation } from "@/components/navigation"
 import { PageContainer, PageHeader } from "@/components/page-container"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -13,6 +14,7 @@ import { Separator } from "@/components/ui/separator"
 import { Download, Sparkles, RotateCcw, Save, Plus, Trash2, AlertCircle } from "lucide-react"
 
 export default function CVStudioPage() {
+  const { t } = useTranslation()
   const [cvData, setCvData] = useState({
     name: "Deniz Yilmaz",
     email: "deniz@example.com",
@@ -91,19 +93,19 @@ export default function CVStudioPage() {
     <>
       <Navigation />
       <PageContainer>
-        <PageHeader title="CV Studio" description="Build and optimize your resume with AI assistance" />
+        <PageHeader title={t('cvStudio.title')} description={t('cvStudio.description')} />
 
         <div className="grid gap-6 lg:grid-cols-[1fr,400px]">
           {/* Input Form */}
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Personal Information</CardTitle>
+                <CardTitle>{t('cvStudio.personalInfo')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
+                    <Label htmlFor="name">{t('cvStudio.fullName')}</Label>
                     <Input
                       id="name"
                       value={cvData.name}
@@ -111,7 +113,7 @@ export default function CVStudioPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="email">{t('cvStudio.email')}</Label>
                     <Input
                       id="email"
                       type="email"
@@ -120,7 +122,7 @@ export default function CVStudioPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Phone</Label>
+                    <Label htmlFor="phone">{t('cvStudio.phone')}</Label>
                     <Input
                       id="phone"
                       value={cvData.phone}
@@ -128,7 +130,7 @@ export default function CVStudioPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="location">Location</Label>
+                    <Label htmlFor="location">{t('cvStudio.location')}</Label>
                     <Input
                       id="location"
                       value={cvData.location}
@@ -137,7 +139,7 @@ export default function CVStudioPage() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="summary">Professional Summary</Label>
+                  <Label htmlFor="summary">{t('cvStudio.professionalSummary')}</Label>
                   <Textarea
                     id="summary"
                     value={cvData.summary}
@@ -150,30 +152,30 @@ export default function CVStudioPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Education</CardTitle>
+                <CardTitle>{t('cvStudio.education')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {cvData.education.map((edu, idx) => (
                   <div key={idx} className="space-y-4 rounded-lg border border-border p-4">
                     <div className="space-y-2">
-                      <Label>Degree</Label>
+                      <Label>{t('cvStudio.degree')}</Label>
                       <Input value={edu.degree} />
                     </div>
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div className="space-y-2">
-                        <Label>School</Label>
+                        <Label>{t('cvStudio.school')}</Label>
                         <Input value={edu.school} />
                       </div>
                       <div className="space-y-2">
-                        <Label>GPA</Label>
+                        <Label>{t('cvStudio.gpa')}</Label>
                         <Input value={edu.gpa} />
                       </div>
                       <div className="space-y-2">
-                        <Label>Start Date</Label>
+                        <Label>{t('cvStudio.startDate')}</Label>
                         <Input value={edu.startDate} />
                       </div>
                       <div className="space-y-2">
-                        <Label>End Date</Label>
+                        <Label>{t('cvStudio.endDate')}</Label>
                         <Input value={edu.endDate} />
                       </div>
                     </div>
@@ -185,10 +187,10 @@ export default function CVStudioPage() {
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle>Experience</CardTitle>
+                  <CardTitle>{t('cvStudio.experience')}</CardTitle>
                   <Button onClick={addExperience} size="sm" variant="outline" className="gap-2 bg-transparent">
                     <Plus className="h-4 w-4" />
-                    Add
+                    {t('cvStudio.add')}
                   </Button>
                 </div>
               </CardHeader>
@@ -197,24 +199,24 @@ export default function CVStudioPage() {
                   <div key={idx} className="space-y-4 rounded-lg border border-border p-4">
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div className="space-y-2">
-                        <Label>Role</Label>
+                        <Label>{t('cvStudio.role')}</Label>
                         <Input value={exp.role} placeholder="Software Engineer" />
                       </div>
                       <div className="space-y-2">
-                        <Label>Company</Label>
+                        <Label>{t('cvStudio.company')}</Label>
                         <Input value={exp.company} placeholder="Tech Company Inc." />
                       </div>
                       <div className="space-y-2">
-                        <Label>Start Date</Label>
+                        <Label>{t('cvStudio.startDate')}</Label>
                         <Input value={exp.startDate} placeholder="Jan 2023" />
                       </div>
                       <div className="space-y-2">
-                        <Label>End Date</Label>
+                        <Label>{t('cvStudio.endDate')}</Label>
                         <Input value={exp.endDate} placeholder="Present" />
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label>Responsibilities & Achievements</Label>
+                      <Label>{t('cvStudio.responsibilities')}</Label>
                       {exp.bullets.map((bullet, bulletIdx) => (
                         <Textarea
                           key={bulletIdx}
@@ -225,7 +227,7 @@ export default function CVStudioPage() {
                       ))}
                       <Button size="sm" variant="ghost" className="gap-2">
                         <Plus className="h-3 w-3" />
-                        Add bullet point
+                        {t('cvStudio.addBullet')}
                       </Button>
                     </div>
                   </div>
@@ -236,10 +238,10 @@ export default function CVStudioPage() {
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle>Projects</CardTitle>
+                  <CardTitle>{t('cvStudio.projects')}</CardTitle>
                   <Button onClick={addProject} size="sm" variant="outline" className="gap-2 bg-transparent">
                     <Plus className="h-4 w-4" />
-                    Add
+                    {t('cvStudio.add')}
                   </Button>
                 </div>
               </CardHeader>
@@ -247,15 +249,15 @@ export default function CVStudioPage() {
                 {cvData.projects.map((project, idx) => (
                   <div key={idx} className="space-y-4 rounded-lg border border-border p-4">
                     <div className="space-y-2">
-                      <Label>Project Title</Label>
+                      <Label>{t('cvStudio.projectTitle')}</Label>
                       <Input value={project.title} placeholder="E-commerce Platform" />
                     </div>
                     <div className="space-y-2">
-                      <Label>Tech Stack</Label>
+                      <Label>{t('cvStudio.techStack')}</Label>
                       <Input value={project.techStack} placeholder="React, Node.js, MongoDB" />
                     </div>
                     <div className="space-y-2">
-                      <Label>Description</Label>
+                      <Label>{t('cvStudio.projectDescription')}</Label>
                       <Textarea
                         value={project.description}
                         className="min-h-[80px]"
@@ -269,7 +271,7 @@ export default function CVStudioPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Skills</CardTitle>
+                <CardTitle>{t('cvStudio.skills')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex flex-wrap gap-2">
@@ -281,7 +283,7 @@ export default function CVStudioPage() {
                   ))}
                   <Button size="sm" variant="outline" className="gap-2 bg-transparent">
                     <Plus className="h-3 w-3" />
-                    Add skill
+                    {t('cvStudio.addSkill')}
                   </Button>
                 </div>
               </CardContent>
@@ -289,15 +291,15 @@ export default function CVStudioPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Target Job Description</CardTitle>
-                <CardDescription>Paste the job description to optimize your CV</CardDescription>
+                <CardTitle>{t('cvStudio.targetJobDescription')}</CardTitle>
+                <CardDescription>{t('cvStudio.pasteJobDescription')}</CardDescription>
               </CardHeader>
               <CardContent>
                 <Textarea
                   value={cvData.targetJob}
                   onChange={(e) => setCvData({ ...cvData, targetJob: e.target.value })}
                   className="min-h-[120px]"
-                  placeholder="Paste the full job description here..."
+                  placeholder={t('cvStudio.pasteHere')}
                 />
               </CardContent>
             </Card>
@@ -305,11 +307,11 @@ export default function CVStudioPage() {
             <div className="flex gap-3">
               <Button className="flex-1 gap-2">
                 <Sparkles className="h-4 w-4" />
-                Generate CV Draft
+                {t('cvStudio.generateCVDraft')}
               </Button>
               <Button variant="outline" className="gap-2 bg-transparent">
                 <Save className="h-4 w-4" />
-                Save
+                {t('cvStudio.save')}
               </Button>
             </div>
           </div>
@@ -319,31 +321,31 @@ export default function CVStudioPage() {
             {/* CV Analysis */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">CV Analysis</CardTitle>
+                <CardTitle className="text-lg">{t('cvStudio.cvAnalysis')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium">ATS Score</span>
+                    <span className="font-medium">{t('cvStudio.atsScore')}</span>
                     <span className="text-2xl font-bold text-primary">{atsScore}%</span>
                   </div>
                   <div className="h-2 overflow-hidden rounded-full bg-secondary">
                     <div className="h-full bg-primary transition-all" style={{ width: `${atsScore}%` }} />
                   </div>
-                  <p className="text-xs text-muted-foreground">Good! Your CV is well-formatted for ATS systems</p>
+                  <p className="text-xs text-muted-foreground">{t('cvStudio.atsGood')}</p>
                 </div>
 
                 <Separator />
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium">Role Match</span>
+                    <span className="font-medium">{t('cvStudio.roleMatch')}</span>
                     <span className="text-2xl font-bold text-primary">{roleMatch}%</span>
                   </div>
                   <div className="h-2 overflow-hidden rounded-full bg-secondary">
                     <div className="h-full bg-primary transition-all" style={{ width: `${roleMatch}%` }} />
                   </div>
-                  <p className="text-xs text-muted-foreground">Great alignment with the target role</p>
+                  <p className="text-xs text-muted-foreground">{t('cvStudio.roleMatchGood')}</p>
                 </div>
 
                 <Separator />
@@ -351,7 +353,7 @@ export default function CVStudioPage() {
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-sm font-medium">
                     <AlertCircle className="h-4 w-4 text-warning" />
-                    Missing Skills
+                    {t('cvStudio.missingSkills')}
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {missingSkills.map((skill, idx) => (
@@ -360,7 +362,7 @@ export default function CVStudioPage() {
                       </Badge>
                     ))}
                   </div>
-                  <p className="text-xs text-muted-foreground">Consider adding these skills if you have experience</p>
+                  <p className="text-xs text-muted-foreground">{t('cvStudio.considerAdding')}</p>
                 </div>
               </CardContent>
             </Card>
@@ -368,12 +370,12 @@ export default function CVStudioPage() {
             {/* CV Preview */}
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-lg">Live Preview</CardTitle>
+                <CardTitle className="text-lg">{t('cvStudio.livePreview')}</CardTitle>
                 <div className="flex gap-2">
-                  <Button size="icon" variant="ghost" title="Regenerate">
+                  <Button size="icon" variant="ghost" title={t('cvStudio.regenerate')}>
                     <RotateCcw className="h-4 w-4" />
                   </Button>
-                  <Button size="icon" variant="ghost" title="Download PDF">
+                  <Button size="icon" variant="ghost" title={t('cvStudio.downloadPDF')}>
                     <Download className="h-4 w-4" />
                   </Button>
                 </div>
@@ -392,12 +394,12 @@ export default function CVStudioPage() {
                     <Separator />
 
                     <div>
-                      <h3 className="mb-2 text-sm font-bold uppercase">Summary</h3>
+                      <h3 className="mb-2 text-sm font-bold uppercase">{t('cvStudio.professionalSummary')}</h3>
                       <p className="text-xs leading-relaxed text-gray-700 text-pretty">{cvData.summary}</p>
                     </div>
 
                     <div>
-                      <h3 className="mb-2 text-sm font-bold uppercase">Experience</h3>
+                      <h3 className="mb-2 text-sm font-bold uppercase">{t('cvStudio.experience')}</h3>
                       <div className="space-y-3">
                         {cvData.experience.map((exp, idx) => (
                           <div key={idx} className="space-y-1">
@@ -423,7 +425,7 @@ export default function CVStudioPage() {
                     </div>
 
                     <div>
-                      <h3 className="mb-2 text-sm font-bold uppercase">Projects</h3>
+                      <h3 className="mb-2 text-sm font-bold uppercase">{t('cvStudio.projects')}</h3>
                       <div className="space-y-2">
                         {cvData.projects.map((project, idx) => (
                           <div key={idx}>
@@ -437,7 +439,7 @@ export default function CVStudioPage() {
                     </div>
 
                     <div>
-                      <h3 className="mb-2 text-sm font-bold uppercase">Education</h3>
+                      <h3 className="mb-2 text-sm font-bold uppercase">{t('cvStudio.education')}</h3>
                       {cvData.education.map((edu, idx) => (
                         <div key={idx} className="flex justify-between">
                           <div>
@@ -455,7 +457,7 @@ export default function CVStudioPage() {
                     </div>
 
                     <div>
-                      <h3 className="mb-2 text-sm font-bold uppercase">Skills</h3>
+                      <h3 className="mb-2 text-sm font-bold uppercase">{t('cvStudio.skills')}</h3>
                       <p className="text-xs text-gray-700">{cvData.skills.join(" • ")}</p>
                     </div>
                   </div>
@@ -466,8 +468,7 @@ export default function CVStudioPage() {
             <Card className="bg-secondary/50">
               <CardContent className="p-4">
                 <p className="text-xs text-muted-foreground leading-relaxed text-pretty">
-                  <strong>Pro Tip:</strong> Use action verbs and quantify your achievements. For example: "Increased
-                  user engagement by 40%" instead of "Improved user engagement."
+                  <strong>{t('cvStudio.proTip')}</strong> {t('cvStudio.proTipContent')}
                 </p>
               </CardContent>
             </Card>

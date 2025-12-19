@@ -1,4 +1,7 @@
+"use client"
+
 import type React from "react"
+import { useTranslation } from "react-i18next"
 import { Navigation } from "@/components/navigation"
 import { PageContainer } from "@/components/page-container"
 import { Button } from "@/components/ui/button"
@@ -7,6 +10,7 @@ import Link from "next/link"
 import { ArrowRight, MessageSquare, FileText, Target, TrendingUp } from "lucide-react"
 
 export default function LandingPage() {
+  const { t } = useTranslation()
   return (
     <>
       <Navigation />
@@ -16,23 +20,22 @@ export default function LandingPage() {
           <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
             <div className="flex flex-col justify-center">
               <h1 className="mb-4 text-4xl font-bold tracking-tight text-balance md:text-5xl lg:text-6xl">
-                Your AI-powered interview companion
+                {t('mockInterview.yourCompanion')}
               </h1>
               <p className="mb-8 text-lg text-muted-foreground text-pretty md:text-xl">
-                Practice HR and technical interviews, improve your CV, and track your progress with personalized AI
-                feedback.
+                {t('mockInterview.description')}
               </p>
               <div className="flex flex-col gap-3 sm:flex-row">
                 <Link href="/onboarding">
                   <Button size="lg" className="gap-2">
-                    Start mock interview
+                    {t('common.start')}
                     <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Link>
                 <Link href="/cv-studio">
                   <Button size="lg" variant="outline" className="gap-2 bg-transparent">
                     <FileText className="h-4 w-4" />
-                    Build my CV
+                    {t('cvStudio.buildMyCV')}
                   </Button>
                 </Link>
               </div>
@@ -46,12 +49,12 @@ export default function LandingPage() {
                     {/* Mock chat bubbles */}
                     <div className="flex justify-start">
                       <div className="max-w-[80%] rounded-2xl rounded-tl-sm bg-secondary px-4 py-3">
-                        <p className="text-sm">Tell me about yourself and your background.</p>
+                        <p className="text-sm">{t('common.tellMeAboutYourself')}</p>
                       </div>
                     </div>
                     <div className="flex justify-end">
                       <div className="max-w-[80%] rounded-2xl rounded-tr-sm bg-primary px-4 py-3 text-primary-foreground">
-                        <p className="text-sm">I recently graduated with a degree in Computer Science...</p>
+                        <p className="text-sm">{t('common.mockResponse')}</p>
                       </div>
                     </div>
 
@@ -59,18 +62,18 @@ export default function LandingPage() {
                     <Card className="border-2 border-primary/20 bg-primary/5">
                       <CardContent className="p-4">
                         <div className="mb-2 flex items-center justify-between">
-                          <span className="text-sm font-medium">Live Feedback</span>
+                          <span className="text-sm font-medium">{t('mockInterview.liveFeedback')}</span>
                           <span className="text-2xl font-bold text-primary">85%</span>
                         </div>
                         <div className="space-y-2">
                           <div className="flex items-center justify-between text-xs">
-                            <span>Clarity</span>
+                            <span>{t('mockInterview.clarity')}</span>
                             <div className="h-2 w-24 overflow-hidden rounded-full bg-secondary">
                               <div className="h-full w-[85%] bg-primary" />
                             </div>
                           </div>
                           <div className="flex items-center justify-between text-xs">
-                            <span>Confidence</span>
+                            <span>{t('mockInterview.confidence')}</span>
                             <div className="h-2 w-24 overflow-hidden rounded-full bg-secondary">
                               <div className="h-full w-[75%] bg-primary" />
                             </div>
@@ -88,23 +91,23 @@ export default function LandingPage() {
           <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:mt-24 lg:grid-cols-4">
             <FeatureCard
               icon={<MessageSquare className="h-6 w-6" />}
-              title="Mock Interviews"
-              description="Practice with AI-powered HR and technical interviews"
+              title={t('mockInterview.title')}
+              description={t('mockInterview.description')}
             />
             <FeatureCard
               icon={<FileText className="h-6 w-6" />}
-              title="CV Builder"
-              description="Create ATS-optimized resumes tailored to your role"
+              title={t('cvStudio.title')}
+              description={t('common.cvBuilderDesc')}
             />
             <FeatureCard
               icon={<Target className="h-6 w-6" />}
-              title="Skill Quizzes"
-              description="Test your knowledge with targeted quiz questions"
+              title={t('common.skillQuizzes')}
+              description={t('common.skillQuizzesDesc')}
             />
             <FeatureCard
               icon={<TrendingUp className="h-6 w-6" />}
-              title="Progress Analytics"
-              description="Track your improvement over time with insights"
+              title={t('analytics.title')}
+              description={t('common.progressAnalyticsDesc')}
             />
           </div>
         </div>

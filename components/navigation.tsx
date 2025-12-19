@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -25,16 +26,18 @@ import {
   User,
 } from "lucide-react"
 
-const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/mock-interview", label: "Mock Interview", icon: MessageSquare },
-  { href: "/quizzes", label: "Quizzes", icon: FileQuestion },
-  { href: "/cv-studio", label: "CV Studio", icon: FileText },
-  { href: "/analytics", label: "Analytics", icon: BarChart3 },
-]
 
 export function Navigation() {
+  const { t, i18n } = useTranslation()
   const [mobileOpen, setMobileOpen] = useState(false)
+
+  const navItems = [
+    { href: "/dashboard", label: t('navigation.dashboard'), icon: LayoutDashboard },
+    { href: "/mock-interview", label: t('navigation.mockInterview'), icon: MessageSquare },
+    { href: "/quizzes", label: t('navigation.quizzes'), icon: FileQuestion },
+    { href: "/cv-studio", label: t('navigation.cvStudio'), icon: FileText },
+    { href: "/analytics", label: t('navigation.analytics'), icon: BarChart3 },
+  ]
 
   return (
     <>
@@ -76,39 +79,58 @@ export function Navigation() {
             </nav>
           </div>
 
-          {/* User menu */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-9 w-9 rounded-full">
-                <Avatar className="h-9 w-9">
-                  <AvatarImage src="/diverse-user-avatars.png" alt="User" />
-                  <AvatarFallback>DN</AvatarFallback>
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>
-                <div className="flex flex-col gap-1">
-                  <p className="text-sm font-medium">Deniz</p>
-                  <p className="text-xs text-muted-foreground">deniz@example.com</p>
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <User className="mr-2 h-4 w-4" />
-                Profile
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Settings className="mr-2 h-4 w-4" />
-                Settings
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <LogOut className="mr-2 h-4 w-4" />
-                Log out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-9 w-9">
+                  <span className="sr-only">Toggle language</span>
+                  <span className="text-sm font-medium">{i18n.language === 'tr' ? 'TR' : 'EN'}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => i18n.changeLanguage('tr')}>
+                  Türkçe
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => i18n.changeLanguage('en')}>
+                  English
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* User menu */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+                  <Avatar className="h-9 w-9">
+                    <AvatarImage src="/diverse-user-avatars.png" alt="User" />
+                    <AvatarFallback>DN</AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>
+                  <div className="flex flex-col gap-1">
+                    <p className="text-sm font-medium">Deniz</p>
+                    <p className="text-xs text-muted-foreground">deniz@example.com</p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>
+                  <User className="mr-2 h-4 w-4" />
+                  {t('navigation.profile')}
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Settings className="mr-2 h-4 w-4" />
+                  {t('navigation.settings')}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  {t('navigation.logout')}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </header>
 
@@ -138,6 +160,14 @@ export function Navigation() {
 }
 
 function MobileNav({ onClose }: { onClose: () => void }) {
+  const { t, i18n } = useTranslation()
+  const navItems = [
+    { href: "/dashboard", label: t('navigation.dashboard'), icon: LayoutDashboard },
+    { href: "/mock-interview", label: t('navigation.mockInterview'), icon: MessageSquare },
+    { href: "/quizzes", label: t('navigation.quizzes'), icon: FileQuestion },
+    { href: "/cv-studio", label: t('navigation.cvStudio'), icon: FileText },
+    { href: "/analytics", label: t('navigation.analytics'), icon: BarChart3 },
+  ]
   return (
     <div className="flex h-full flex-col">
       <div className="flex h-16 items-center gap-2 border-b border-border px-6">
@@ -156,6 +186,24 @@ function MobileNav({ onClose }: { onClose: () => void }) {
           </Link>
         ))}
       </nav>
+      <div className="border-t border-border p-4">
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            variant={i18n.language === 'tr' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => i18n.changeLanguage('tr')}
+          >
+            Türkçe
+          </Button>
+          <Button
+            variant={i18n.language === 'en' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => i18n.changeLanguage('en')}
+          >
+            English
+          </Button>
+        </div>
+      </div>
     </div>
   )
 }

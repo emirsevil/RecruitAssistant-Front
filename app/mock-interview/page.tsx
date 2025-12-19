@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 import { Navigation } from "@/components/navigation"
 import { PageContainer, PageHeader } from "@/components/page-container"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -44,6 +45,7 @@ const mockResults = [
 ]
 
 export default function MockInterviewPage() {
+  const { t } = useTranslation()
   const [state, setState] = useState<InterviewState>("setup")
   const [interviewType, setInterviewType] = useState("hr")
   const [difficulty, setDifficulty] = useState("junior")
@@ -75,53 +77,53 @@ export default function MockInterviewPage() {
       <>
         <Navigation />
         <PageContainer>
-          <PageHeader title="Mock Interview" description="Practice your interview skills with AI-powered feedback" />
+          <PageHeader title={t('mockInterview.title')} description={t('mockInterview.description')} />
 
           <div className="mx-auto max-w-2xl">
             <Card>
               <CardHeader>
-                <CardTitle>Interview Setup</CardTitle>
-                <CardDescription>Configure your practice session</CardDescription>
+                <CardTitle>{t('mockInterview.setupTitle')}</CardTitle>
+                <CardDescription>{t('mockInterview.setupDescription')}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-2">
-                  <Label>Interview Type</Label>
+                  <Label>{t('mockInterview.interviewType')}</Label>
                   <Select value={interviewType} onValueChange={setInterviewType}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="hr">HR / Behavioral</SelectItem>
-                      <SelectItem value="technical">Technical</SelectItem>
+                      <SelectItem value="hr">{t('mockInterview.types.hr')}</SelectItem>
+                      <SelectItem value="technical">{t('mockInterview.types.technical')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Difficulty Level</Label>
+                  <Label>{t('mockInterview.difficultyLevel')}</Label>
                   <Select value={difficulty} onValueChange={setDifficulty}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="intern">Intern</SelectItem>
-                      <SelectItem value="junior">Junior / New Grad</SelectItem>
-                      <SelectItem value="mid">Mid-Level</SelectItem>
+                      <SelectItem value="intern">{t('mockInterview.difficulties.intern')}</SelectItem>
+                      <SelectItem value="junior">{t('mockInterview.difficulties.junior')}</SelectItem>
+                      <SelectItem value="mid">{t('mockInterview.difficulties.mid')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Language</Label>
+                  <Label>{t('mockInterview.language')}</Label>
                   <Select value={language} onValueChange={setLanguage}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="english">English</SelectItem>
-                      <SelectItem value="spanish">Spanish</SelectItem>
-                      <SelectItem value="french">French</SelectItem>
-                      <SelectItem value="german">German</SelectItem>
+                      <SelectItem value="english">{t('mockInterview.languages.english')}</SelectItem>
+                      <SelectItem value="spanish">{t('mockInterview.languages.spanish')}</SelectItem>
+                      <SelectItem value="french">{t('mockInterview.languages.french')}</SelectItem>
+                      <SelectItem value="german">{t('mockInterview.languages.german')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -129,15 +131,15 @@ export default function MockInterviewPage() {
                 <div className="space-y-4 rounded-lg border border-border p-4">
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label>Microphone</Label>
-                      <p className="text-sm text-muted-foreground">Enable voice responses</p>
+                      <Label>{t('mockInterview.microphone')}</Label>
+                      <p className="text-sm text-muted-foreground">{t('mockInterview.enableVoice')}</p>
                     </div>
                     <Switch checked={micEnabled} onCheckedChange={setMicEnabled} />
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label>Question Time Limit</Label>
-                      <p className="text-sm text-muted-foreground">2 minutes per question</p>
+                      <Label>{t('mockInterview.questionTimeLimit')}</Label>
+                      <p className="text-sm text-muted-foreground">{t('mockInterview.timeLimitDesc')}</p>
                     </div>
                     <Switch checked={timeLimit} onCheckedChange={setTimeLimit} />
                   </div>
@@ -145,7 +147,7 @@ export default function MockInterviewPage() {
 
                 <Button onClick={startInterview} size="lg" className="w-full gap-2">
                   <PlayCircle className="h-5 w-5" />
-                  Start Interview
+                  {t('mockInterview.startInterview')}
                 </Button>
               </CardContent>
             </Card>
@@ -164,7 +166,7 @@ export default function MockInterviewPage() {
           <div className="mb-4">
             <Progress value={progress} className="h-2" />
             <p className="mt-2 text-sm text-muted-foreground">
-              Question {currentQuestion + 1} of {mockQuestions.length}
+              {t('mockInterview.progress', { current: currentQuestion + 1, total: mockQuestions.length })}
             </p>
           </div>
 
@@ -173,7 +175,7 @@ export default function MockInterviewPage() {
             <Card className="flex flex-col">
               <CardHeader className="border-b border-border">
                 <div className="flex items-center justify-between">
-                  <CardTitle>Interview Session</CardTitle>
+                  <CardTitle>{t('mockInterview.session')}</CardTitle>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Clock className="h-4 w-4" />
                     <span>15:42</span>
@@ -197,7 +199,7 @@ export default function MockInterviewPage() {
                       {timeLimit && (
                         <span className="flex items-center gap-1 text-xs text-muted-foreground">
                           <Clock className="h-3 w-3" />
-                          1:45 remaining
+                          1:45 {t('mockInterview.remaining')}
                         </span>
                       )}
                     </div>
@@ -221,7 +223,7 @@ export default function MockInterviewPage() {
               <div className="border-t border-border p-4">
                 <div className="flex gap-2">
                   <Textarea
-                    placeholder="Type your answer here..."
+                    placeholder={t('mockInterview.typeAnswer')}
                     value={userAnswer}
                     onChange={(e) => setUserAnswer(e.target.value)}
                     className="min-h-[80px] resize-none"
@@ -242,23 +244,23 @@ export default function MockInterviewPage() {
             <div className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Live Feedback</CardTitle>
+                  <CardTitle className="text-lg">{t('mockInterview.liveFeedback')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <FeedbackMetric label="Clarity" value={82} />
-                  <FeedbackMetric label="Technical Depth" value={75} />
-                  <FeedbackMetric label="Communication" value={88} />
-                  <FeedbackMetric label="Confidence" value={80} />
+                  <FeedbackMetric label={t('mockInterview.clarity')} value={82} />
+                  <FeedbackMetric label={t('mockInterview.technicalDepth')} value={75} />
+                  <FeedbackMetric label={t('mockInterview.communication')} value={88} />
+                  <FeedbackMetric label={t('mockInterview.confidence')} value={80} />
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Notes</CardTitle>
+                  <CardTitle className="text-lg">{t('mockInterview.notes')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <Textarea
-                    placeholder="Take notes during the interview..."
+                    placeholder={t('mockInterview.takeNotes')}
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     className="min-h-[120px] resize-none"
@@ -269,7 +271,7 @@ export default function MockInterviewPage() {
               <Card className="bg-secondary/50">
                 <CardContent className="p-4">
                   <p className="text-xs text-muted-foreground leading-relaxed text-pretty">
-                    Tip: Use the STAR method (Situation, Task, Action, Result) to structure your behavioral answers.
+                    {t('mockInterview.tip')} {t('mockInterview.tipContent')}
                   </p>
                 </CardContent>
               </Card>
@@ -289,23 +291,23 @@ export default function MockInterviewPage() {
           {/* Overall Score */}
           <Card className="border-2 border-primary/20 bg-primary/5">
             <CardContent className="p-8 text-center">
-              <div className="mb-2 text-sm font-medium text-muted-foreground">Overall Score</div>
+              <div className="mb-2 text-sm font-medium text-muted-foreground">{t('mockInterview.overallScore')}</div>
               <div className="mb-4 text-6xl font-bold text-primary">82%</div>
-              <p className="text-sm text-muted-foreground">Great job! You've improved from your last interview.</p>
+              <p className="text-sm text-muted-foreground">{t('mockInterview.greatJob')}</p>
             </CardContent>
           </Card>
 
           {/* Performance Radar */}
           <Card>
             <CardHeader>
-              <CardTitle>Performance Overview</CardTitle>
-              <CardDescription>Your strengths and areas for improvement</CardDescription>
+              <CardTitle>{t('mockInterview.performanceOverview')}</CardTitle>
+              <CardDescription>{t('mockInterview.strengthsWeaknesses')}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex h-64 items-center justify-center rounded-lg bg-secondary/50">
                 <div className="text-center text-muted-foreground">
                   <BarChart3 className="mx-auto mb-2 h-12 w-12" />
-                  <p className="text-sm">Radar Chart Visualization</p>
+                  <p className="text-sm">{t('mockInterview.viz')}</p>
                 </div>
               </div>
             </CardContent>
@@ -314,8 +316,8 @@ export default function MockInterviewPage() {
           {/* Question by Question */}
           <Card>
             <CardHeader>
-              <CardTitle>Question-by-Question Breakdown</CardTitle>
-              <CardDescription>Detailed feedback for each question</CardDescription>
+              <CardTitle>{t('mockInterview.breakdown')}</CardTitle>
+              <CardDescription>{t('mockInterview.breakdownDesc')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {mockResults.map((result, idx) => (
@@ -341,11 +343,11 @@ export default function MockInterviewPage() {
           <div className="flex flex-col gap-3 sm:flex-row">
             <Button size="lg" className="flex-1 gap-2" onClick={() => setState("setup")}>
               <PlayCircle className="h-5 w-5" />
-              Start Another Interview
+              {t('mockInterview.startAnother')}
             </Button>
             <Link href="/quizzes" className="flex-1">
               <Button size="lg" variant="outline" className="w-full gap-2 bg-transparent">
-                Practice Weak Topics
+                {t('mockInterview.practiceWeak')}
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </Link>

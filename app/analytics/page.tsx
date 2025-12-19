@@ -1,51 +1,64 @@
+"use client"
+
 import { Navigation } from "@/components/navigation"
 import { PageContainer, PageHeader } from "@/components/page-container"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { useTranslation } from "react-i18next"
 import { TrendingUp, TrendingDown, Calendar, Download, CheckCircle2 } from "lucide-react"
 
-const scoreData = [
-  { week: "Week 1", hr: 65, technical: 60 },
-  { week: "Week 2", hr: 70, technical: 65 },
-  { week: "Week 3", hr: 75, technical: 70 },
-  { week: "Week 4", hr: 82, technical: 78 },
-]
-
-const skillData = [
-  { skill: "Communication", score: 85, trend: "up" },
-  { skill: "Problem Solving", score: 82, trend: "up" },
-  { skill: "System Design", score: 70, trend: "neutral" },
-  { skill: "Algorithms", score: 88, trend: "up" },
-  { skill: "Behavioral", score: 75, trend: "down" },
-  { skill: "Code Quality", score: 80, trend: "up" },
-]
-
-const cvVersions = [
-  { version: "v3", date: "Dec 20, 2024", atsScore: 85, roleMatch: 88, status: "current" },
-  { version: "v2", date: "Dec 15, 2024", atsScore: 78, roleMatch: 82, status: "archived" },
-  { version: "v1", date: "Dec 10, 2024", atsScore: 72, roleMatch: 75, status: "archived" },
-]
-
-const upcomingTasks = [
-  { task: "Complete Behavioral Quiz", priority: "high", dueDate: "Today" },
-  { task: "Practice System Design Interview", priority: "medium", dueDate: "Tomorrow" },
-  { task: "Update CV with new project", priority: "medium", dueDate: "Dec 25" },
-  { task: "Review weak topics", priority: "low", dueDate: "This week" },
-]
-
 export default function AnalyticsPage() {
+  const { t } = useTranslation()
+
+  const scoreData = [
+    { week: `${t('analytics.week')} 1`, hr: 65, technical: 60 },
+    { week: `${t('analytics.week')} 2`, hr: 70, technical: 65 },
+    { week: `${t('analytics.week')} 3`, hr: 75, technical: 70 },
+    { week: `${t('analytics.week')} 4`, hr: 82, technical: 78 },
+  ]
+
+  const skillData = [
+    { skill: t('dashboard.skills.communication'), score: 85, trend: "up" },
+    { skill: t('dashboard.skills.problemSolving'), score: 82, trend: "up" },
+    { skill: t('dashboard.skills.systemDesign'), score: 70, trend: "neutral" },
+    { skill: t('dashboard.skills.algorithms'), score: 88, trend: "up" },
+    { skill: t('dashboard.skills.behavioral'), score: 75, trend: "down" },
+    { skill: t('dashboard.skills.codeQuality'), score: 80, trend: "up" },
+  ]
+
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString(t('language.code', { defaultValue: 'en-US' }), {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    })
+  }
+
+  const cvVersions = [
+    { version: "v3", date: formatDate(new Date(2024, 11, 20)), atsScore: 85, roleMatch: 88, status: "current" },
+    { version: "v2", date: formatDate(new Date(2024, 11, 15)), atsScore: 78, roleMatch: 82, status: "archived" },
+    { version: "v1", date: formatDate(new Date(2024, 11, 10)), atsScore: 72, roleMatch: 75, status: "archived" },
+  ]
+
+  const upcomingTasks = [
+    { task: t('analytics.tasks.behavioralQuiz'), priority: "high", dueDate: t('analytics.today') },
+    { task: t('analytics.tasks.systemDesignPractice'), priority: "medium", dueDate: t('analytics.tomorrow') },
+    { task: t('analytics.tasks.updateCV'), priority: "medium", dueDate: formatDate(new Date(2024, 11, 25)) },
+    { task: t('analytics.tasks.reviewWeakTopics'), priority: "low", dueDate: t('analytics.thisWeek') },
+  ]
+
   return (
     <>
       <Navigation />
       <PageContainer>
         <PageHeader
-          title="Analytics"
-          description="Track your progress and performance insights"
+          title={t('analytics.title')}
+          description={t('analytics.description')}
           action={
             <Button variant="outline" className="gap-2 bg-transparent">
               <Download className="h-4 w-4" />
-              Export Report
+              {t('analytics.exportReport')}
             </Button>
           }
         />
@@ -54,8 +67,8 @@ export default function AnalyticsPage() {
           {/* Progress Over Time */}
           <Card>
             <CardHeader>
-              <CardTitle>Score Progress Over Time</CardTitle>
-              <CardDescription>Your HR and Technical interview scores by week</CardDescription>
+              <CardTitle>{t('analytics.scoreProgress')}</CardTitle>
+              <CardDescription>{t('analytics.scoreProgressDesc')}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
@@ -68,12 +81,12 @@ export default function AnalyticsPage() {
                           <div
                             className="w-1/2 rounded-t-md bg-primary transition-all hover:opacity-80"
                             style={{ height: `${data.hr * 2}px` }}
-                            title={`HR: ${data.hr}%`}
+                            title={`${t('analytics.hrScore')}: ${data.hr}%`}
                           />
                           <div
                             className="w-1/2 rounded-t-md bg-accent transition-all hover:opacity-80"
                             style={{ height: `${data.technical * 2}px` }}
-                            title={`Technical: ${data.technical}%`}
+                            title={`${t('analytics.technicalScore')}: ${data.technical}%`}
                           />
                         </div>
                         <span className="text-xs text-muted-foreground">{data.week}</span>
@@ -86,11 +99,12 @@ export default function AnalyticsPage() {
                 <div className="flex items-center justify-center gap-6 text-sm">
                   <div className="flex items-center gap-2">
                     <div className="h-3 w-3 rounded-sm bg-primary" />
-                    <span className="text-muted-foreground">HR Score</span>
+                    <div className="h-3 w-3 rounded-sm bg-primary" />
+                    <span className="text-muted-foreground">{t('analytics.hrScore')}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="h-3 w-3 rounded-sm bg-accent" />
-                    <span className="text-muted-foreground">Technical Score</span>
+                    <span className="text-muted-foreground">{t('analytics.technicalScore')}</span>
                   </div>
                 </div>
 
@@ -98,15 +112,15 @@ export default function AnalyticsPage() {
                 <div className="grid gap-4 sm:grid-cols-3">
                   <div className="rounded-lg border border-border bg-secondary/50 p-4 text-center">
                     <p className="text-2xl font-bold text-primary">+17%</p>
-                    <p className="text-sm text-muted-foreground">HR Score Improvement</p>
+                    <p className="text-sm text-muted-foreground">{t('analytics.hrImprovement')}</p>
                   </div>
                   <div className="rounded-lg border border-border bg-secondary/50 p-4 text-center">
                     <p className="text-2xl font-bold text-accent">+18%</p>
-                    <p className="text-sm text-muted-foreground">Technical Improvement</p>
+                    <p className="text-sm text-muted-foreground">{t('analytics.technicalImprovement')}</p>
                   </div>
                   <div className="rounded-lg border border-border bg-secondary/50 p-4 text-center">
                     <p className="text-2xl font-bold">12</p>
-                    <p className="text-sm text-muted-foreground">Total Interviews</p>
+                    <p className="text-sm text-muted-foreground">{t('analytics.totalInterviews')}</p>
                   </div>
                 </div>
               </div>
@@ -117,8 +131,8 @@ export default function AnalyticsPage() {
             {/* Skills Heatmap */}
             <Card>
               <CardHeader>
-                <CardTitle>Skills Performance</CardTitle>
-                <CardDescription>Your current proficiency across key areas</CardDescription>
+                <CardTitle>{t('analytics.skillsPerformance')}</CardTitle>
+                <CardDescription>{t('analytics.skillsDesc')}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
@@ -143,9 +157,9 @@ export default function AnalyticsPage() {
                 </div>
 
                 <div className="mt-6 rounded-lg border border-primary/20 bg-primary/5 p-4">
-                  <p className="text-sm font-medium">Top Strength: Algorithms</p>
+                  <p className="text-sm font-medium">{t('analytics.topStrength', { strength: t('dashboard.skills.algorithms') })}</p>
                   <p className="text-xs text-muted-foreground">
-                    You've shown consistent excellence in algorithm problem-solving
+                    {t('analytics.topStrengthDesc')}
                   </p>
                 </div>
               </CardContent>
@@ -154,24 +168,23 @@ export default function AnalyticsPage() {
             {/* CV Version History */}
             <Card>
               <CardHeader>
-                <CardTitle>CV Version History</CardTitle>
-                <CardDescription>Track improvements to your resume</CardDescription>
+                <CardTitle>{t('analytics.cvVersionHistory')}</CardTitle>
+                <CardDescription>{t('analytics.cvVersionDesc')}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   {cvVersions.map((cv, idx) => (
                     <div
                       key={idx}
-                      className={`rounded-lg border p-4 ${
-                        cv.status === "current" ? "border-primary bg-primary/5" : "border-border"
-                      }`}
+                      className={`rounded-lg border p-4 ${cv.status === "current" ? "border-primary bg-primary/5" : "border-border"
+                        }`}
                     >
                       <div className="mb-3 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span className="font-semibold">{cv.version}</span>
                           {cv.status === "current" && (
                             <Badge variant="default" className="text-xs">
-                              Current
+                              {t('analytics.current')}
                             </Badge>
                           )}
                         </div>
@@ -182,17 +195,17 @@ export default function AnalyticsPage() {
                       </div>
                       <div className="grid grid-cols-2 gap-3 text-sm">
                         <div>
-                          <p className="text-muted-foreground">ATS Score</p>
+                          <p className="text-muted-foreground">{t('analytics.atsScore')}</p>
                           <p className="font-semibold">{cv.atsScore}%</p>
                         </div>
                         <div>
-                          <p className="text-muted-foreground">Role Match</p>
+                          <p className="text-muted-foreground">{t('analytics.roleMatch')}</p>
                           <p className="font-semibold">{cv.roleMatch}%</p>
                         </div>
                       </div>
                       {cv.status === "archived" && (
                         <Button size="sm" variant="ghost" className="mt-3 h-8 text-xs">
-                          View Version
+                          {t('analytics.viewVersion')}
                         </Button>
                       )}
                     </div>
@@ -205,8 +218,8 @@ export default function AnalyticsPage() {
           {/* Upcoming Tasks */}
           <Card>
             <CardHeader>
-              <CardTitle>Upcoming Tasks</CardTitle>
-              <CardDescription>Auto-generated action items based on your performance</CardDescription>
+              <CardTitle>{t('analytics.upcomingTasks')}</CardTitle>
+              <CardDescription>{t('analytics.upcomingTasksDesc')}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
@@ -221,7 +234,7 @@ export default function AnalyticsPage() {
                       </div>
                       <div>
                         <p className="font-medium">{task.task}</p>
-                        <p className="text-sm text-muted-foreground">Due: {task.dueDate}</p>
+                        <p className="text-sm text-muted-foreground">{t('analytics.due', { date: task.dueDate })}</p>
                       </div>
                     </div>
                     <Badge
@@ -229,7 +242,7 @@ export default function AnalyticsPage() {
                         task.priority === "high" ? "destructive" : task.priority === "medium" ? "default" : "secondary"
                       }
                     >
-                      {task.priority}
+                      {task.priority === "high" ? t('analytics.high') : task.priority === "medium" ? t('analytics.medium') : t('analytics.low')}
                     </Badge>
                   </div>
                 ))}
@@ -243,10 +256,10 @@ export default function AnalyticsPage() {
               <CardContent className="p-6">
                 <div className="mb-2 flex items-center gap-2">
                   <TrendingUp className="h-5 w-5 text-success" />
-                  <h3 className="font-semibold">Strong Progress</h3>
+                  <h3 className="font-semibold">{t('analytics.strongProgress')}</h3>
                 </div>
                 <p className="text-sm text-muted-foreground text-pretty">
-                  You've improved your average score by 15% over the last month. Keep up the consistent practice!
+                  {t('analytics.strongProgressDesc')}
                 </p>
               </CardContent>
             </Card>
@@ -255,10 +268,10 @@ export default function AnalyticsPage() {
               <CardContent className="p-6">
                 <div className="mb-2 flex items-center gap-2">
                   <TrendingDown className="h-5 w-5 text-warning" />
-                  <h3 className="font-semibold">Area to Focus</h3>
+                  <h3 className="font-semibold">{t('analytics.areaToFocus')}</h3>
                 </div>
                 <p className="text-sm text-muted-foreground text-pretty">
-                  Your behavioral interview scores have plateaued. Consider practicing more STAR method responses.
+                  {t('analytics.areaToFocusDesc')}
                 </p>
               </CardContent>
             </Card>

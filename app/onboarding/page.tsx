@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 import { Navigation } from "@/components/navigation"
 import { PageContainer } from "@/components/page-container"
 import { Button } from "@/components/ui/button"
@@ -32,14 +33,10 @@ const skills = [
   "REST APIs",
 ]
 
-const goals = [
-  { id: "hr", label: "Ace HR interviews", description: "Practice behavioral questions and communication" },
-  { id: "tech", label: "Improve technical interviews", description: "Master coding problems and system design" },
-  { id: "cv", label: "Optimize my CV", description: "Create an ATS-friendly resume" },
-  { id: "track", label: "Track my progress", description: "Monitor improvement over time" },
-]
+/* Goals array moved inside component or translated dynamically */
 
 export default function OnboardingPage() {
+  const { t } = useTranslation()
   const [step, setStep] = useState(1)
   const [formData, setFormData] = useState({
     name: "",
@@ -50,6 +47,13 @@ export default function OnboardingPage() {
     selectedGoals: [] as string[],
   })
   const router = useRouter()
+
+  const goals = [
+    { id: "hr", label: t('onboarding.goals.hr'), description: t('onboarding.goals.hrDesc') },
+    { id: "tech", label: t('onboarding.goals.tech'), description: t('onboarding.goals.techDesc') },
+    { id: "cv", label: t('onboarding.goals.cv'), description: t('onboarding.goals.cvDesc') },
+    { id: "track", label: t('onboarding.goals.track'), description: t('onboarding.goals.trackDesc') },
+  ]
 
   const totalSteps = 4
   const progress = (step / totalSteps) * 100
@@ -87,20 +91,20 @@ export default function OnboardingPage() {
               <div className="mb-4">
                 <Progress value={progress} className="h-2" />
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Step {step} of {totalSteps}
+                  {t('onboarding.step', { current: step, total: totalSteps })}
                 </p>
               </div>
               <CardTitle className="text-2xl">
-                {step === 1 && "Welcome to RecruitAssistant"}
-                {step === 2 && "Tell us about your skills"}
-                {step === 3 && "What are your goals?"}
-                {step === 4 && "You're all set!"}
+                {step === 1 && t('onboarding.welcome')}
+                {step === 2 && t('onboarding.tellUsSkills')}
+                {step === 3 && t('onboarding.yourGoals')}
+                {step === 4 && t('onboarding.allSet')}
               </CardTitle>
               <CardDescription>
-                {step === 1 && "Let's get to know you better"}
-                {step === 2 && "Select all the skills you have"}
-                {step === 3 && "Choose what you want to achieve"}
-                {step === 4 && "Review your information"}
+                {step === 1 && t('onboarding.getToKnow')}
+                {step === 2 && t('onboarding.selectSkills')}
+                {step === 3 && t('onboarding.chooseGoals')}
+                {step === 4 && t('onboarding.reviewInfo')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -108,7 +112,7 @@ export default function OnboardingPage() {
               {step === 1 && (
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
+                    <Label htmlFor="name">{t('onboarding.fullName')}</Label>
                     <Input
                       id="name"
                       placeholder="John Doe"
@@ -117,7 +121,7 @@ export default function OnboardingPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="university">University</Label>
+                    <Label htmlFor="university">{t('onboarding.university')}</Label>
                     <Input
                       id="university"
                       placeholder="Massachusetts Institute of Technology"
@@ -127,7 +131,7 @@ export default function OnboardingPage() {
                   </div>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
-                      <Label htmlFor="graduationYear">Graduation Year</Label>
+                      <Label htmlFor="graduationYear">{t('onboarding.graduationYear')}</Label>
                       <Input
                         id="graduationYear"
                         type="number"
@@ -137,7 +141,7 @@ export default function OnboardingPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="targetRole">Target Role</Label>
+                      <Label htmlFor="targetRole">{t('onboarding.targetRole')}</Label>
                       <Input
                         id="targetRole"
                         placeholder="Software Engineer"
@@ -167,7 +171,7 @@ export default function OnboardingPage() {
                   </div>
                   {formData.selectedSkills.length > 0 && (
                     <p className="text-sm text-muted-foreground">
-                      {formData.selectedSkills.length} skill{formData.selectedSkills.length !== 1 ? "s" : ""} selected
+                      {t('onboarding.skillsSelected', { count: formData.selectedSkills.length, plural: formData.selectedSkills.length !== 1 ? "s" : "" })}
                     </p>
                   )}
                 </div>
@@ -179,11 +183,10 @@ export default function OnboardingPage() {
                   {goals.map((goal) => (
                     <Card
                       key={goal.id}
-                      className={`cursor-pointer transition-all ${
-                        formData.selectedGoals.includes(goal.id)
-                          ? "border-primary bg-primary/5"
-                          : "hover:border-primary/50"
-                      }`}
+                      className={`cursor-pointer transition-all ${formData.selectedGoals.includes(goal.id)
+                        ? "border-primary bg-primary/5"
+                        : "hover:border-primary/50"
+                        }`}
                       onClick={() => toggleGoal(goal.id)}
                     >
                       <CardContent className="flex items-start gap-3 p-4">
@@ -202,30 +205,30 @@ export default function OnboardingPage() {
               {step === 4 && (
                 <div className="space-y-6">
                   <div className="rounded-lg bg-secondary/50 p-4">
-                    <h3 className="mb-3 font-semibold">Your Profile</h3>
+                    <h3 className="mb-3 font-semibold">{t('onboarding.yourProfile')}</h3>
                     <dl className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <dt className="text-muted-foreground">Name:</dt>
-                        <dd className="font-medium">{formData.name || "Not provided"}</dd>
+                        <dt className="text-muted-foreground">{t('onboarding.fullName')}:</dt>
+                        <dd className="font-medium">{formData.name || t('onboarding.notProvided')}</dd>
                       </div>
                       <div className="flex justify-between">
-                        <dt className="text-muted-foreground">University:</dt>
-                        <dd className="font-medium">{formData.university || "Not provided"}</dd>
+                        <dt className="text-muted-foreground">{t('onboarding.university')}:</dt>
+                        <dd className="font-medium">{formData.university || t('onboarding.notProvided')}</dd>
                       </div>
                       <div className="flex justify-between">
-                        <dt className="text-muted-foreground">Graduation:</dt>
+                        <dt className="text-muted-foreground">{t('onboarding.graduationYear')}:</dt>
                         <dd className="font-medium">{formData.graduationYear}</dd>
                       </div>
                       <div className="flex justify-between">
-                        <dt className="text-muted-foreground">Target Role:</dt>
-                        <dd className="font-medium">{formData.targetRole || "Not provided"}</dd>
+                        <dt className="text-muted-foreground">{t('onboarding.targetRole')}:</dt>
+                        <dd className="font-medium">{formData.targetRole || t('onboarding.notProvided')}</dd>
                       </div>
                     </dl>
                   </div>
 
                   {formData.selectedSkills.length > 0 && (
                     <div>
-                      <h3 className="mb-2 font-semibold">Selected Skills</h3>
+                      <h3 className="mb-2 font-semibold">{t('onboarding.selectedSkills')}</h3>
                       <div className="flex flex-wrap gap-2">
                         {formData.selectedSkills.map((skill) => (
                           <Badge key={skill} variant="secondary">
@@ -238,7 +241,7 @@ export default function OnboardingPage() {
 
                   {formData.selectedGoals.length > 0 && (
                     <div>
-                      <h3 className="mb-2 font-semibold">Your Goals</h3>
+                      <h3 className="mb-2 font-semibold">{t('onboarding.selectedGoals')}</h3>
                       <ul className="space-y-1 text-sm">
                         {formData.selectedGoals.map((goalId) => {
                           const goal = goals.find((g) => g.id === goalId)
@@ -259,16 +262,16 @@ export default function OnboardingPage() {
               <div className="mt-8 flex justify-between gap-4">
                 <Button variant="outline" onClick={() => setStep((s) => Math.max(1, s - 1))} disabled={step === 1}>
                   <ChevronLeft className="mr-2 h-4 w-4" />
-                  Back
+                  {t('common.back')}
                 </Button>
                 {step < totalSteps ? (
                   <Button onClick={() => setStep((s) => Math.min(totalSteps, s + 1))}>
-                    Next
+                    {t('common.next')}
                     <ChevronRight className="ml-2 h-4 w-4" />
                   </Button>
                 ) : (
                   <Button onClick={handleComplete}>
-                    Go to Dashboard
+                    {t('onboarding.goToDashboard')}
                     <ChevronRight className="ml-2 h-4 w-4" />
                   </Button>
                 )}
