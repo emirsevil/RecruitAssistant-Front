@@ -135,21 +135,21 @@ export function Navigation() {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/profile" className="flex cursor-pointer">
+                <DropdownMenuItem>
+                  <Link href="/profile" className="flex w-full items-center">
                     <User className="mr-2 h-4 w-4" />
                     {t("profile")}
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/settings" className="flex cursor-pointer">
+                <DropdownMenuItem>
+                  <Link href="/settings" className="flex w-full items-center">
                     <Settings className="mr-2 h-4 w-4" />
                     {t("settings")}
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/login" className="flex cursor-pointer">
+                <DropdownMenuItem>
+                  <Link href="/login" className="flex w-full items-center">
                     <LogOut className="mr-2 h-4 w-4" />
                     {t("logout")}
                   </Link>
