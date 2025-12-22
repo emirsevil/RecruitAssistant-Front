@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { Download, Sparkles, RotateCcw, Save, Plus, Trash2, AlertCircle } from "lucide-react"
+import { Download, Sparkles, RotateCcw, Save, Plus, Trash2, AlertCircle, Loader2, FileText, Eye } from "lucide-react"
 
 export default function CVStudioPage() {
   const [cvData, setCvData] = useState({
@@ -53,9 +53,17 @@ export default function CVStudioPage() {
     targetJob: "Software Engineer - Full Stack",
   })
 
-  const [atsScore] = useState(78)
-  const [roleMatch] = useState(85)
+  const [atsScore, setAtsScore] = useState(78)
+  const [roleMatch, setRoleMatch] = useState(85)
   const [missingSkills] = useState(["Docker", "Kubernetes", "GraphQL"])
+
+  // New state for AI generation
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [generatedLatex, setGeneratedLatex] = useState("")
+  const [generatedHtml, setGeneratedHtml] = useState("")
+  const [showLatex, setShowLatex] = useState(false)
+  const [generationError, setGenerationError] = useState("")
+  const [isGenerated, setIsGenerated] = useState(false)
 
   const addExperience = () => {
     setCvData({
@@ -73,6 +81,13 @@ export default function CVStudioPage() {
     })
   }
 
+  const removeExperience = (indexToRemove: number) => {
+    setCvData({
+      ...cvData,
+      experience: cvData.experience.filter((_, idx) => idx !== indexToRemove),
+    })
+  }
+
   const addProject = () => {
     setCvData({
       ...cvData,
@@ -85,6 +100,126 @@ export default function CVStudioPage() {
         },
       ],
     })
+  }
+
+  const removeProject = (indexToRemove: number) => {
+    setCvData({
+      ...cvData,
+      projects: cvData.projects.filter((_, idx) => idx !== indexToRemove),
+    })
+  }
+
+  const addSkill = () => {
+    const skill = prompt("Enter a new skill:")
+    if (skill && skill.trim()) {
+      setCvData({
+        ...cvData,
+        skills: [...cvData.skills, skill.trim()],
+      })
+    }
+  }
+
+  const removeSkill = (indexToRemove: number) => {
+    setCvData({
+      ...cvData,
+      skills: cvData.skills.filter((_, idx) => idx !== indexToRemove),
+    })
+  }
+
+  const addBullet = (expIndex: number) => {
+    const newExperience = [...cvData.experience]
+    newExperience[expIndex].bullets.push("")
+    setCvData({ ...cvData, experience: newExperience })
+  }
+
+  const updateExperienceBullet = (expIndex: number, bulletIndex: number, value: string) => {
+    const newExperience = [...cvData.experience]
+    newExperience[expIndex].bullets[bulletIndex] = value
+    setCvData({ ...cvData, experience: newExperience })
+  }
+
+  const updateExperience = (index: number, field: string, value: string) => {
+    const newExperience = [...cvData.experience]
+      ; (newExperience[index] as any)[field] = value
+    setCvData({ ...cvData, experience: newExperience })
+  }
+
+  const updateProject = (index: number, field: string, value: string) => {
+    const newProjects = [...cvData.projects]
+      ; (newProjects[index] as any)[field] = value
+    setCvData({ ...cvData, projects: newProjects })
+  }
+
+  const updateEducation = (index: number, field: string, value: string) => {
+    const newEducation = [...cvData.education]
+      ; (newEducation[index] as any)[field] = value
+    setCvData({ ...cvData, education: newEducation })
+  }
+
+  // Generate CV using AI
+  const generateCV = async () => {
+    setIsGenerating(true)
+    setGenerationError("")
+
+    try {
+      const response = await fetch("/api/generate-cv", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(cvData),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to generate CV")
+      }
+
+      setGeneratedLatex(data.latex)
+      setGeneratedHtml(data.html)
+      setIsGenerated(true)
+      setAtsScore(Math.floor(Math.random() * 15) + 85) // Simulated improvement
+      setRoleMatch(Math.floor(Math.random() * 10) + 90) // Simulated improvement
+    } catch (error: any) {
+      setGenerationError(error.message || "An error occurred while generating the CV")
+    } finally {
+      setIsGenerating(false)
+    }
+  }
+
+  // Download LaTeX file
+  const downloadLatex = () => {
+    if (!generatedLatex) return
+
+    const blob = new Blob([generatedLatex], { type: "text/plain" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `${cvData.name.replace(/\s+/g, "_")}_CV.tex`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  // Download PDF (via Browser Print)
+  const downloadPDF = () => {
+    if (!generatedHtml) return
+
+    // Create a new window with instructions and the HTML code
+    const win = window.open("", "_blank")
+    if (win) {
+      win.document.write(generatedHtml)
+      win.document.close()
+      // Wait for resources to load then print
+      win.onload = () => {
+        setTimeout(() => {
+          win.focus()
+          win.print()
+        }, 500)
+      }
+    }
   }
 
   return (
@@ -157,24 +292,39 @@ export default function CVStudioPage() {
                   <div key={idx} className="space-y-4 rounded-lg border border-border p-4">
                     <div className="space-y-2">
                       <Label>Degree</Label>
-                      <Input value={edu.degree} />
+                      <Input
+                        value={edu.degree}
+                        onChange={(e) => updateEducation(idx, "degree", e.target.value)}
+                      />
                     </div>
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div className="space-y-2">
                         <Label>School</Label>
-                        <Input value={edu.school} />
+                        <Input
+                          value={edu.school}
+                          onChange={(e) => updateEducation(idx, "school", e.target.value)}
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label>GPA</Label>
-                        <Input value={edu.gpa} />
+                        <Input
+                          value={edu.gpa}
+                          onChange={(e) => updateEducation(idx, "gpa", e.target.value)}
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label>Start Date</Label>
-                        <Input value={edu.startDate} />
+                        <Input
+                          value={edu.startDate}
+                          onChange={(e) => updateEducation(idx, "startDate", e.target.value)}
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label>End Date</Label>
-                        <Input value={edu.endDate} />
+                        <Input
+                          value={edu.endDate}
+                          onChange={(e) => updateEducation(idx, "endDate", e.target.value)}
+                        />
                       </div>
                     </div>
                   </div>
@@ -194,23 +344,49 @@ export default function CVStudioPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {cvData.experience.map((exp, idx) => (
-                  <div key={idx} className="space-y-4 rounded-lg border border-border p-4">
+                  <div key={idx} className="space-y-4 rounded-lg border border-border p-4 relative">
+                    {cvData.experience.length > 1 && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="absolute top-2 right-2 h-8 w-8 text-destructive"
+                        onClick={() => removeExperience(idx)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div className="space-y-2">
                         <Label>Role</Label>
-                        <Input value={exp.role} placeholder="Software Engineer" />
+                        <Input
+                          value={exp.role}
+                          placeholder="Software Engineer"
+                          onChange={(e) => updateExperience(idx, "role", e.target.value)}
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label>Company</Label>
-                        <Input value={exp.company} placeholder="Tech Company Inc." />
+                        <Input
+                          value={exp.company}
+                          placeholder="Tech Company Inc."
+                          onChange={(e) => updateExperience(idx, "company", e.target.value)}
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label>Start Date</Label>
-                        <Input value={exp.startDate} placeholder="Jan 2023" />
+                        <Input
+                          value={exp.startDate}
+                          placeholder="Jan 2023"
+                          onChange={(e) => updateExperience(idx, "startDate", e.target.value)}
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label>End Date</Label>
-                        <Input value={exp.endDate} placeholder="Present" />
+                        <Input
+                          value={exp.endDate}
+                          placeholder="Present"
+                          onChange={(e) => updateExperience(idx, "endDate", e.target.value)}
+                        />
                       </div>
                     </div>
                     <div className="space-y-2">
@@ -219,11 +395,12 @@ export default function CVStudioPage() {
                         <Textarea
                           key={bulletIdx}
                           value={bullet}
+                          onChange={(e) => updateExperienceBullet(idx, bulletIdx, e.target.value)}
                           className="min-h-[60px]"
                           placeholder="• Developed features that improved..."
                         />
                       ))}
-                      <Button size="sm" variant="ghost" className="gap-2">
+                      <Button size="sm" variant="ghost" className="gap-2" onClick={() => addBullet(idx)}>
                         <Plus className="h-3 w-3" />
                         Add bullet point
                       </Button>
@@ -245,19 +422,38 @@ export default function CVStudioPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {cvData.projects.map((project, idx) => (
-                  <div key={idx} className="space-y-4 rounded-lg border border-border p-4">
+                  <div key={idx} className="space-y-4 rounded-lg border border-border p-4 relative">
+                    {cvData.projects.length > 1 && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="absolute top-2 right-2 h-8 w-8 text-destructive"
+                        onClick={() => removeProject(idx)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                     <div className="space-y-2">
                       <Label>Project Title</Label>
-                      <Input value={project.title} placeholder="E-commerce Platform" />
+                      <Input
+                        value={project.title}
+                        placeholder="E-commerce Platform"
+                        onChange={(e) => updateProject(idx, "title", e.target.value)}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label>Tech Stack</Label>
-                      <Input value={project.techStack} placeholder="React, Node.js, MongoDB" />
+                      <Input
+                        value={project.techStack}
+                        placeholder="React, Node.js, MongoDB"
+                        onChange={(e) => updateProject(idx, "techStack", e.target.value)}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label>Description</Label>
                       <Textarea
                         value={project.description}
+                        onChange={(e) => updateProject(idx, "description", e.target.value)}
                         className="min-h-[80px]"
                         placeholder="Built a full-stack application that..."
                       />
@@ -276,10 +472,13 @@ export default function CVStudioPage() {
                   {cvData.skills.map((skill, idx) => (
                     <Badge key={idx} variant="secondary" className="gap-1 px-3 py-1.5">
                       {skill}
-                      <Trash2 className="h-3 w-3 cursor-pointer" />
+                      <Trash2
+                        className="h-3 w-3 cursor-pointer hover:text-destructive"
+                        onClick={() => removeSkill(idx)}
+                      />
                     </Badge>
                   ))}
-                  <Button size="sm" variant="outline" className="gap-2 bg-transparent">
+                  <Button size="sm" variant="outline" className="gap-2 bg-transparent" onClick={addSkill}>
                     <Plus className="h-3 w-3" />
                     Add skill
                   </Button>
@@ -302,10 +501,34 @@ export default function CVStudioPage() {
               </CardContent>
             </Card>
 
+            {generationError && (
+              <Card className="border-destructive bg-destructive/10">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 text-destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <p className="text-sm font-medium">{generationError}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             <div className="flex gap-3">
-              <Button className="flex-1 gap-2">
-                <Sparkles className="h-4 w-4" />
-                Generate CV Draft
+              <Button
+                className="flex-1 gap-2"
+                onClick={generateCV}
+                disabled={isGenerating}
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Generating with AI...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4" />
+                    Generate CV Draft
+                  </>
+                )}
               </Button>
               <Button variant="outline" className="gap-2 bg-transparent">
                 <Save className="h-4 w-4" />
@@ -330,7 +553,9 @@ export default function CVStudioPage() {
                   <div className="h-2 overflow-hidden rounded-full bg-secondary">
                     <div className="h-full bg-primary transition-all" style={{ width: `${atsScore}%` }} />
                   </div>
-                  <p className="text-xs text-muted-foreground">Good! Your CV is well-formatted for ATS systems</p>
+                  <p className="text-xs text-muted-foreground">
+                    {isGenerated ? "Excellent! AI-optimized for ATS systems" : "Good! Your CV is well-formatted for ATS systems"}
+                  </p>
                 </div>
 
                 <Separator />
@@ -343,7 +568,9 @@ export default function CVStudioPage() {
                   <div className="h-2 overflow-hidden rounded-full bg-secondary">
                     <div className="h-full bg-primary transition-all" style={{ width: `${roleMatch}%` }} />
                   </div>
-                  <p className="text-xs text-muted-foreground">Great alignment with the target role</p>
+                  <p className="text-xs text-muted-foreground">
+                    {isGenerated ? "Optimized for your target role" : "Great alignment with the target role"}
+                  </p>
                 </div>
 
                 <Separator />
@@ -370,104 +597,161 @@ export default function CVStudioPage() {
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-lg">Live Preview</CardTitle>
                 <div className="flex gap-2">
-                  <Button size="icon" variant="ghost" title="Regenerate">
-                    <RotateCcw className="h-4 w-4" />
-                  </Button>
-                  <Button size="icon" variant="ghost" title="Download PDF">
-                    <Download className="h-4 w-4" />
-                  </Button>
+                  {isGenerated && (
+                    <>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        title="Toggle LaTeX View"
+                        onClick={() => setShowLatex(!showLatex)}
+                      >
+                        {showLatex ? <Eye className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        title="Regenerate"
+                        onClick={generateCV}
+                        disabled={isGenerating}
+                      >
+                        <RotateCcw className={`h-4 w-4 ${isGenerating ? 'animate-spin' : ''}`} />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        title="Download PDF"
+                        onClick={downloadPDF}
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
+                    </>
+                  )}
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="rounded-lg border-2 border-border bg-white p-6 text-black">
-                  {/* CV Preview Content */}
-                  <div className="space-y-4">
-                    <div className="text-center">
-                      <h2 className="text-2xl font-bold">{cvData.name}</h2>
-                      <p className="text-sm text-gray-600">
-                        {cvData.email} • {cvData.phone} • {cvData.location}
-                      </p>
-                    </div>
+                {isGenerating ? (
+                  <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <p className="text-sm text-muted-foreground">Generating your optimized CV...</p>
+                  </div>
+                ) : isGenerated && showLatex ? (
+                  <div className="rounded-lg border-2 border-border bg-gray-900 p-4 text-green-400 font-mono text-xs overflow-auto max-h-[600px]">
+                    <pre className="whitespace-pre-wrap">{generatedLatex}</pre>
+                  </div>
+                ) : (
+                  <div className="rounded-lg border-2 border-border bg-white p-6 text-black">
+                    {/* CV Preview Content */}
+                    <div className="space-y-4">
+                      <div className="text-center">
+                        <h2 className="text-2xl font-bold">{cvData.name}</h2>
+                        <p className="text-sm text-gray-600">
+                          {cvData.email} • {cvData.phone} • {cvData.location}
+                        </p>
+                      </div>
 
-                    <Separator />
+                      <Separator />
 
-                    <div>
-                      <h3 className="mb-2 text-sm font-bold uppercase">Summary</h3>
-                      <p className="text-xs leading-relaxed text-gray-700 text-pretty">{cvData.summary}</p>
-                    </div>
+                      <div>
+                        <h3 className="mb-2 text-sm font-bold uppercase">Summary</h3>
+                        <p className="text-xs leading-relaxed text-gray-700 text-pretty">{cvData.summary}</p>
+                      </div>
 
-                    <div>
-                      <h3 className="mb-2 text-sm font-bold uppercase">Experience</h3>
-                      <div className="space-y-3">
-                        {cvData.experience.map((exp, idx) => (
-                          <div key={idx} className="space-y-1">
-                            <div className="flex items-start justify-between">
-                              <div>
-                                <p className="text-xs font-semibold">{exp.role}</p>
-                                <p className="text-xs text-gray-600">{exp.company}</p>
+                      <div>
+                        <h3 className="mb-2 text-sm font-bold uppercase">Experience</h3>
+                        <div className="space-y-3">
+                          {cvData.experience.map((exp, idx) => (
+                            <div key={idx} className="space-y-1">
+                              <div className="flex items-start justify-between">
+                                <div>
+                                  <p className="text-xs font-semibold">{exp.role}</p>
+                                  <p className="text-xs text-gray-600">{exp.company}</p>
+                                </div>
+                                <p className="text-xs text-gray-500">
+                                  {exp.startDate} - {exp.endDate}
+                                </p>
                               </div>
-                              <p className="text-xs text-gray-500">
-                                {exp.startDate} - {exp.endDate}
-                              </p>
+                              <ul className="ml-4 list-disc space-y-1">
+                                {exp.bullets.map((bullet, bulletIdx) => (
+                                  <li key={bulletIdx} className="text-xs leading-relaxed text-gray-700 text-pretty">
+                                    {bullet}
+                                  </li>
+                                ))}
+                              </ul>
                             </div>
-                            <ul className="ml-4 list-disc space-y-1">
-                              {exp.bullets.map((bullet, bulletIdx) => (
-                                <li key={bulletIdx} className="text-xs leading-relaxed text-gray-700 text-pretty">
-                                  {bullet}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <h3 className="mb-2 text-sm font-bold uppercase">Projects</h3>
-                      <div className="space-y-2">
-                        {cvData.projects.map((project, idx) => (
-                          <div key={idx}>
-                            <p className="text-xs font-semibold">
-                              {project.title} <span className="font-normal text-gray-600">| {project.techStack}</span>
-                            </p>
-                            <p className="text-xs leading-relaxed text-gray-700 text-pretty">{project.description}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <h3 className="mb-2 text-sm font-bold uppercase">Education</h3>
-                      {cvData.education.map((edu, idx) => (
-                        <div key={idx} className="flex justify-between">
-                          <div>
-                            <p className="text-xs font-semibold">{edu.degree}</p>
-                            <p className="text-xs text-gray-600">{edu.school}</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-xs text-gray-500">
-                              {edu.startDate} - {edu.endDate}
-                            </p>
-                            <p className="text-xs text-gray-600">GPA: {edu.gpa}</p>
-                          </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
+                      </div>
 
-                    <div>
-                      <h3 className="mb-2 text-sm font-bold uppercase">Skills</h3>
-                      <p className="text-xs text-gray-700">{cvData.skills.join(" • ")}</p>
+                      <div>
+                        <h3 className="mb-2 text-sm font-bold uppercase">Projects</h3>
+                        <div className="space-y-2">
+                          {cvData.projects.map((project, idx) => (
+                            <div key={idx}>
+                              <p className="text-xs font-semibold">
+                                {project.title} <span className="font-normal text-gray-600">| {project.techStack}</span>
+                              </p>
+                              <p className="text-xs leading-relaxed text-gray-700 text-pretty">{project.description}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <h3 className="mb-2 text-sm font-bold uppercase">Education</h3>
+                        {cvData.education.map((edu, idx) => (
+                          <div key={idx} className="flex justify-between">
+                            <div>
+                              <p className="text-xs font-semibold">{edu.degree}</p>
+                              <p className="text-xs text-gray-600">{edu.school}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-xs text-gray-500">
+                                {edu.startDate} - {edu.endDate}
+                              </p>
+                              <p className="text-xs text-gray-600">GPA: {edu.gpa}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div>
+                        <h3 className="mb-2 text-sm font-bold uppercase">Skills</h3>
+                        <p className="text-xs text-gray-700">{cvData.skills.join(" • ")}</p>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
+
+                {/* Download buttons after generation */}
+                {isGenerated && !isGenerating && (
+                  <div className="mt-4 flex gap-2">
+                    <Button className="flex-1 gap-2" onClick={downloadPDF}>
+                      <Download className="h-4 w-4" />
+                      Download PDF
+                    </Button>
+                    <Button variant="outline" className="gap-2 bg-transparent" onClick={downloadLatex}>
+                      <FileText className="h-4 w-4" />
+                      Download .tex
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
             <Card className="bg-secondary/50">
               <CardContent className="p-4">
                 <p className="text-xs text-muted-foreground leading-relaxed text-pretty">
-                  <strong>Pro Tip:</strong> Use action verbs and quantify your achievements. For example: "Increased
-                  user engagement by 40%" instead of "Improved user engagement."
+                  {isGenerated ? (
+                    <>
+                      <strong>✨ AI Generated!</strong> Your CV has been optimized for the target role.
+                      Click "Download PDF" to get your professional resume ready for applications.
+                    </>
+                  ) : (
+                    <>
+                      <strong>Pro Tip:</strong> Use action verbs and quantify your achievements. For example: "Increased
+                      user engagement by 40%" instead of "Improved user engagement."
+                    </>
+                  )}
                 </p>
               </CardContent>
             </Card>

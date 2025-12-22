@@ -1,24 +1,40 @@
+"use client"
+
+import { useState } from "react"
 import { Navigation } from "@/components/navigation"
 import { PageContainer, PageHeader } from "@/components/page-container"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { TrendingUp, TrendingDown, Calendar, Download, CheckCircle2 } from "lucide-react"
+import { TrendingUp, TrendingDown, Calendar, Download, CheckCircle2, ChevronLeft, ChevronRight, Brain, MessageSquare, Target } from "lucide-react"
+import {
+  LineChart, Line, AreaChart, Area, BarChart, Bar,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar
+} from 'recharts'
 
-const scoreData = [
-  { week: "Week 1", hr: 65, technical: 60 },
-  { week: "Week 2", hr: 70, technical: 65 },
-  { week: "Week 3", hr: 75, technical: 70 },
-  { week: "Week 4", hr: 82, technical: 78 },
+// Mock Data
+const quizProgressData = [
+  { attempt: 'Q1', score: 65, avg: 60 },
+  { attempt: 'Q2', score: 75, avg: 62 },
+  { attempt: 'Q3', score: 72, avg: 65 },
+  { attempt: 'Q4', score: 85, avg: 68 },
+  { attempt: 'Q5', score: 82, avg: 70 },
+  { attempt: 'Q6', score: 90, avg: 72 },
 ]
 
-const skillData = [
-  { skill: "Communication", score: 85, trend: "up" },
-  { skill: "Problem Solving", score: 82, trend: "up" },
-  { skill: "System Design", score: 70, trend: "neutral" },
-  { skill: "Algorithms", score: 88, trend: "up" },
-  { skill: "Behavioral", score: 75, trend: "down" },
-  { skill: "Code Quality", score: 80, trend: "up" },
+const interviewPerformanceData = [
+  { subject: 'Communication', A: 85, fullMark: 100 },
+  { subject: 'Problem Solving', A: 80, fullMark: 100 },
+  { subject: 'Coding', A: 90, fullMark: 100 },
+  { subject: 'System Design', A: 70, fullMark: 100 },
+  { subject: 'Behavioral', A: 75, fullMark: 100 },
+]
+
+const skillTrendData = [
+  { month: 'Sep', Frontend: 60, Backend: 40 },
+  { month: 'Oct', Frontend: 70, Backend: 55 },
+  { month: 'Nov', Frontend: 75, Backend: 70 },
+  { month: 'Dec', Frontend: 85, Backend: 75 },
 ]
 
 const cvVersions = [
@@ -35,6 +51,77 @@ const upcomingTasks = [
 ]
 
 export default function AnalyticsPage() {
+  const [currentSlide, setCurrentSlide] = useState(0)
+  const totalSlides = 3
+
+  const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % totalSlides)
+  const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + totalSlides) % totalSlides)
+
+  const slides = [
+    {
+      title: "Quiz Score Trend",
+      description: "Comparison of your scores vs class average",
+      icon: <Brain className="h-5 w-5 text-purple-500" />,
+      component: (
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart data={quizProgressData}>
+            <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+            <XAxis dataKey="attempt" />
+            <YAxis />
+            <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+            <Legend />
+            <Line type="monotone" dataKey="score" stroke="#8884d8" name="Your Score" strokeWidth={3} activeDot={{ r: 8 }} />
+            <Line type="monotone" dataKey="avg" stroke="#82ca9d" name="Average" strokeDasharray="5 5" />
+          </LineChart>
+        </ResponsiveContainer>
+      )
+    },
+    {
+      title: "Interview Skill Radar",
+      description: "Holistic view of your technical and soft skills",
+      icon: <MessageSquare className="h-5 w-5 text-blue-500" />,
+      component: (
+        <ResponsiveContainer width="100%" height={300}>
+          <RadarChart cx="50%" cy="50%" outerRadius="80%" data={interviewPerformanceData}>
+            <PolarGrid />
+            <PolarAngleAxis dataKey="subject" />
+            <PolarRadiusAxis angle={30} domain={[0, 100]} />
+            <Radar name="My Skills" dataKey="A" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />
+            <Tooltip />
+          </RadarChart>
+        </ResponsiveContainer>
+      )
+    },
+    {
+      title: "Skill Growth (Frontend vs Backend)",
+      description: "Progress over the last 4 months",
+      icon: <Target className="h-5 w-5 text-red-500" />,
+      component: (
+        <ResponsiveContainer width="100%" height={300}>
+          <AreaChart data={skillTrendData}>
+            <defs>
+              <linearGradient id="colorFe" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8} />
+                <stop offset="95%" stopColor="#8884d8" stopOpacity={0} />
+              </linearGradient>
+              <linearGradient id="colorBe" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#82ca9d" stopOpacity={0.8} />
+                <stop offset="95%" stopColor="#82ca9d" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <XAxis dataKey="month" />
+            <YAxis />
+            <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+            <Tooltip />
+            <Legend />
+            <Area type="monotone" dataKey="Frontend" stroke="#8884d8" fillOpacity={1} fill="url(#colorFe)" />
+            <Area type="monotone" dataKey="Backend" stroke="#82ca9d" fillOpacity={1} fill="url(#colorBe)" />
+          </AreaChart>
+        </ResponsiveContainer>
+      )
+    }
+  ]
+
   return (
     <>
       <Navigation />
@@ -51,106 +138,40 @@ export default function AnalyticsPage() {
         />
 
         <div className="space-y-6">
-          {/* Progress Over Time */}
-          <Card>
+          {/* Main Chart Carousel */}
+          <Card className="relative overflow-hidden">
             <CardHeader>
-              <CardTitle>Score Progress Over Time</CardTitle>
-              <CardDescription>Your HR and Technical interview scores by week</CardDescription>
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    {slides[currentSlide].icon}
+                    <CardTitle>{slides[currentSlide].title}</CardTitle>
+                  </div>
+                  <CardDescription>{slides[currentSlide].description}</CardDescription>
+                </div>
+
+                {/* Carousel Controls */}
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="icon" onClick={prevSlide}>
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <div className="text-sm font-medium w-12 text-center text-muted-foreground">
+                    {currentSlide + 1} / {totalSlides}
+                  </div>
+                  <Button variant="outline" size="icon" onClick={nextSlide}>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-6">
-                {/* Chart Visualization */}
-                <div className="h-64 rounded-lg border border-border bg-secondary/20 p-6">
-                  <div className="flex h-full items-end justify-around gap-4">
-                    {scoreData.map((data, idx) => (
-                      <div key={idx} className="flex flex-1 flex-col items-center gap-2">
-                        <div className="flex w-full gap-2">
-                          <div
-                            className="w-1/2 rounded-t-md bg-primary transition-all hover:opacity-80"
-                            style={{ height: `${data.hr * 2}px` }}
-                            title={`HR: ${data.hr}%`}
-                          />
-                          <div
-                            className="w-1/2 rounded-t-md bg-accent transition-all hover:opacity-80"
-                            style={{ height: `${data.technical * 2}px` }}
-                            title={`Technical: ${data.technical}%`}
-                          />
-                        </div>
-                        <span className="text-xs text-muted-foreground">{data.week}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Legend */}
-                <div className="flex items-center justify-center gap-6 text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-sm bg-primary" />
-                    <span className="text-muted-foreground">HR Score</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-sm bg-accent" />
-                    <span className="text-muted-foreground">Technical Score</span>
-                  </div>
-                </div>
-
-                {/* Stats */}
-                <div className="grid gap-4 sm:grid-cols-3">
-                  <div className="rounded-lg border border-border bg-secondary/50 p-4 text-center">
-                    <p className="text-2xl font-bold text-primary">+17%</p>
-                    <p className="text-sm text-muted-foreground">HR Score Improvement</p>
-                  </div>
-                  <div className="rounded-lg border border-border bg-secondary/50 p-4 text-center">
-                    <p className="text-2xl font-bold text-accent">+18%</p>
-                    <p className="text-sm text-muted-foreground">Technical Improvement</p>
-                  </div>
-                  <div className="rounded-lg border border-border bg-secondary/50 p-4 text-center">
-                    <p className="text-2xl font-bold">12</p>
-                    <p className="text-sm text-muted-foreground">Total Interviews</p>
-                  </div>
-                </div>
+              <div className="w-full min-h-[300px] transition-all duration-300 ease-in-out">
+                {slides[currentSlide].component}
               </div>
             </CardContent>
           </Card>
 
           <div className="grid gap-6 lg:grid-cols-2">
-            {/* Skills Heatmap */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Skills Performance</CardTitle>
-                <CardDescription>Your current proficiency across key areas</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {skillData.map((skill, idx) => (
-                    <div key={idx} className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium">{skill.skill}</span>
-                          {skill.trend === "up" && <TrendingUp className="h-4 w-4 text-success" />}
-                          {skill.trend === "down" && <TrendingDown className="h-4 w-4 text-destructive" />}
-                        </div>
-                        <span className="text-sm font-semibold">{skill.score}%</span>
-                      </div>
-                      <div className="h-2 overflow-hidden rounded-full bg-secondary">
-                        <div
-                          className="h-full rounded-full bg-primary transition-all"
-                          style={{ width: `${skill.score}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="mt-6 rounded-lg border border-primary/20 bg-primary/5 p-4">
-                  <p className="text-sm font-medium">Top Strength: Algorithms</p>
-                  <p className="text-xs text-muted-foreground">
-                    You've shown consistent excellence in algorithm problem-solving
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
             {/* CV Version History */}
             <Card>
               <CardHeader>
@@ -162,9 +183,8 @@ export default function AnalyticsPage() {
                   {cvVersions.map((cv, idx) => (
                     <div
                       key={idx}
-                      className={`rounded-lg border p-4 ${
-                        cv.status === "current" ? "border-primary bg-primary/5" : "border-border"
-                      }`}
+                      className={`rounded-lg border p-4 ${cv.status === "current" ? "border-primary bg-primary/5" : "border-border"
+                        }`}
                     >
                       <div className="mb-3 flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -200,44 +220,44 @@ export default function AnalyticsPage() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Upcoming Tasks */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Upcoming Tasks</CardTitle>
+                <CardDescription>Auto-generated action items based on your performance</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {upcomingTasks.map((task, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between rounded-lg border border-border p-4 transition-colors hover:border-primary/50"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-border">
+                          <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <div>
+                          <p className="font-medium">{task.task}</p>
+                          <p className="text-sm text-muted-foreground">Due: {task.dueDate}</p>
+                        </div>
+                      </div>
+                      <Badge
+                        variant={
+                          task.priority === "high" ? "destructive" : task.priority === "medium" ? "default" : "secondary"
+                        }
+                      >
+                        {task.priority}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
-          {/* Upcoming Tasks */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Upcoming Tasks</CardTitle>
-              <CardDescription>Auto-generated action items based on your performance</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {upcomingTasks.map((task, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center justify-between rounded-lg border border-border p-4 transition-colors hover:border-primary/50"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-border">
-                        <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
-                      </div>
-                      <div>
-                        <p className="font-medium">{task.task}</p>
-                        <p className="text-sm text-muted-foreground">Due: {task.dueDate}</p>
-                      </div>
-                    </div>
-                    <Badge
-                      variant={
-                        task.priority === "high" ? "destructive" : task.priority === "medium" ? "default" : "secondary"
-                      }
-                    >
-                      {task.priority}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Insights */}
+          {/* Insights Grid */}
           <div className="grid gap-4 md:grid-cols-2">
             <Card className="border-l-4 border-l-success">
               <CardContent className="p-6">

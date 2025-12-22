@@ -23,6 +23,7 @@ import {
   LogOut,
   Settings,
   User,
+  Calendar,
 } from "lucide-react"
 
 const navItems = [
@@ -30,6 +31,7 @@ const navItems = [
   { href: "/mock-interview", label: "Mock Interview", icon: MessageSquare },
   { href: "/quizzes", label: "Quizzes", icon: FileQuestion },
   { href: "/cv-studio", label: "CV Studio", icon: FileText },
+  { href: "/schedule", label: "Schedule", icon: Calendar },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
 ]
 
