@@ -256,29 +256,5 @@ def main():
         output_dir = os.path.dirname(output_path)
         compile_pdf(output_path, output_dir)
 
-def compile_pdf(tex_file: str, output_dir: str):
-    """
-    Compiles the LaTeX file to PDF using pdflatex.
-    """
-    if not which("pdflatex"):
-        print("Warning: pdflatex not found in PATH. Skipping PDF compilation.")
-        return
-
-    print(f"Compiling {tex_file} to PDF...")
-    try:
-        # Run pdflatex twice to resolve references/layout if needed
-        subprocess.run(
-            ["pdflatex", "-output-directory", output_dir, "-interaction=nonstopmode", tex_file],
-            check=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
-        print("PDF compilation successful.")
-    except subprocess.CalledProcessError as e:
-        print("Error compiling PDF:")
-        # pdflatex often puts errors in stdout
-        print(e.stdout.decode(errors='replace') if e.stdout else "")
-        print(e.stderr.decode(errors='replace') if e.stderr else "")
-
 if __name__ == "__main__":
     main()

@@ -1,4 +1,8 @@
+"use client"
+
 import type React from "react"
+import { format } from "date-fns"
+import { useSchedule } from "@/lib/schedule-context"
 import { Navigation } from "@/components/navigation"
 import { PageContainer, PageHeader } from "@/components/page-container"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -9,6 +13,7 @@ import { ArrowUpRight, MessageSquare, FileText, Brain, TrendingUp, Clock, CheckC
 import Link from "next/link"
 
 export default function DashboardPage() {
+  const { events } = useSchedule()
   return (
     <>
       <Navigation />
@@ -178,24 +183,37 @@ export default function DashboardPage() {
 
             {/* Upcoming */}
             <Card>
-              <CardHeader>
-                <CardTitle>Upcoming</CardTitle>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-base font-semibold">Upcoming</CardTitle>
+                <Link href="/schedule">
+                  <Button variant="ghost" size="sm" className="h-8 text-xs">View All</Button>
+                </Link>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-start gap-3 rounded-lg border border-border bg-secondary/50 p-3">
-                  <Clock className="mt-0.5 h-4 w-4 text-muted-foreground" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">Practice Reminder</p>
-                    <p className="text-xs text-muted-foreground">Daily interview in 2 hours</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3 rounded-lg border border-border bg-secondary/50 p-3">
-                  <TrendingUp className="mt-0.5 h-4 w-4 text-muted-foreground" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">Weekly Report</p>
-                    <p className="text-xs text-muted-foreground">Available in 3 days</p>
-                  </div>
-                </div>
+              <CardContent className="space-y-3 pt-2">
+                {events.length === 0 ? (
+                  <p className="text-xs text-muted-foreground text-center py-4">No upcoming events scheduled.</p>
+                ) : (
+                  events
+                    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+                    .slice(0, 3) // Show top 3
+                    .map((event) => (
+                      <div key={event.id} className="flex items-start gap-3 rounded-lg border border-border bg-secondary/50 p-3">
+                        {event.type === "quiz" ? (
+                          <Brain className="mt-0.5 h-4 w-4 text-purple-500" />
+                        ) : event.type === "interview" ? (
+                          <MessageSquare className="mt-0.5 h-4 w-4 text-blue-500" />
+                        ) : (
+                          <Clock className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                        )}
+                        <div className="flex-1">
+                          <p className="text-sm font-medium">{event.title}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {format(new Date(event.date), "MMM d, h:mm a")}
+                          </p>
+                        </div>
+                      </div>
+                    ))
+                )}
               </CardContent>
             </Card>
           </div>
@@ -249,9 +267,8 @@ interface ActionCardProps {
 function ActionCard({ title, description, action, href, icon, priority }: ActionCardProps) {
   return (
     <div
-      className={`flex items-start gap-4 rounded-lg border p-4 transition-colors hover:border-primary/50 ${
-        priority === "high" ? "border-primary/20 bg-primary/5" : ""
-      }`}
+      className={`flex items-start gap-4 rounded-lg border p-4 transition-colors hover:border-primary/50 ${priority === "high" ? "border-primary/20 bg-primary/5" : ""
+        }`}
     >
       <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-secondary text-foreground">
         {icon}
