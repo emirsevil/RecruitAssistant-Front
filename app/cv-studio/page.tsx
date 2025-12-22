@@ -11,8 +11,10 @@ import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Download, Sparkles, RotateCcw, Save, Plus, Trash2, AlertCircle, Loader2, FileText, Eye } from "lucide-react"
+import { useLanguage } from "@/lib/language-context"
 
 export default function CVStudioPage() {
+  const { t } = useLanguage()
   const [cvData, setCvData] = useState({
     name: "Deniz Yilmaz",
     email: "deniz@example.com",
@@ -226,19 +228,19 @@ export default function CVStudioPage() {
     <>
       <Navigation />
       <PageContainer>
-        <PageHeader title="CV Studio" description="Build and optimize your resume with AI assistance" />
+        <PageHeader title={t("CV Studio")} description={t("Build and optimize your resume with AI assistance")} />
 
         <div className="grid gap-6 lg:grid-cols-[1fr,400px]">
           {/* Input Form */}
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Personal Information</CardTitle>
+                <CardTitle>{t("Personal Information")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
+                    <Label htmlFor="name">{t("Full Name")}</Label>
                     <Input
                       id="name"
                       value={cvData.name}
@@ -246,7 +248,7 @@ export default function CVStudioPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="email">{t("Email")}</Label>
                     <Input
                       id="email"
                       type="email"
@@ -255,7 +257,7 @@ export default function CVStudioPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Phone</Label>
+                    <Label htmlFor="phone">{t("Phone")}</Label>
                     <Input
                       id="phone"
                       value={cvData.phone}
@@ -263,7 +265,7 @@ export default function CVStudioPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="location">Location</Label>
+                    <Label htmlFor="location">{t("Location")}</Label>
                     <Input
                       id="location"
                       value={cvData.location}
@@ -272,7 +274,7 @@ export default function CVStudioPage() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="summary">Professional Summary</Label>
+                  <Label htmlFor="summary">{t("Professional Summary")}</Label>
                   <Textarea
                     id="summary"
                     value={cvData.summary}
@@ -285,13 +287,13 @@ export default function CVStudioPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Education</CardTitle>
+                <CardTitle>{t("Education")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {cvData.education.map((edu, idx) => (
                   <div key={idx} className="space-y-4 rounded-lg border border-border p-4">
                     <div className="space-y-2">
-                      <Label>Degree</Label>
+                      <Label>{t("Degree")}</Label>
                       <Input
                         value={edu.degree}
                         onChange={(e) => updateEducation(idx, "degree", e.target.value)}
@@ -299,28 +301,28 @@ export default function CVStudioPage() {
                     </div>
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div className="space-y-2">
-                        <Label>School</Label>
+                        <Label>{t("School")}</Label>
                         <Input
                           value={edu.school}
                           onChange={(e) => updateEducation(idx, "school", e.target.value)}
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>GPA</Label>
+                        <Label>{t("GPA")}</Label>
                         <Input
                           value={edu.gpa}
                           onChange={(e) => updateEducation(idx, "gpa", e.target.value)}
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>Start Date</Label>
+                        <Label>{t("Start Date")}</Label>
                         <Input
                           value={edu.startDate}
                           onChange={(e) => updateEducation(idx, "startDate", e.target.value)}
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>End Date</Label>
+                        <Label>{t("End Date")}</Label>
                         <Input
                           value={edu.endDate}
                           onChange={(e) => updateEducation(idx, "endDate", e.target.value)}
@@ -335,10 +337,10 @@ export default function CVStudioPage() {
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle>Experience</CardTitle>
+                  <CardTitle>{t("Experience")}</CardTitle>
                   <Button onClick={addExperience} size="sm" variant="outline" className="gap-2 bg-transparent">
                     <Plus className="h-4 w-4" />
-                    Add
+                    {t("Add")}
                   </Button>
                 </div>
               </CardHeader>
@@ -357,7 +359,7 @@ export default function CVStudioPage() {
                     )}
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div className="space-y-2">
-                        <Label>Role</Label>
+                        <Label>{t("Role")}</Label>
                         <Input
                           value={exp.role}
                           placeholder="Software Engineer"
@@ -365,7 +367,7 @@ export default function CVStudioPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>Company</Label>
+                        <Label>{t("Company")}</Label>
                         <Input
                           value={exp.company}
                           placeholder="Tech Company Inc."
@@ -373,7 +375,7 @@ export default function CVStudioPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>Start Date</Label>
+                        <Label>{t("Start Date")}</Label>
                         <Input
                           value={exp.startDate}
                           placeholder="Jan 2023"
@@ -381,7 +383,7 @@ export default function CVStudioPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>End Date</Label>
+                        <Label>{t("End Date")}</Label>
                         <Input
                           value={exp.endDate}
                           placeholder="Present"
@@ -390,7 +392,7 @@ export default function CVStudioPage() {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label>Responsibilities & Achievements</Label>
+                      <Label>{t("Responsibilities & Achievements")}</Label>
                       {exp.bullets.map((bullet, bulletIdx) => (
                         <Textarea
                           key={bulletIdx}
@@ -402,7 +404,7 @@ export default function CVStudioPage() {
                       ))}
                       <Button size="sm" variant="ghost" className="gap-2" onClick={() => addBullet(idx)}>
                         <Plus className="h-3 w-3" />
-                        Add bullet point
+                        {t("Add bullet point")}
                       </Button>
                     </div>
                   </div>
@@ -413,10 +415,10 @@ export default function CVStudioPage() {
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle>Projects</CardTitle>
+                  <CardTitle>{t("Projects")}</CardTitle>
                   <Button onClick={addProject} size="sm" variant="outline" className="gap-2 bg-transparent">
                     <Plus className="h-4 w-4" />
-                    Add
+                    {t("Add")}
                   </Button>
                 </div>
               </CardHeader>
@@ -434,7 +436,7 @@ export default function CVStudioPage() {
                       </Button>
                     )}
                     <div className="space-y-2">
-                      <Label>Project Title</Label>
+                      <Label>{t("Project Title")}</Label>
                       <Input
                         value={project.title}
                         placeholder="E-commerce Platform"
@@ -442,7 +444,7 @@ export default function CVStudioPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Tech Stack</Label>
+                      <Label>{t("Tech Stack")}</Label>
                       <Input
                         value={project.techStack}
                         placeholder="React, Node.js, MongoDB"
@@ -450,7 +452,7 @@ export default function CVStudioPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Description</Label>
+                      <Label>{t("Description")}</Label>
                       <Textarea
                         value={project.description}
                         onChange={(e) => updateProject(idx, "description", e.target.value)}
@@ -465,7 +467,7 @@ export default function CVStudioPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Skills</CardTitle>
+                <CardTitle>{t("Skills")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex flex-wrap gap-2">
@@ -480,7 +482,7 @@ export default function CVStudioPage() {
                   ))}
                   <Button size="sm" variant="outline" className="gap-2 bg-transparent" onClick={addSkill}>
                     <Plus className="h-3 w-3" />
-                    Add skill
+                    {t("Add skill")}
                   </Button>
                 </div>
               </CardContent>
@@ -488,15 +490,15 @@ export default function CVStudioPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Target Job Description</CardTitle>
-                <CardDescription>Paste the job description to optimize your CV</CardDescription>
+                <CardTitle>{t("Target Job Description")}</CardTitle>
+                <CardDescription>{t("Paste the job description to optimize your CV")}</CardDescription>
               </CardHeader>
               <CardContent>
                 <Textarea
                   value={cvData.targetJob}
                   onChange={(e) => setCvData({ ...cvData, targetJob: e.target.value })}
                   className="min-h-[120px]"
-                  placeholder="Paste the full job description here..."
+                  placeholder={t("Paste the full job description here...")}
                 />
               </CardContent>
             </Card>
@@ -521,18 +523,18 @@ export default function CVStudioPage() {
                 {isGenerating ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Generating with AI...
+                    {t("Generating with AI...")}
                   </>
                 ) : (
                   <>
                     <Sparkles className="h-4 w-4" />
-                    Generate CV Draft
+                    {t("Generate CV Draft")}
                   </>
                 )}
               </Button>
               <Button variant="outline" className="gap-2 bg-transparent">
                 <Save className="h-4 w-4" />
-                Save
+                {t("Save")}
               </Button>
             </div>
           </div>
@@ -542,12 +544,12 @@ export default function CVStudioPage() {
             {/* CV Analysis */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">CV Analysis</CardTitle>
+                <CardTitle className="text-lg">{t("CV Analysis")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium">ATS Score</span>
+                    <span className="font-medium">{t("ATS Score")}</span>
                     <span className="text-2xl font-bold text-primary">{atsScore}%</span>
                   </div>
                   <div className="h-2 overflow-hidden rounded-full bg-secondary">
@@ -562,7 +564,7 @@ export default function CVStudioPage() {
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium">Role Match</span>
+                    <span className="font-medium">{t("Role Match")}</span>
                     <span className="text-2xl font-bold text-primary">{roleMatch}%</span>
                   </div>
                   <div className="h-2 overflow-hidden rounded-full bg-secondary">
@@ -578,7 +580,7 @@ export default function CVStudioPage() {
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-sm font-medium">
                     <AlertCircle className="h-4 w-4 text-warning" />
-                    Missing Skills
+                    {t("Missing Skills")}
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {missingSkills.map((skill, idx) => (
@@ -595,7 +597,7 @@ export default function CVStudioPage() {
             {/* CV Preview */}
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-lg">Live Preview</CardTitle>
+                <CardTitle className="text-lg">{t("Live Preview")}</CardTitle>
                 <div className="flex gap-2">
                   {isGenerated && (
                     <>
@@ -632,7 +634,7 @@ export default function CVStudioPage() {
                 {isGenerating ? (
                   <div className="flex flex-col items-center justify-center py-12 space-y-4">
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    <p className="text-sm text-muted-foreground">Generating your optimized CV...</p>
+                    <p className="text-sm text-muted-foreground">{t("Generating with AI...")}</p>
                   </div>
                 ) : isGenerated && showLatex ? (
                   <div className="rounded-lg border-2 border-border bg-gray-900 p-4 text-green-400 font-mono text-xs overflow-auto max-h-[600px]">
@@ -652,12 +654,12 @@ export default function CVStudioPage() {
                       <Separator />
 
                       <div>
-                        <h3 className="mb-2 text-sm font-bold uppercase">Summary</h3>
+                        <h3 className="mb-2 text-sm font-bold uppercase">{t("Professional Summary")}</h3>
                         <p className="text-xs leading-relaxed text-gray-700 text-pretty">{cvData.summary}</p>
                       </div>
 
                       <div>
-                        <h3 className="mb-2 text-sm font-bold uppercase">Experience</h3>
+                        <h3 className="mb-2 text-sm font-bold uppercase">{t("Experience")}</h3>
                         <div className="space-y-3">
                           {cvData.experience.map((exp, idx) => (
                             <div key={idx} className="space-y-1">
@@ -683,7 +685,7 @@ export default function CVStudioPage() {
                       </div>
 
                       <div>
-                        <h3 className="mb-2 text-sm font-bold uppercase">Projects</h3>
+                        <h3 className="mb-2 text-sm font-bold uppercase">{t("Projects")}</h3>
                         <div className="space-y-2">
                           {cvData.projects.map((project, idx) => (
                             <div key={idx}>
@@ -697,7 +699,7 @@ export default function CVStudioPage() {
                       </div>
 
                       <div>
-                        <h3 className="mb-2 text-sm font-bold uppercase">Education</h3>
+                        <h3 className="mb-2 text-sm font-bold uppercase">{t("Education")}</h3>
                         {cvData.education.map((edu, idx) => (
                           <div key={idx} className="flex justify-between">
                             <div>
@@ -715,7 +717,7 @@ export default function CVStudioPage() {
                       </div>
 
                       <div>
-                        <h3 className="mb-2 text-sm font-bold uppercase">Skills</h3>
+                        <h3 className="mb-2 text-sm font-bold uppercase">{t("Skills")}</h3>
                         <p className="text-xs text-gray-700">{cvData.skills.join(" • ")}</p>
                       </div>
                     </div>
@@ -727,11 +729,11 @@ export default function CVStudioPage() {
                   <div className="mt-4 flex gap-2">
                     <Button className="flex-1 gap-2" onClick={downloadPDF}>
                       <Download className="h-4 w-4" />
-                      Download PDF
+                      {t("Download PDF")}
                     </Button>
                     <Button variant="outline" className="gap-2 bg-transparent" onClick={downloadLatex}>
                       <FileText className="h-4 w-4" />
-                      Download .tex
+                      {t("Download .tex")}
                     </Button>
                   </div>
                 )}

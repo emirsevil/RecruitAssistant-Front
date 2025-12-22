@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Navigation } from "@/components/navigation"
 import { PageContainer, PageHeader } from "@/components/page-container"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Progress } from "@/components/ui/progress"
 import { PlayCircle, Mic, MicOff, Clock, Send, ChevronRight, BarChart3 } from "lucide-react"
 import Link from "next/link"
+import { useLanguage } from "@/lib/language-context"
 
 type InterviewState = "setup" | "active" | "completed"
 
@@ -53,6 +54,7 @@ export default function MockInterviewPage() {
   const [currentQuestion, setCurrentQuestion] = useState(0)
   const [userAnswer, setUserAnswer] = useState("")
   const [notes, setNotes] = useState("")
+  const { t } = useLanguage()
 
   const startInterview = () => {
     setState("active")
@@ -75,17 +77,17 @@ export default function MockInterviewPage() {
       <>
         <Navigation />
         <PageContainer>
-          <PageHeader title="Mock Interview" description="Practice your interview skills with AI-powered feedback" />
+          <PageHeader title={t("Mock Interview")} description={t("Practice your interview skills with AI-powered feedback")} />
 
           <div className="mx-auto max-w-2xl">
             <Card>
               <CardHeader>
-                <CardTitle>Interview Setup</CardTitle>
-                <CardDescription>Configure your practice session</CardDescription>
+                <CardTitle>{t("Interview Setup")}</CardTitle>
+                <CardDescription>{t("Configure your practice session")}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-2">
-                  <Label>Interview Type</Label>
+                  <Label>{t("Interview Type")}</Label>
                   <Select value={interviewType} onValueChange={setInterviewType}>
                     <SelectTrigger>
                       <SelectValue />
@@ -98,7 +100,7 @@ export default function MockInterviewPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Difficulty Level</Label>
+                  <Label>{t("Difficulty Level")}</Label>
                   <Select value={difficulty} onValueChange={setDifficulty}>
                     <SelectTrigger>
                       <SelectValue />
@@ -112,7 +114,7 @@ export default function MockInterviewPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Language</Label>
+                  <Label>{t("Language")}</Label>
                   <Select value={language} onValueChange={setLanguage}>
                     <SelectTrigger>
                       <SelectValue />
@@ -129,15 +131,15 @@ export default function MockInterviewPage() {
                 <div className="space-y-4 rounded-lg border border-border p-4">
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label>Microphone</Label>
-                      <p className="text-sm text-muted-foreground">Enable voice responses</p>
+                      <Label>{t("Microphone")}</Label>
+                      <p className="text-sm text-muted-foreground">{t("Enable voice responses")}</p>
                     </div>
                     <Switch checked={micEnabled} onCheckedChange={setMicEnabled} />
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label>Question Time Limit</Label>
-                      <p className="text-sm text-muted-foreground">2 minutes per question</p>
+                      <Label>{t("Question Time Limit")}</Label>
+                      <p className="text-sm text-muted-foreground">{t("2 minutes per question")}</p>
                     </div>
                     <Switch checked={timeLimit} onCheckedChange={setTimeLimit} />
                   </div>
@@ -145,7 +147,7 @@ export default function MockInterviewPage() {
 
                 <Button onClick={startInterview} size="lg" className="w-full gap-2">
                   <PlayCircle className="h-5 w-5" />
-                  Start Interview
+                  {t("Start Interview")}
                 </Button>
               </CardContent>
             </Card>
@@ -158,125 +160,106 @@ export default function MockInterviewPage() {
   if (state === "active") {
     const question = mockQuestions[currentQuestion]
     return (
-      <>
+      <div className="flex min-h-screen flex-col bg-background">
         <Navigation />
-        <PageContainer className="pb-0">
-          <div className="mb-4">
-            <Progress value={progress} className="h-2" />
-            <p className="mt-2 text-sm text-muted-foreground">
-              Question {currentQuestion + 1} of {mockQuestions.length}
-            </p>
-          </div>
-
-          <div className="grid gap-6 lg:grid-cols-[1fr,380px]">
-            {/* Chat Panel */}
-            <Card className="flex flex-col">
-              <CardHeader className="border-b border-border">
-                <div className="flex items-center justify-between">
-                  <CardTitle>Interview Session</CardTitle>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Clock className="h-4 w-4" />
-                    <span>15:42</span>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="flex-1 space-y-4 p-6">
-                {/* Question */}
-                <div className="flex items-start gap-3">
-                  <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                    AI
-                  </div>
-                  <div className="flex-1 space-y-2">
-                    <div className="rounded-2xl rounded-tl-sm bg-secondary px-4 py-3">
-                      <p className="text-sm leading-relaxed">{question.question}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-xs">
-                        {question.topic}
-                      </Badge>
-                      {timeLimit && (
-                        <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <Clock className="h-3 w-3" />
-                          1:45 remaining
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* User Answer (if any) */}
-                {userAnswer && (
-                  <div className="flex items-start gap-3 justify-end">
-                    <div className="flex-1 space-y-2 text-right">
-                      <div className="inline-block rounded-2xl rounded-tr-sm bg-primary px-4 py-3 text-left text-primary-foreground">
-                        <p className="text-sm leading-relaxed">{userAnswer}</p>
-                      </div>
-                    </div>
-                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-muted">
-                      You
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-              <div className="border-t border-border p-4">
-                <div className="flex gap-2">
-                  <Textarea
-                    placeholder="Type your answer here..."
-                    value={userAnswer}
-                    onChange={(e) => setUserAnswer(e.target.value)}
-                    className="min-h-[80px] resize-none"
-                  />
-                  <div className="flex flex-col gap-2">
-                    <Button size="icon" variant="outline" onClick={() => setMicEnabled(!micEnabled)}>
-                      {micEnabled ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
-                    </Button>
-                    <Button size="icon" onClick={nextQuestion}>
-                      <Send className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            {/* Feedback Panel */}
-            <div className="space-y-6">
-              <Card>
+        <main className="flex-1 p-6 md:p-8">
+          <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-2 lg:h-[calc(100vh-140px)]">
+            {/* Question & Camera Area */}
+            <div className="flex flex-col gap-6">
+              <Card className="flex-1 flex flex-col">
                 <CardHeader>
-                  <CardTitle className="text-lg">Live Feedback</CardTitle>
+                  <div className="flex items-center justify-between mb-2">
+                    <Badge variant="outline">{t("Interview Session")}</Badge>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Clock className="h-4 w-4" />
+                      <span>01:45</span>
+                    </div>
+                  </div>
+                  <Progress value={progress} className="h-2 mb-2" />
+                  <CardTitle className="text-xl lg:text-2xl leading-relaxed">{mockQuestions[currentQuestion].question}</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <FeedbackMetric label="Clarity" value={82} />
-                  <FeedbackMetric label="Technical Depth" value={75} />
-                  <FeedbackMetric label="Communication" value={88} />
-                  <FeedbackMetric label="Confidence" value={80} />
+                <CardContent className="flex-1 bg-muted/30 m-6 rounded-lg border border-dashed flex items-center justify-center relative overflow-hidden">
+                  <div className="absolute inset-0 bg-black/5 flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="h-20 w-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Mic className="h-8 w-8 text-primary" />
+                      </div>
+                      <p className="text-sm font-medium text-muted-foreground">{micEnabled ? t("Listening...") : t("Microphone disabled")}</p>
+                    </div>
+                  </div>
                 </CardContent>
+                <CardFooter className="flex justify-center gap-4 pb-8">
+                  <Button
+                    variant={micEnabled ? "default" : "outline"}
+                    size="icon"
+                    className="h-12 w-12 rounded-full"
+                    onClick={() => setMicEnabled(!micEnabled)}
+                  >
+                    {micEnabled ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
+                  </Button>
+                </CardFooter>
               </Card>
 
-              <Card>
+              {/* Text Input Fallback */}
+              <div className="relative">
+                <Textarea
+                  placeholder={t("Type your answer here...")}
+                  className="min-h-[120px] resize-none pr-12 text-base"
+                  value={userAnswer}
+                  onChange={(e) => setUserAnswer(e.target.value)}
+                />
+                <Button
+                  size="icon"
+                  className="absolute bottom-4 right-4 h-8 w-8"
+                  onClick={nextQuestion}
+                  disabled={!userAnswer && !micEnabled}
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* AI Feedback & Notes */}
+            <div className="flex flex-col gap-6 h-full text-balance">
+              <Card className="flex-1">
                 <CardHeader>
-                  <CardTitle className="text-lg">Notes</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5 text-primary" />
+                    {t("Live Feedback")}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
+                  <div className="space-y-4">
+                    <div className="rounded-lg bg-yellow-500/10 p-4 text-sm text-yellow-600 dark:text-yellow-400 border border-yellow-500/20">
+                      <p className="font-semibold mb-1">💡 {t("Tip")}</p>
+                      {t("Try to structure your answer using the STAR method (Situation, Task, Action, Result).")}
+                    </div>
+                    <div className="rounded-lg bg-blue-500/10 p-4 text-sm text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                      <p className="font-semibold mb-1">👀 {t("Eye Contact")}</p>
+                      {t("Good eye contact maintained. keep it up!")}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="flex-1 flex flex-col">
+                <CardHeader>
+                  <CardTitle>{t("Notes")}</CardTitle>
+                </CardHeader>
+                <CardContent className="flex-1">
                   <Textarea
-                    placeholder="Take notes during the interview..."
+                    placeholder={t("Take notes during the interview...")}
+                    className="h-full resize-none border-0 focus-visible:ring-0 p-0"
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    className="min-h-[120px] resize-none"
                   />
                 </CardContent>
               </Card>
 
-              <Card className="bg-secondary/50">
-                <CardContent className="p-4">
-                  <p className="text-xs text-muted-foreground leading-relaxed text-pretty">
-                    Tip: Use the STAR method (Situation, Task, Action, Result) to structure your behavioral answers.
-                  </p>
-                </CardContent>
-              </Card>
             </div>
           </div>
-        </PageContainer>
-      </>
+        </main>
+      </div>
     )
   }
 

@@ -24,19 +24,23 @@ import {
   Settings,
   User,
   Calendar,
+  Globe,
+  Check,
 } from "lucide-react"
+import { useLanguage } from "@/lib/language-context"
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/mock-interview", label: "Mock Interview", icon: MessageSquare },
-  { href: "/quizzes", label: "Quizzes", icon: FileQuestion },
-  { href: "/cv-studio", label: "CV Studio", icon: FileText },
-  { href: "/schedule", label: "Schedule", icon: Calendar },
-  { href: "/analytics", label: "Analytics", icon: BarChart3 },
+  { href: "/dashboard", label: "dashboard", icon: LayoutDashboard },
+  { href: "/mock-interview", label: "mockInterview", icon: MessageSquare },
+  { href: "/quizzes", label: "quizzes", icon: FileQuestion },
+  { href: "/cv-studio", label: "cvStudio", icon: FileText },
+  { href: "/schedule", label: "schedule", icon: Calendar },
+  { href: "/analytics", label: "analytics", icon: BarChart3 },
 ]
 
 export function Navigation() {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const { t, language, setLanguage } = useLanguage()
 
   return (
     <>
@@ -71,52 +75,78 @@ export function Navigation() {
                 <Link key={item.href} href={item.href}>
                   <Button variant="ghost" className="gap-2">
                     <item.icon className="h-4 w-4" />
-                    {item.label}
+                    {t(item.label)}
                   </Button>
                 </Link>
               ))}
             </nav>
           </div>
 
-          {/* User menu */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-9 w-9 rounded-full">
-                <Avatar className="h-9 w-9">
-                  <AvatarImage src="/diverse-user-avatars.png" alt="User" />
-                  <AvatarFallback>DN</AvatarFallback>
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>
-                <div className="flex flex-col gap-1">
-                  <p className="text-sm font-medium">Deniz</p>
-                  <p className="text-xs text-muted-foreground">deniz@example.com</p>
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link href="/profile" className="flex cursor-pointer">
-                  <User className="mr-2 h-4 w-4" />
-                  Profile
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/settings" className="flex cursor-pointer">
-                  <Settings className="mr-2 h-4 w-4" />
-                  Settings
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link href="/login" className="flex cursor-pointer">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Log out
-                </Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex items-center gap-2">
+            {/* Language Selector */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-9 w-9">
+                  <Globe className="h-4 w-4" />
+                  <span className="sr-only">Switch language</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setLanguage("en")}>
+                  <span className="flex items-center gap-2">
+                    {language === "en" && <Check className="h-4 w-4" />}
+                    <span className={language !== "en" ? "pl-6" : ""}>English</span>
+                  </span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setLanguage("tr")}>
+                  <span className="flex items-center gap-2">
+                    {language === "tr" && <Check className="h-4 w-4" />}
+                    <span className={language !== "tr" ? "pl-6" : ""}>Türkçe</span>
+                  </span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* User menu */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+                  <Avatar className="h-9 w-9">
+                    <AvatarImage src="/diverse-user-avatars.png" alt="User" />
+                    <AvatarFallback>DN</AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>
+                  <div className="flex flex-col gap-1">
+                    <p className="text-sm font-medium">Deniz</p>
+                    <p className="text-xs text-muted-foreground">deniz@example.com</p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/profile" className="flex cursor-pointer">
+                    <User className="mr-2 h-4 w-4" />
+                    {t("profile")}
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/settings" className="flex cursor-pointer">
+                    <Settings className="mr-2 h-4 w-4" />
+                    {t("settings")}
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/login" className="flex cursor-pointer">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    {t("logout")}
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </header>
 
@@ -124,9 +154,9 @@ export function Navigation() {
         <nav className="flex flex-1 flex-col items-center gap-2 py-6">
           {navItems.map((item) => (
             <Link key={item.href} href={item.href}>
-              <Button variant="ghost" size="icon" className="h-12 w-12" title={item.label}>
+              <Button variant="ghost" size="icon" className="h-12 w-12" title={t(item.label)}>
                 <item.icon className="h-5 w-5" />
-                <span className="sr-only">{item.label}</span>
+                <span className="sr-only">{t(item.label)}</span>
               </Button>
             </Link>
           ))}
@@ -137,6 +167,8 @@ export function Navigation() {
 }
 
 function MobileNav({ onClose }: { onClose: () => void }) {
+  const { t } = useLanguage()
+
   return (
     <div className="flex h-full flex-col">
       <div className="flex h-16 items-center gap-2 border-b border-border px-6">
@@ -150,7 +182,7 @@ function MobileNav({ onClose }: { onClose: () => void }) {
           <Link key={item.href} href={item.href} onClick={onClose}>
             <Button variant="ghost" className="w-full justify-start gap-3">
               <item.icon className="h-5 w-5" />
-              {item.label}
+              {t(item.label)}
             </Button>
           </Link>
         ))}

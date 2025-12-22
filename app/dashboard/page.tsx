@@ -11,44 +11,47 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { ArrowUpRight, MessageSquare, FileText, Brain, TrendingUp, Clock, CheckCircle2, Target } from "lucide-react"
 import Link from "next/link"
+import { useLanguage } from "@/lib/language-context"
 
 export default function DashboardPage() {
   const { events } = useSchedule()
+  const { t } = useLanguage()
+
   return (
     <>
       <Navigation />
       <PageContainer>
-        <PageHeader title="Good evening, Deniz" description="Here's your progress overview" />
+        <PageHeader title={`${t("Good evening")}, Deniz`} description={t("Here's your progress overview")} />
 
         {/* KPI Cards */}
         <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <KPICard
-            title="Mock Interviews"
+            title={t("Mock Interviews")}
             value="12"
-            subtitle="Completed"
+            subtitle={t("Completed")}
             icon={<MessageSquare className="h-5 w-5" />}
             trend="+3 this week"
           />
           <KPICard
-            title="Avg HR Score"
+            title={t("Avg HR Score")}
             value="82%"
-            subtitle="Last 5 interviews"
+            subtitle={t("Last 5 interviews")}
             icon={<Target className="h-5 w-5" />}
             trend="+5% improvement"
             trendUp
           />
           <KPICard
-            title="Avg Technical Score"
+            title={t("Avg Technical Score")}
             value="78%"
-            subtitle="Last 5 interviews"
+            subtitle={t("Last 5 interviews")}
             icon={<Brain className="h-5 w-5" />}
             trend="+8% improvement"
             trendUp
           />
           <KPICard
-            title="CV Readiness"
+            title={t("CV Readiness")}
             value="85%"
-            subtitle="ATS optimized"
+            subtitle={t("ATS optimized")}
             icon={<FileText className="h-5 w-5" />}
             progress={85}
           />
@@ -60,29 +63,29 @@ export default function DashboardPage() {
             {/* Recommended Actions */}
             <Card>
               <CardHeader>
-                <CardTitle>Recommended Next Actions</CardTitle>
-                <CardDescription>Continue your preparation journey</CardDescription>
+                <CardTitle>{t("Recommended Next Actions")}</CardTitle>
+                <CardDescription>{t("Continue your preparation journey")}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 <ActionCard
-                  title="Practice Behavioral Questions"
-                  description="You scored 75% on communication last time. Let's improve it!"
-                  action="Start Interview"
+                  title={t("Practice Behavioral Questions")}
+                  description={t("You scored 75% on communication last time. Let's improve it!")}
+                  action={t("Start Interview")}
                   href="/mock-interview"
                   icon={<MessageSquare className="h-5 w-5" />}
                   priority="high"
                 />
                 <ActionCard
-                  title="Complete Algorithms Quiz"
-                  description="Test your data structures knowledge with 15 questions"
-                  action="Take Quiz"
+                  title={t("Complete Algorithms Quiz")}
+                  description={t("Test your data structures knowledge with 15 questions")}
+                  action={t("Take Quiz")}
                   href="/quizzes"
                   icon={<Brain className="h-5 w-5" />}
                 />
                 <ActionCard
-                  title="Update Your CV"
-                  description="Add your latest project to boost your CV score"
-                  action="Edit CV"
+                  title={t("Update Your CV")}
+                  description={t("Add your latest project to boost your CV score")}
+                  action={t("Edit CV")}
                   href="/cv-studio"
                   icon={<FileText className="h-5 w-5" />}
                 />
@@ -92,39 +95,39 @@ export default function DashboardPage() {
             {/* Activity Timeline */}
             <Card>
               <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
-                <CardDescription>Your latest actions and milestones</CardDescription>
+                <CardTitle>{t("Recent Activity")}</CardTitle>
+                <CardDescription>{t("Your latest actions and milestones")}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <TimelineItem
-                    title="Completed HR Mock Interview"
-                    description="Scored 85% on behavioral questions"
-                    time="2 hours ago"
+                    title={t("Completed HR Mock Interview")}
+                    description={t("Scored 85% on behavioral questions")}
+                    time={t("2 hours ago")}
                     icon={<CheckCircle2 className="h-4 w-4 text-success" />}
                   />
                   <TimelineItem
-                    title="Updated CV - Added Experience"
-                    description="Added Software Engineering Intern at TechCorp"
-                    time="1 day ago"
+                    title={t("Updated CV - Added Experience")}
+                    description={t("Added Software Engineering Intern at TechCorp")}
+                    time={t("1 day ago")}
                     icon={<FileText className="h-4 w-4 text-primary" />}
                   />
                   <TimelineItem
-                    title="Passed System Design Quiz"
-                    description="8/10 correct - Great improvement!"
-                    time="2 days ago"
+                    title={t("Passed System Design Quiz")}
+                    description={t("8/10 correct - Great improvement!")}
+                    time={t("2 days ago")}
                     icon={<CheckCircle2 className="h-4 w-4 text-success" />}
                   />
                   <TimelineItem
-                    title="Started Technical Interview Practice"
-                    description="Completed coding challenges on arrays"
-                    time="3 days ago"
+                    title={t("Started Technical Interview Practice")}
+                    description={t("Completed coding challenges on arrays")}
+                    time={t("3 days ago")}
                     icon={<Brain className="h-4 w-4 text-primary" />}
                   />
                   <TimelineItem
-                    title="Created Your Profile"
-                    description="Welcome to RecruitAssistant!"
-                    time="1 week ago"
+                    title={t("Created Your Profile")}
+                    description={t("Welcome to RecruitAssistant!")}
+                    time={t("1 week ago")}
                     icon={<Target className="h-4 w-4 text-muted-foreground" />}
                   />
                 </div>
@@ -137,32 +140,32 @@ export default function DashboardPage() {
             {/* Quick Stats */}
             <Card>
               <CardHeader>
-                <CardTitle>This Week</CardTitle>
+                <CardTitle>{t("This Week")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Interviews</span>
+                    <span className="text-muted-foreground">{t("Interviews")}</span>
                     <span className="font-semibold">3</span>
                   </div>
                   <Progress value={60} className="h-2" />
-                  <p className="text-xs text-muted-foreground">Goal: 5 per week</p>
+                  <p className="text-xs text-muted-foreground">{t("Goal: 5 per week")}</p>
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Quizzes</span>
+                    <span className="text-muted-foreground">{t("Quizzes")}</span>
                     <span className="font-semibold">2</span>
                   </div>
                   <Progress value={100} className="h-2" />
-                  <p className="text-xs text-success">Goal achieved!</p>
+                  <p className="text-xs text-success">{t("Goal achieved!")}</p>
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Practice Time</span>
+                    <span className="text-muted-foreground">{t("Practice Time")}</span>
                     <span className="font-semibold">4.5h</span>
                   </div>
                   <Progress value={90} className="h-2" />
-                  <p className="text-xs text-muted-foreground">Goal: 5 hours</p>
+                  <p className="text-xs text-muted-foreground">{t("Goal: 5 hours")}</p>
                 </div>
               </CardContent>
             </Card>
@@ -170,8 +173,8 @@ export default function DashboardPage() {
             {/* Skill Focus */}
             <Card>
               <CardHeader>
-                <CardTitle>Skills to Focus On</CardTitle>
-                <CardDescription>Based on your recent performance</CardDescription>
+                <CardTitle>{t("Skills to Focus On")}</CardTitle>
+                <CardDescription>{t("Based on your recent performance")}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-2">
                 <SkillBadge skill="Communication" score={75} />
@@ -184,14 +187,14 @@ export default function DashboardPage() {
             {/* Upcoming */}
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-base font-semibold">Upcoming</CardTitle>
+                <CardTitle className="text-base font-semibold">{t("Upcoming")}</CardTitle>
                 <Link href="/schedule">
-                  <Button variant="ghost" size="sm" className="h-8 text-xs">View All</Button>
+                  <Button variant="ghost" size="sm" className="h-8 text-xs">{t("View All")}</Button>
                 </Link>
               </CardHeader>
               <CardContent className="space-y-3 pt-2">
                 {events.length === 0 ? (
-                  <p className="text-xs text-muted-foreground text-center py-4">No upcoming events scheduled.</p>
+                  <p className="text-xs text-muted-foreground text-center py-4">{t("No upcoming events scheduled.")}</p>
                 ) : (
                   events
                     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())

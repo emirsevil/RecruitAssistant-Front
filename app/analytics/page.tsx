@@ -11,8 +11,9 @@ import {
   LineChart, Line, AreaChart, Area, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar
 } from 'recharts'
+import { useLanguage } from "@/lib/language-context"
 
-// Mock Data
+// Mock Data (Static labels kept as is or could be translated via mapping)
 const quizProgressData = [
   { attempt: 'Q1', score: 65, avg: 60 },
   { attempt: 'Q2', score: 75, avg: 62 },
@@ -51,6 +52,7 @@ const upcomingTasks = [
 ]
 
 export default function AnalyticsPage() {
+  const { t } = useLanguage()
   const [currentSlide, setCurrentSlide] = useState(0)
   const totalSlides = 3
 
@@ -59,8 +61,8 @@ export default function AnalyticsPage() {
 
   const slides = [
     {
-      title: "Quiz Score Trend",
-      description: "Comparison of your scores vs class average",
+      title: t("Quiz Score Trend"),
+      description: t("Comparison of your scores vs class average"),
       icon: <Brain className="h-5 w-5 text-purple-500" />,
       component: (
         <ResponsiveContainer width="100%" height={300}>
@@ -70,15 +72,15 @@ export default function AnalyticsPage() {
             <YAxis />
             <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
             <Legend />
-            <Line type="monotone" dataKey="score" stroke="#8884d8" name="Your Score" strokeWidth={3} activeDot={{ r: 8 }} />
-            <Line type="monotone" dataKey="avg" stroke="#82ca9d" name="Average" strokeDasharray="5 5" />
+            <Line type="monotone" dataKey="score" stroke="#8884d8" name={t("Your Score")} strokeWidth={3} activeDot={{ r: 8 }} />
+            <Line type="monotone" dataKey="avg" stroke="#82ca9d" name={t("Average")} strokeDasharray="5 5" />
           </LineChart>
         </ResponsiveContainer>
       )
     },
     {
-      title: "Interview Skill Radar",
-      description: "Holistic view of your technical and soft skills",
+      title: t("Interview Skill Radar"),
+      description: t("Holistic view of your technical and soft skills"),
       icon: <MessageSquare className="h-5 w-5 text-blue-500" />,
       component: (
         <ResponsiveContainer width="100%" height={300}>
@@ -86,15 +88,15 @@ export default function AnalyticsPage() {
             <PolarGrid />
             <PolarAngleAxis dataKey="subject" />
             <PolarRadiusAxis angle={30} domain={[0, 100]} />
-            <Radar name="My Skills" dataKey="A" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />
+            <Radar name={t("My Skills")} dataKey="A" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />
             <Tooltip />
           </RadarChart>
         </ResponsiveContainer>
       )
     },
     {
-      title: "Skill Growth (Frontend vs Backend)",
-      description: "Progress over the last 4 months",
+      title: t("Skill Growth (Frontend vs Backend)"),
+      description: t("Progress over the last 4 months"),
       icon: <Target className="h-5 w-5 text-red-500" />,
       component: (
         <ResponsiveContainer width="100%" height={300}>
@@ -127,12 +129,12 @@ export default function AnalyticsPage() {
       <Navigation />
       <PageContainer>
         <PageHeader
-          title="Analytics"
-          description="Track your progress and performance insights"
+          title={t("Analytics")}
+          description={t("Track your progress and performance insights")}
           action={
             <Button variant="outline" className="gap-2 bg-transparent">
               <Download className="h-4 w-4" />
-              Export Report
+              {t("Export Report")}
             </Button>
           }
         />
@@ -175,8 +177,8 @@ export default function AnalyticsPage() {
             {/* CV Version History */}
             <Card>
               <CardHeader>
-                <CardTitle>CV Version History</CardTitle>
-                <CardDescription>Track improvements to your resume</CardDescription>
+                <CardTitle>{t("CV Version History")}</CardTitle>
+                <CardDescription>{t("Track improvements to your resume")}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
@@ -191,7 +193,7 @@ export default function AnalyticsPage() {
                           <span className="font-semibold">{cv.version}</span>
                           {cv.status === "current" && (
                             <Badge variant="default" className="text-xs">
-                              Current
+                              {t("Current")}
                             </Badge>
                           )}
                         </div>
@@ -202,17 +204,17 @@ export default function AnalyticsPage() {
                       </div>
                       <div className="grid grid-cols-2 gap-3 text-sm">
                         <div>
-                          <p className="text-muted-foreground">ATS Score</p>
+                          <p className="text-muted-foreground">{t("ATS Score")}</p>
                           <p className="font-semibold">{cv.atsScore}%</p>
                         </div>
                         <div>
-                          <p className="text-muted-foreground">Role Match</p>
+                          <p className="text-muted-foreground">{t("Role Match")}</p>
                           <p className="font-semibold">{cv.roleMatch}%</p>
                         </div>
                       </div>
                       {cv.status === "archived" && (
                         <Button size="sm" variant="ghost" className="mt-3 h-8 text-xs">
-                          View Version
+                          {t("View Version")}
                         </Button>
                       )}
                     </div>
@@ -224,8 +226,8 @@ export default function AnalyticsPage() {
             {/* Upcoming Tasks */}
             <Card>
               <CardHeader>
-                <CardTitle>Upcoming Tasks</CardTitle>
-                <CardDescription>Auto-generated action items based on your performance</CardDescription>
+                <CardTitle>{t("Upcoming Tasks")}</CardTitle>
+                <CardDescription>{t("Auto-generated action items based on your performance")}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
@@ -240,7 +242,7 @@ export default function AnalyticsPage() {
                         </div>
                         <div>
                           <p className="font-medium">{task.task}</p>
-                          <p className="text-sm text-muted-foreground">Due: {task.dueDate}</p>
+                          <p className="text-sm text-muted-foreground">{t("Due")}: {task.dueDate}</p>
                         </div>
                       </div>
                       <Badge
@@ -263,10 +265,10 @@ export default function AnalyticsPage() {
               <CardContent className="p-6">
                 <div className="mb-2 flex items-center gap-2">
                   <TrendingUp className="h-5 w-5 text-success" />
-                  <h3 className="font-semibold">Strong Progress</h3>
+                  <h3 className="font-semibold">{t("Strong Progress")}</h3>
                 </div>
                 <p className="text-sm text-muted-foreground text-pretty">
-                  You've improved your average score by 15% over the last month. Keep up the consistent practice!
+                  {t("You've improved your average score by 15% over the last month. Keep up the consistent practice!")}
                 </p>
               </CardContent>
             </Card>
@@ -275,10 +277,10 @@ export default function AnalyticsPage() {
               <CardContent className="p-6">
                 <div className="mb-2 flex items-center gap-2">
                   <TrendingDown className="h-5 w-5 text-warning" />
-                  <h3 className="font-semibold">Area to Focus</h3>
+                  <h3 className="font-semibold">{t("Area to Focus")}</h3>
                 </div>
                 <p className="text-sm text-muted-foreground text-pretty">
-                  Your behavioral interview scores have plateaued. Consider practicing more STAR method responses.
+                  {t("Your behavioral interview scores have plateaued. Consider practicing more STAR method responses.")}
                 </p>
               </CardContent>
             </Card>

@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { format, addDays, startOfWeek, isSameDay, subWeeks, addWeeks } from "date-fns"
+import { enUS, tr } from "date-fns/locale"
 import { Navigation } from "@/components/navigation"
 import { PageContainer, PageHeader } from "@/components/page-container"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -14,15 +15,19 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { CalendarEvent, useSchedule } from "@/lib/schedule-context"
 import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, History, Clock, FileText, MessageSquare, Brain } from "lucide-react"
+import { useLanguage } from "@/lib/language-context"
 
 export default function SchedulePage() {
+    const { t, language } = useLanguage()
     const { events, addEvent, removeEvent } = useSchedule()
     const [currentDate, setCurrentDate] = useState(new Date())
 
+    const dateLocale = language === "tr" ? tr : enUS
+
     // Weekly Navigation
-    const startOfCurrentWeek = startOfWeek(currentDate, { weekStartsOn: 1 })
+    const startOfCurrentWeek = startOfWeek(currentDate, { weekStartsOn: 1, locale: dateLocale })
     const weekDays = Array.from({ length: 7 }).map((_, i) => addDays(startOfCurrentWeek, i))
-    const weekRange = `${format(startOfCurrentWeek, "MMM d")} - ${format(addDays(startOfCurrentWeek, 6), "MMM d, yyyy")}`
+    const weekRange = `${format(startOfCurrentWeek, "MMM d", { locale: dateLocale })} - ${format(addDays(startOfCurrentWeek, 6), "MMM d, yyyy", { locale: dateLocale })}`
 
     const navigateWeek = (direction: "prev" | "next") => {
         setCurrentDate(prev => direction === "prev" ? subWeeks(prev, 1) : addWeeks(prev, 1))
@@ -67,19 +72,19 @@ export default function SchedulePage() {
             <PageContainer>
                 <div className="flex flex-col gap-6">
                     <div className="flex items-center justify-between">
-                        <PageHeader title="Weekly Schedule" description="Plan your tailored preparation journey" />
+                        <PageHeader title={t("Weekly Schedule")} description={t("Plan your tailored preparation journey")} />
 
                         {/* History Box Popover */}
                         <Popover>
                             <PopoverTrigger asChild>
                                 <Button variant="outline" className="gap-2">
                                     <History className="h-4 w-4" />
-                                    View History
+                                    {t("View History")}
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-80" align="end">
                                 <div className="space-y-4">
-                                    <h4 className="font-medium leading-none">Past Weeks Summary</h4>
+                                    <h4 className="font-medium leading-none">{t("Past Weeks Summary")}</h4>
                                     <ScrollArea className="h-[200px]">
                                         <div className="space-y-4 pr-4">
                                             <HistoryItem
@@ -122,8 +127,8 @@ export default function SchedulePage() {
                                     <div key={i} className="flex flex-col gap-2">
                                         <div className={`text-center p-2 rounded-t-lg border-b ${isSameDay(day, new Date()) ? "bg-primary/10 text-primary font-bold" : "bg-muted/50"
                                             }`}>
-                                            <div className="text-xs uppercase opacity-70">{format(day, "EEE")}</div>
-                                            <div className="text-lg">{format(day, "d")}</div>
+                                            <div className="text-xs uppercase opacity-70">{format(day, "EEE", { locale: dateLocale })}</div>
+                                            <div className="text-lg">{format(day, "d", { locale: dateLocale })}</div>
                                         </div>
 
                                         <div
@@ -137,7 +142,7 @@ export default function SchedulePage() {
                                                 ))
                                             }
                                             <Button variant="ghost" className="w-full h-8 px-2 text-xs text-muted-foreground opacity-0 hover:opacity-100">
-                                                <Plus className="h-3 w-3 mr-1" /> Add
+                                                <Plus className="h-3 w-3 mr-1" /> {t("Add")}
                                             </Button>
                                         </div>
                                     </div>
@@ -151,14 +156,14 @@ export default function SchedulePage() {
                 <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                     <DialogContent>
                         <DialogHeader>
-                            <DialogTitle>Add Event</DialogTitle>
+                            <DialogTitle>{t("Add Event")}</DialogTitle>
                             <DialogDescription>
-                                Schedule an activity for {selectedDate && format(selectedDate, "MMMM d")}
+                                {t("Schedule Event")} {selectedDate && format(selectedDate, "MMMM d", { locale: dateLocale })}
                             </DialogDescription>
                         </DialogHeader>
                         <div className="grid gap-4 py-4">
                             <div className="grid gap-2">
-                                <Label htmlFor="title">Activity Title</Label>
+                                <Label htmlFor="title">{t("Activity Title")}</Label>
                                 <Input
                                     id="title"
                                     value={newEvent.title}
@@ -167,7 +172,7 @@ export default function SchedulePage() {
                                 />
                             </div>
                             <div className="grid gap-2">
-                                <Label htmlFor="type">Type</Label>
+                                <Label htmlFor="type">{t("Type")}</Label>
                                 <Select
                                     value={newEvent.type}
                                     onValueChange={(val: any) => setNewEvent({ ...newEvent, type: val })}
@@ -176,15 +181,15 @@ export default function SchedulePage() {
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="interview">Mock Interview</SelectItem>
-                                        <SelectItem value="quiz">Quiz</SelectItem>
-                                        <SelectItem value="practice">Practice Session</SelectItem>
-                                        <SelectItem value="other">Other</SelectItem>
+                                        <SelectItem value="interview">{t("Mock Interview")}</SelectItem>
+                                        <SelectItem value="quiz">{t("Quizzes")}</SelectItem>
+                                        <SelectItem value="practice">{t("Practice Session")}</SelectItem>
+                                        <SelectItem value="other">{t("Other")}</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
                             <div className="grid gap-2">
-                                <Label htmlFor="time">Time</Label>
+                                <Label htmlFor="time">{t("Time")}</Label>
                                 <Input
                                     id="time"
                                     type="time"
@@ -194,7 +199,7 @@ export default function SchedulePage() {
                             </div>
                         </div>
                         <DialogFooter>
-                            <Button onClick={handleAddEvent}>Schedule Event</Button>
+                            <Button onClick={handleAddEvent}>{t("Schedule Event")}</Button>
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>

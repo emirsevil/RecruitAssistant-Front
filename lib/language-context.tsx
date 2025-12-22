@@ -1,0 +1,498 @@
+"use client"
+
+import React, { createContext, useContext, useState, useEffect } from "react"
+
+type Language = "en" | "tr"
+
+type Translations = {
+    [key in Language]: {
+        [key: string]: string
+    }
+}
+
+const translations: Translations = {
+    en: {
+        // Navigation
+        dashboard: "Dashboard",
+        mockInterview: "Mock Interview",
+        quizzes: "Quizzes",
+        cvStudio: "CV Studio",
+        schedule: "Schedule",
+        analytics: "Analytics",
+        profile: "Profile",
+        settings: "Settings",
+        logout: "Log out",
+        search: "Search",
+        notifications: "Notifications",
+        help: "Help",
+        welcome: "Welcome",
+        language: "Language",
+
+        // Dashboard
+        "Good evening": "Good evening",
+        "Here's your progress overview": "Here's your progress overview",
+        "Mock Interviews": "Mock Interviews",
+        "Completed": "Completed",
+        "Avg HR Score": "Avg HR Score",
+        "Avg Technical Score": "Avg Technical Score",
+        "Last 5 interviews": "Last 5 interviews",
+        "CV Readiness": "CV Readiness",
+        "ATS optimized": "ATS optimized",
+        "Recommended Next Actions": "Recommended Next Actions",
+        "Continue your preparation journey": "Continue your preparation journey",
+        "Practice Behavioral Questions": "Practice Behavioral Questions",
+        "You scored 75% on communication last time. Let's improve it!": "You scored 75% on communication last time. Let's improve it!",
+        "Start Interview": "Start Interview",
+        "Complete Algorithms Quiz": "Complete Algorithms Quiz",
+        "Test your data structures knowledge with 15 questions": "Test your data structures knowledge with 15 questions",
+        "Take Quiz": "Take Quiz",
+        "Update Your CV": "Update Your CV",
+        "Add your latest project to boost your CV score": "Add your latest project to boost your CV score",
+        "Edit CV": "Edit CV",
+        "Recent Activity": "Recent Activity",
+        "Your latest actions and milestones": "Your latest actions and milestones",
+        "This Week": "This Week",
+        "Interviews": "Interviews",
+        "Practice Time": "Practice Time",
+        "Goal: 5 per week": "Goal: 5 per week",
+        "Goal achieved!": "Goal achieved!",
+        "Goal: 5 hours": "Goal: 5 hours",
+        "Skills to Focus On": "Skills to Focus On",
+        "Based on your recent performance": "Based on your recent performance",
+        "Upcoming": "Upcoming",
+        "View All": "View All",
+        "No upcoming events scheduled.": "No upcoming events scheduled.",
+
+        // Quizzes
+        "Test your knowledge and track your improvement": "Test your knowledge and track your improvement",
+        "Recommended for You": "Recommended for You",
+        "Start Quiz": "Start Quiz",
+        "questions": "questions",
+        "Your score": "Your score",
+        "Retake Quiz": "Retake Quiz",
+        "Exit Quiz": "Exit Quiz",
+        "Quiz Complete!": "Quiz Complete!",
+        "Answer Review": "Answer Review",
+        "See which questions you got right and wrong": "See which questions you got right and wrong",
+        "Your answer:": "Your answer:",
+        "Correct answer:": "Correct answer:",
+        "Back to Quizzes": "Back to Quizzes",
+        "Retry Quiz": "Retry Quiz",
+        "All": "All",
+        "Easy": "Easy",
+        "Medium": "Medium",
+        "Hard": "Hard",
+
+        // Mock Interview
+        "Practice your interview skills with AI-powered feedback": "Practice your interview skills with AI-powered feedback",
+        "Interview Setup": "Interview Setup",
+        "Configure your practice session": "Configure your practice session",
+        "Interview Type": "Interview Type",
+        "Difficulty Level": "Difficulty Level",
+        "Language": "Language",
+        "Microphone": "Microphone",
+        "Enable voice responses": "Enable voice responses",
+        "Question Time Limit": "Question Time Limit",
+        "2 minutes per question": "2 minutes per question",
+        "Interview Session": "Interview Session",
+        "Type your answer here...": "Type your answer here...",
+        "Live Feedback": "Live Feedback",
+        "Notes": "Notes",
+        "Take notes during the interview...": "Take notes during the interview...",
+        "Overall Score": "Overall Score",
+        "Performance Overview": "Performance Overview",
+        "Question-by-Question Breakdown": "Question-by-Question Breakdown",
+        "Start Another Interview": "Start Another Interview",
+        "Practice Weak Topics": "Practice Weak Topics",
+
+        // CV Studio
+        "Build and optimize your resume with AI assistance": "Build and optimize your resume with AI assistance",
+        "Personal Information": "Personal Information",
+        "Full Name": "Full Name",
+        "Email": "Email",
+        "Phone": "Phone",
+        "Location": "Location",
+        "Professional Summary": "Professional Summary",
+        "Education": "Education",
+        "Degree": "Degree",
+        "School": "School",
+        "GPA": "GPA",
+        "Start Date": "Start Date",
+        "End Date": "End Date",
+        "Experience": "Experience",
+        "Role": "Role",
+        "Company": "Company",
+        "Responsibilities & Achievements": "Responsibilities & Achievements",
+        "Projects": "Projects",
+        "Project Title": "Project Title",
+        "Tech Stack": "Tech Stack",
+        "Description": "Description",
+        "Skills": "Skills",
+        "Add skill": "Add skill",
+        "Target Job Description": "Target Job Description",
+        "Paste the full job description here...": "Paste the full job description here...",
+        "Generate CV Draft": "Generate CV Draft",
+        "Generating with AI...": "Generating with AI...",
+        "Save": "Save",
+        "CV Analysis": "CV Analysis",
+        "ATS Score": "ATS Score",
+        "Role Match": "Role Match",
+        "Missing Skills": "Missing Skills",
+        "Live Preview": "Live Preview",
+        "Download PDF": "Download PDF",
+        "Download .tex": "Download .tex",
+
+        // Schedule
+        "Weekly Schedule": "Weekly Schedule",
+        "Plan your tailored preparation journey": "Plan your tailored preparation journey",
+        "View History": "View History",
+        "Past Weeks Summary": "Past Weeks Summary",
+        "Add Event": "Add Event",
+        "Activity Title": "Activity Title",
+        "Type": "Type",
+        "Time": "Time",
+        "Schedule Event": "Schedule Event",
+
+        // Dashboard Activity items (Static for demo)
+        "Completed HR Mock Interview": "Completed HR Mock Interview",
+        "Scored 85% on behavioral questions": "Scored 85% on behavioral questions",
+        "Updated CV - Added Experience": "Updated CV - Added Experience",
+        "Added Software Engineering Intern at TechCorp": "Added Software Engineering Intern at TechCorp",
+        "Passed System Design Quiz": "Passed System Design Quiz",
+        "8/10 correct - Great improvement!": "8/10 correct - Great improvement!",
+        "Started Technical Interview Practice": "Started Technical Interview Practice",
+        "Completed coding challenges on arrays": "Completed coding challenges on arrays",
+        "Created Your Profile": "Created Your Profile",
+        "Welcome to RecruitAssistant!": "Welcome to RecruitAssistant!",
+
+        // Mock Interview Results
+        "Interview Complete!": "Interview Complete!",
+        "Here's how you performed in your session": "Here's how you performed in your session",
+        "Your strengths and areas for improvement": "Your strengths and areas for improvement",
+        "Radar Chart Visualization": "Radar Chart Visualization",
+        "Detailed feedback for each question": "Detailed feedback for each question",
+        "Great job! You've improved from your last interview.": "Great job! You've improved from your last interview.",
+        "Technical": "Technical",
+        "Communication": "Communication",
+        "Clarity": "Clarity",
+        "Structure (STAR)": "Structure (STAR)",
+        "Confidence": "Confidence",
+        "Tip": "Tip",
+        "Eye Contact": "Eye Contact",
+        "Try to structure your answer using the STAR method (Situation, Task, Action, Result).": "Try to structure your answer using the STAR method (Situation, Task, Action, Result).",
+        "Good eye contact maintained. keep it up!": "Good eye contact maintained. keep it up!",
+        "AI Feedback: Good use of examples, but try to be more concise in the 'Action' part of your response.": "AI Feedback: Good use of examples, but try to be more concise in the 'Action' part of your response.",
+
+        "Help": "Help",
+
+        // Time
+        "2 hours ago": "2 hours ago",
+        "1 day ago": "1 day ago",
+        "2 days ago": "2 days ago",
+        "3 days ago": "3 days ago",
+        "1 week ago": "1 week ago",
+
+        // Quiz Categories
+        "Algorithms": "Algorithms",
+        "Data Structures": "Data Structures",
+        "Databases": "Databases",
+        "OOP": "OOP",
+        "System Design": "System Design",
+        "Behavioral": "Behavioral",
+
+        // Quiz Result Feedback
+        "Great job! Your answer demonstrates a solid understanding.": "Great job! Your answer demonstrates a solid understanding.",
+        "Review this concept to improve your understanding.": "Review this concept to improve your understanding.",
+        "Previous": "Previous",
+        "Next": "Next",
+        "Finish": "Finish",
+        "Add": "Add",
+
+        // Analytics
+        "Track your progress and performance insights": "Track your progress and performance insights",
+        "Export Report": "Export Report",
+        "Quiz Score Trend": "Quiz Score Trend",
+        "Comparison of your scores vs class average": "Comparison of your scores vs class average",
+        "Average": "Average",
+        "Interview Skill Radar": "Interview Skill Radar",
+        "Holistic view of your technical and soft skills": "Holistic view of your technical and soft skills",
+        "Skill Growth (Frontend vs Backend)": "Skill Growth (Frontend vs Backend)",
+        "Progress over the last 4 months": "Progress over the last 4 months",
+        "CV Version History": "CV Version History",
+        "Track improvements to your resume": "Track improvements to your resume",
+        "Current": "Current",
+        "View Version": "View Version",
+        "Upcoming Tasks": "Upcoming Tasks",
+        "Auto-generated action items based on your performance": "Auto-generated action items based on your performance",
+        "Due": "Due",
+        "Strong Progress": "Strong Progress",
+        "You've improved your average score by 15% over the last month. Keep up the consistent practice!": "You've improved your average score by 15% over the last month. Keep up the consistent practice!",
+        "Area to Focus": "Area to Focus",
+        "Your behavioral interview scores have plateaued. Consider practicing more STAR method responses.": "Your behavioral interview scores have plateaued. Consider practicing more STAR method responses.",
+        "My Skills": "My Skills",
+        "Problem Solving": "Problem Solving",
+        "Coding": "Coding",
+    },
+    tr: {
+        // Navigation
+        dashboard: "Panel",
+        mockInterview: "Mülakat Simülasyonu",
+        quizzes: "Testler",
+        cvStudio: "CV Stüdyosu",
+        schedule: "Takvim",
+        analytics: "Analizler",
+        profile: "Profil",
+        settings: "Ayarlar",
+        logout: "Çıkış Yap",
+        search: "Ara",
+        notifications: "Bildirimler",
+        help: "Yardım",
+        welcome: "Hoşgeldiniz",
+        language: "Dil",
+
+        // Time
+        "2 hours ago": "2 saat önce",
+        "1 day ago": "1 gün önce",
+        "2 days ago": "2 gün önce",
+        "3 days ago": "3 gün önce",
+        "1 week ago": "1 hafta önce",
+
+        // Quiz Categories
+        "Algorithms": "Algoritmalar",
+        "Data Structures": "Veri Yapıları",
+        "Databases": "Veritabanları",
+        "OOP": "NYP (Nesne Yönelimli Programlama)",
+        "System Design": "Sistem Tasarımı",
+        "Behavioral": "Davranışsal",
+
+        // Dashboard
+        "Good evening": "İyi akşamlar",
+        "Here's your progress overview": "İlerleme durumuna genel bakış",
+        "Mock Interviews": "Mülakatlar",
+        "Completed": "Tamamlandı",
+        "Avg HR Score": "Ort. İK Puanı",
+        "Avg Technical Score": "Ort. Teknik Puan",
+        "Last 5 interviews": "Son 5 mülakat",
+        "CV Readiness": "CV Hazırlığı",
+        "ATS optimized": "ATS uyumlu",
+        "Recommended Next Actions": "Önerilen Sonraki Adımlar",
+        "Continue your preparation journey": "Hazırlık yolculuğuna devam et",
+        "Practice Behavioral Questions": "Davranışsal Sorular Çalış",
+        "You scored 75% on communication last time. Let's improve it!": "Geçen sefer iletişimde %75 aldın. Geliştirelim!",
+        "Start Interview": "Mülakata Başla",
+        "Complete Algorithms Quiz": "Algoritma Testini Tamamla",
+        "Test your data structures knowledge with 15 questions": "15 soru ile veri yapıları bilgini test et",
+        "Take Quiz": "Teste Başla",
+        "Update Your CV": "CV'ni Güncelle",
+        "Add your latest project to boost your CV score": "CV puanını artırmak için son projeni ekle",
+        "Edit CV": "CV Düzenle",
+        "Recent Activity": "Son Aktiviteler",
+        "Your latest actions and milestones": "Son işlemlerin ve dönüm noktaların",
+        "This Week": "Bu Hafta",
+        "Interviews": "Mülakatlar",
+        "Practice Time": "Pratik Süresi",
+        "Goal: 5 per week": "Hedef: Haftada 5",
+        "Goal achieved!": "Hedefe ulaşıldı!",
+        "Goal: 5 hours": "Hedef: 5 saat",
+        "Skills to Focus On": "Odaklanılması Gereken Beceriler",
+        "Based on your recent performance": "Son performansına dayalı",
+        "Upcoming": "Yaklaşanlar",
+        "View All": "Tümünü Gör",
+        "No upcoming events scheduled.": "Yaklaşan etkinlik yok.",
+
+        // Quizzes
+        "Test your knowledge and track your improvement": "Bilgini test et ve gelişimini takip et",
+        "Recommended for You": "Önerilenler",
+        "Start Quiz": "Teste Başla",
+        "questions": "soru",
+        "Your score": "Puanın",
+        "Retake Quiz": "Testi Tekrarla",
+        "Exit Quiz": "Testten Çık",
+        "Quiz Complete!": "Test Tamamlandı!",
+        "Answer Review": "Cevap Özeti",
+        "See which questions you got right and wrong": "Doğru ve yanlışlarını gör",
+        "Your answer:": "Cevabın:",
+        "Correct answer:": "Doğru cevap:",
+        "Back to Quizzes": "Testlere Dön",
+        "Retry Quiz": "Tekrar Dene",
+        "All": "Tümü",
+        "Easy": "Kolay",
+        "Medium": "Orta",
+        "Hard": "Zor",
+
+        // Mock Interview
+        "Practice your interview skills with AI-powered feedback": "Yapay zeka desteğiyle mülakat becerilerini geliştir",
+        "Interview Setup": "Mülakat Kurulumu",
+        "Configure your practice session": "Pratik oturumunu yapılandır",
+        "Interview Type": "Mülakat Tipi",
+        "Difficulty Level": "Zorluk Seviyesi",
+        "Language": "Dil",
+        "Microphone": "Mikrofon",
+        "Enable voice responses": "Sesli yanıtları etkinleştir",
+        "Question Time Limit": "Soru Süre Limiti",
+        "2 minutes per question": "Soru başına 2 dakika",
+        "Interview Session": "Mülakat Oturumu",
+        "Type your answer here...": "Cevabını buraya yaz...",
+        "Live Feedback": "Canlı Geri Bildirim",
+        "Notes": "Notlar",
+        "Take notes during the interview...": "Mülakat sırasında not al...",
+        "Overall Score": "Genel Puan",
+        "Performance Overview": "Performans Özeti",
+        "Question-by-Question Breakdown": "Soru Bazlı Analiz",
+        "Start Another Interview": "Başka Bir Mülakata Başla",
+        "Practice Weak Topics": "Zayıf Konuları Çalış",
+
+        // CV Studio
+        "Build and optimize your resume with AI assistance": "Yapay zeka desteğiyle CV'ni oluştur ve optimize et",
+        "Personal Information": "Kişisel Bilgiler",
+        "Full Name": "Ad Soyad",
+        "Email": "E-posta",
+        "Phone": "Telefon",
+        "Location": "Konum",
+        "Professional Summary": "Profesyonel Özet",
+        "Education": "Eğitim",
+        "Degree": "Derece / Bölüm",
+        "School": "Okul",
+        "GPA": "Not Ortalaması",
+        "Start Date": "Başlangıç Tarihi",
+        "End Date": "Bitiş Tarihi",
+        "Experience": "Deneyim",
+        "Role": "Pozisyon",
+        "Company": "Şirket",
+        "Responsibilities & Achievements": "Sorumluluklar ve Başarılar",
+        "Projects": "Projeler",
+        "Project Title": "Proje Başlığı",
+        "Tech Stack": "Teknoloji Yığını",
+        "Description": "Açıklama",
+        "Skills": "Yetenekler",
+        "Add skill": "Yetenek ekle",
+        "Target Job Description": "Hedef İş Tanımı",
+        "Paste the full job description here...": "İş tanımını buraya yapıştır...",
+        "Generate CV Draft": "CV Taslağı Oluştur",
+        "Generating with AI...": "Yapay zeka ile oluşturuluyor...",
+        "Save": "Kaydet",
+        "CV Analysis": "CV Analizi",
+        "ATS Score": "ATS Puanı",
+        "Role Match": "Rol Uyumu",
+        "Missing Skills": "Eksik Yetenekler",
+        "Live Preview": "Canlı Önizleme",
+        "Download PDF": "PDF İndir",
+        "Download .tex": ".tex İndir",
+
+        // Schedule
+        "Weekly Schedule": "Haftalık Program",
+        "Plan your tailored preparation journey": "Kişiye özel hazırlık sürecini planla",
+        "View History": "Geçmişi Gör",
+        "Past Weeks Summary": "Geçmiş Haftaların Özeti",
+        "Add Event": "Etkinlik Ekle",
+        "Activity Title": "Etkinlik Başlığı",
+        "Type": "Tür",
+        "Time": "Saat",
+        "Schedule Event": "Etkinliği Planla",
+
+        // Dashboard Activity items
+        "Completed HR Mock Interview": "İK Mülakatı Tamamlandı",
+        "Scored 85% on behavioral questions": "Davranışsal sorularda %85 puan alındı",
+        "Updated CV - Added Experience": "CV Güncellendi - Deneyim Eklendi",
+        "Added Software Engineering Intern at TechCorp": "TechCorp'ta Yazılım Mühendisliği Stajı eklendi",
+        "Passed System Design Quiz": "Sistem Tasarımı Testi Geçildi",
+        "8/10 correct - Great improvement!": "8/10 doğru - Harika gelişme!",
+        "Started Technical Interview Practice": "Teknik Mülakat Çalışması Başlatıldı",
+        "Completed coding challenges on arrays": "Dizilerle ilgili kodlama soruları tamamlandı",
+        "Created Your Profile": "Profil Oluşturuldu",
+        "Welcome to RecruitAssistant!": "RecruitAssistant'a Hoşgeldiniz!",
+
+        // Mock Interview Results
+        "Interview Complete!": "Mülakat Tamamlandı!",
+        "Here's how you performed in your session": "İşte oturum performansın",
+        "Your strengths and areas for improvement": "Güçlü yönlerin ve gelişim alanların",
+        "Radar Chart Visualization": "Radar Grafiği Görselleştirme",
+        "Detailed feedback for each question": "Her soru için detaylı geri bildirim",
+        "Great job! You've improved from your last interview.": "Harika iş! Son mülakatından bu yana giriştin.",
+        "Technical": "Teknik",
+        "Communication": "İletişim",
+        "Clarity": "Netlik",
+        "Structure (STAR)": "Yapı (STAR)",
+        "Confidence": "Özgüven",
+        "Tip": "İpucu",
+        "Eye Contact": "Göz Teması",
+        "Try to structure your answer using the STAR method (Situation, Task, Action, Result).": "Cevabını STAR yöntemini (Durum, Görev, Eylem, Sonuç) kullanarak yapılandırmayı dene.",
+        "Good eye contact maintained. keep it up!": "Göz teması iyi korundu. Aynen devam!",
+        "AI Feedback: Good use of examples, but try to be more concise in the 'Action' part of your response.": "Yapay Zeka Geri Bildirimi: Örnek kullanımı iyi, ancak cevabının 'Eylem' kısmında daha özlü olmaya çalış.",
+        // Quiz Result Feedback
+        "Great job! Your answer demonstrates a solid understanding.": "Harika iş! Cevabın sağlam bir anlayış gösteriyor.",
+        "Review this concept to improve your understanding.": "Anlayışını geliştirmek için bu konuyu tekrar et.",
+        "Previous": "Önceki",
+        "Next": "Sonraki",
+        "Finish": "Bitir",
+        "Add": "Ekle",
+
+        // Analytics
+        "Track your progress and performance insights": "Gelişimini ve performans analizlerini takip et",
+        "Export Report": "Raporu Dışa Aktar",
+        "Quiz Score Trend": "Test Puan Grafiği",
+        "Comparison of your scores vs class average": "Puanlarının sınıf ortalamasıyla karşılaştırması",
+        "Average": "Ortalama",
+        "Interview Skill Radar": "Mülakat Beceri Radarı",
+        "Holistic view of your technical and soft skills": "Teknik ve sosyal becerilerine bütünsel bir bakış",
+        "Skill Growth (Frontend vs Backend)": "Beceri Gelişimi (Frontend vs Backend)",
+        "Progress over the last 4 months": "Son 4 aydaki ilerleme",
+        "CV Version History": "CV Versiyon Geçmişi",
+        "Track improvements to your resume": "CV üzerindeki geliştirmeleri takip et",
+        "Current": "Mevcut",
+        "View Version": "Versiyonu Gör",
+        "Upcoming Tasks": "Yaklaşan Görevler",
+        "Auto-generated action items based on your performance": "Performansına göre otomatik oluşturulan aksiyonlar",
+        "Due": "Bitiş",
+        "Strong Progress": "Güçlü İlerleme",
+        "You've improved your average score by 15% over the last month. Keep up the consistent practice!": "Son ayda ortalama puanını %15 geliştirdin. İstikrarlı çalışmaya devam et!",
+        "Area to Focus": "Odaklanılacak Alan",
+        "Your behavioral interview scores have plateaued. Consider practicing more STAR method responses.": "Davranışsal mülakat puanların sabitlendi. STAR metoduyla daha fazla pratik yapmayı düşün.",
+        "My Skills": "Becerilerim",
+        "Problem Solving": "Problem Çözme",
+        "Coding": "Kodlama",
+    },
+}
+
+interface LanguageContextType {
+    language: Language
+    setLanguage: (lang: Language) => void
+    t: (key: string) => string
+}
+
+const LanguageContext = createContext<LanguageContextType | undefined>(undefined)
+
+export function LanguageProvider({ children }: { children: React.ReactNode }) {
+    const [language, setLanguage] = useState<Language>("en")
+
+    useEffect(() => {
+        // Basic persistence
+        const savedLang = localStorage.getItem("language") as Language
+        if (savedLang && (savedLang === "en" || savedLang === "tr")) {
+            setLanguage(savedLang)
+        }
+    }, [])
+
+    const handleSetLanguage = (lang: Language) => {
+        setLanguage(lang)
+        localStorage.setItem("language", lang)
+    }
+
+    const t = (key: string) => {
+        return translations[language][key] || key
+    }
+
+    return (
+        <LanguageContext.Provider value={{ language, setLanguage: handleSetLanguage, t }}>
+            {children}
+        </LanguageContext.Provider>
+    )
+}
+
+export function useLanguage() {
+    const context = useContext(LanguageContext)
+    if (context === undefined) {
+        throw new Error("useLanguage must be used within a LanguageProvider")
+    }
+    return context
+}
