@@ -160,18 +160,7 @@ export function Navigation() {
         </div>
       </header>
 
-      <aside className="fixed inset-y-0 left-0 top-16 z-40 hidden w-20 flex-col border-r border-border bg-background lg:flex">
-        <nav className="flex flex-1 flex-col items-center gap-2 py-6">
-          {navItems.map((item) => (
-            <Link key={item.href} href={item.href}>
-              <Button variant="ghost" size="icon" className="h-12 w-12" title={t(item.label)}>
-                <item.icon className="h-5 w-5" />
-                <span className="sr-only">{t(item.label)}</span>
-              </Button>
-            </Link>
-          ))}
-        </nav>
-      </aside>
+
     </>
   )
 }
