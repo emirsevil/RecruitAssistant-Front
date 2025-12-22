@@ -121,11 +121,25 @@ Bullet lists using itemize
 No page numbers
 
 Output Format (STRICT)
-Output ONLY the LaTeX source code.
-No explanations.
-No backticks.
-No Markdown.
-No comments.`;
+You must output a JSON object with two fields:
+1. "latex": The LaTeX source code.
+2. "html": A complete, single-file HTML representation using Tailwind CSS for styling.
+
+Language Rule:
+Follow the language specified in the language field in the input given to you
+FOLLOW THE LANGUAGE SPECIFIED IN THE LANGUAGE FIELD IN THE INPUT
+FOLLOW THE LANGUAGE SPECIFIED IN THE LANGUAGE FIELD IN THE INPUT
+FOLLOW THE LANGUAGE SPECIFIED IN THE LANGUAGE FIELD IN THE INPUT
+FOLLOW THE LANGUAGE SPECIFIED IN THE LANGUAGE FIELD IN THE INPUT
+FOLLOW THE LANGUAGE SPECIFIED IN THE LANGUAGE FIELD IN THE INPUT
+
+HTML Rules:
+- Use Tailwind CSS via CDN.
+- Aspect ratio A4.
+- Clean, professional, black & white.
+- Font: Inter.
+
+Return ONLY the raw JSON.`;
 
 export async function POST(request: NextRequest) {
   try {
@@ -180,7 +194,8 @@ export async function POST(request: NextRequest) {
 
 ${JSON.stringify(cvInput, null, 2)}
 
-Generate the LaTeX CV now.`;
+Target Language: ${body.language || "English"}
+Generate the CV in ${body.language || "English"}.`;
 
     // Call OpenAI API
     const response = await fetch("https://api.openai.com/v1/chat/completions", {

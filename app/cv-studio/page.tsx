@@ -13,8 +13,11 @@ import { Separator } from "@/components/ui/separator"
 import { Download, Sparkles, RotateCcw, Save, Plus, Trash2, AlertCircle, Loader2, FileText, Eye } from "lucide-react"
 import { useLanguage } from "@/lib/language-context"
 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+
 export default function CVStudioPage() {
   const { t } = useLanguage()
+  const [language, setLanguage] = useState("English")
   const [cvData, setCvData] = useState({
     name: "Deniz Ozturk",
     email: "deniz.ozturk@example.com",
@@ -195,7 +198,7 @@ export default function CVStudioPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(cvData),
+        body: JSON.stringify({ ...cvData, language: language }),
       })
 
       const data = await response.json()
@@ -263,6 +266,18 @@ export default function CVStudioPage() {
                 <CardTitle>{t("Personal Information")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>{t("CV Dili")}</Label>
+                  <Select value={language} onValueChange={setLanguage}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select language" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="English">English</SelectItem>
+                      <SelectItem value="Turkish">Türkçe</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="name">{t("Full Name")}</Label>
