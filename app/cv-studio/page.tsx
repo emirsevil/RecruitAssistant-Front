@@ -16,48 +16,74 @@ import { useLanguage } from "@/lib/language-context"
 export default function CVStudioPage() {
   const { t } = useLanguage()
   const [cvData, setCvData] = useState({
-    name: "Deniz Yilmaz",
-    email: "deniz@example.com",
-    phone: "+1 (555) 123-4567",
-    location: "San Francisco, CA",
-    summary:
-      "Recent Computer Science graduate with strong problem-solving skills and experience in full-stack development.",
+    name: "Deniz Ozturk",
+    email: "deniz.ozturk@example.com",
+    phone: "+90 555 123 45 67",
+    location: "Istanbul, Turkey",
+    summary: "Senior Full Stack Developer with 5+ years of experience in building scalable web applications. Passionate about clean code, performance optimization, and AI integration. Proven track record of leading teams and delivering high-impact projects.",
     education: [
       {
-        degree: "Bachelor of Science in Computer Science",
-        school: "Stanford University",
-        gpa: "3.8",
-        startDate: "2020",
-        endDate: "2024",
+        degree: "B.S. Computer Engineering",
+        school: "Technical University of Istanbul",
+        gpa: "3.8/4.0",
+        startDate: "2015",
+        endDate: "2019",
       },
     ],
     experience: [
       {
-        role: "Software Engineering Intern",
-        company: "TechCorp",
+        role: "Senior Frontend Developer",
+        company: "TechFlow Solutions",
         bullets: [
-          "Developed RESTful APIs using Node.js and Express, improving response time by 30%",
-          "Collaborated with cross-functional team of 5 engineers on microservices architecture",
+          "Led migration of legacy codebase to Next.js 14, improving performance by 40%.",
+          "Implemented CI/CD pipelines reducing deployment time by 15 minutes.",
+          "Mentored 3 junior developers and established code review standards.",
         ],
-        startDate: "Jun 2023",
-        endDate: "Aug 2023",
+        startDate: "Jan 2022",
+        endDate: "Present",
+      },
+      {
+        role: "Software Engineer",
+        company: "DataCorp",
+        bullets: [
+          "Developed RESTful APIs serving 1M+ daily requests using Node.js.",
+          "Collaborated with UX team to redesign the customer portal, increasing conversion by 20%.",
+          "Optimized database queries, reducing response times by 30%.",
+        ],
+        startDate: "Jun 2019",
+        endDate: "Dec 2021",
       },
     ],
     projects: [
       {
-        title: "Task Management App",
-        techStack: "React, Node.js, MongoDB",
-        description:
-          "Built a full-stack web application for team task management with real-time updates using WebSockets",
+        title: "AI Resume Builder",
+        techStack: "React, OpenAI API, Node.js",
+        description: "Built an AI-powered resume generator helping 500+ users optimize their CVs with ATS-friendly formats.",
+      },
+      {
+        title: "Crypto Portfolio Tracker",
+        techStack: "Vue.js, Firebase, CoinGecko API",
+        description: "Real-time cryptocurrency tracking application with price alerts and portfolio analysis tools.",
       },
     ],
-    skills: ["JavaScript", "TypeScript", "React", "Node.js", "Python", "SQL", "Git", "AWS"],
-    targetJob: "Software Engineer - Full Stack",
+    skills: [
+      "JavaScript",
+      "TypeScript",
+      "React",
+      "Next.js",
+      "Node.js",
+      "PostgreSQL",
+      "AWS",
+      "Docker",
+      "Tailwind CSS",
+      "GraphQL"
+    ],
+    targetJob: "",
   })
 
-  const [atsScore, setAtsScore] = useState(78)
-  const [roleMatch, setRoleMatch] = useState(85)
-  const [missingSkills] = useState(["Docker", "Kubernetes", "GraphQL"])
+  const [atsScore, setAtsScore] = useState(0)
+  const [roleMatch, setRoleMatch] = useState(0)
+  const [missingSkills] = useState<string[]>([])
 
   // New state for AI generation
   const [isGenerating, setIsGenerating] = useState(false)
@@ -361,7 +387,7 @@ export default function CVStudioPage() {
                         <Label>{t("Role")}</Label>
                         <Input
                           value={exp.role}
-                          placeholder="Software Engineer"
+                          placeholder={t("Software Engineer")}
                           onChange={(e) => updateExperience(idx, "role", e.target.value)}
                         />
                       </div>
@@ -369,7 +395,7 @@ export default function CVStudioPage() {
                         <Label>{t("Company")}</Label>
                         <Input
                           value={exp.company}
-                          placeholder="Tech Company Inc."
+                          placeholder={t("Tech Company Inc.")}
                           onChange={(e) => updateExperience(idx, "company", e.target.value)}
                         />
                       </div>
@@ -377,7 +403,7 @@ export default function CVStudioPage() {
                         <Label>{t("Start Date")}</Label>
                         <Input
                           value={exp.startDate}
-                          placeholder="Jan 2023"
+                          placeholder={t("Jan 2023")}
                           onChange={(e) => updateExperience(idx, "startDate", e.target.value)}
                         />
                       </div>
@@ -385,7 +411,7 @@ export default function CVStudioPage() {
                         <Label>{t("End Date")}</Label>
                         <Input
                           value={exp.endDate}
-                          placeholder="Present"
+                          placeholder={t("Present")}
                           onChange={(e) => updateExperience(idx, "endDate", e.target.value)}
                         />
                       </div>
@@ -438,7 +464,7 @@ export default function CVStudioPage() {
                       <Label>{t("Project Title")}</Label>
                       <Input
                         value={project.title}
-                        placeholder="E-commerce Platform"
+                        placeholder={t("E-commerce Platform")}
                         onChange={(e) => updateProject(idx, "title", e.target.value)}
                       />
                     </div>
@@ -456,7 +482,7 @@ export default function CVStudioPage() {
                         value={project.description}
                         onChange={(e) => updateProject(idx, "description", e.target.value)}
                         className="min-h-[80px]"
-                        placeholder="Built a full-stack application that..."
+                        placeholder={t("Built a full-stack application that...")}
                       />
                     </div>
                   </div>

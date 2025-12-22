@@ -259,6 +259,12 @@ const translations: Translations = {
         "System Design Fundamentals": "System Design Fundamentals",
         "Advanced Data Structures": "Advanced Data Structures",
         "min": "min",
+        "e.g., Python Data Structures": "e.g., Python Data Structures",
+
+        "Software Engineer": "Software Engineer",
+        "Tech Company Inc.": "Tech Company Inc.",
+        "E-commerce Platform": "E-commerce Platform",
+        "Built a full-stack application that...": "Built a full-stack application that...",
 
         "Complete Behavioral Quiz": "Complete Behavioral Quiz",
         "Practice System Design Interview": "Practice System Design Interview",
@@ -295,6 +301,9 @@ const translations: Translations = {
         "Intern": "Intern",
         "Junior / New Grad": "Junior / New Grad",
         "Mid-Level": "Mid-Level",
+        "Clear and concise introduction. Good structure.": "Clear and concise introduction. Good structure.",
+        "Strong passion shown. Could elaborate more on specific aspects of the role.": "Strong passion shown. Could elaborate more on specific aspects of the role.",
+        "Excellent use of STAR method. Great technical detail.": "Excellent use of STAR method. Great technical detail.",
     },
     tr: {
         // Navigation
@@ -419,7 +428,6 @@ const translations: Translations = {
         "GPA": "Not Ortalaması",
         "Start Date": "Başlangıç Tarihi",
         "End Date": "Bitiş Tarihi",
-        "Experience": "Deneyim",
         "Role": "Pozisyon",
         "Company": "Şirket",
         "Responsibilities & Achievements": "Sorumluluklar ve Başarılar",
@@ -563,13 +571,13 @@ const translations: Translations = {
         "System Design Fundamentals": "System Design Fundamentals",
         "Advanced Data Structures": "Advanced Data Structures",
         "min": "dk",
+        "e.g., Python Data Structures": "örn., Python Veri Yapıları",
+        "Software Engineer": "Yazılım Mühendisi",
+        "Tech Company Inc.": "Teknoloji Şirketi A.Ş.",
+        "E-commerce Platform": "E-ticaret Platformu",
+        "Built a full-stack application that...": "Full-stack bir uygulama geliştirdim...",
 
         // Interview Questions
-        "Tell me about yourself and your background.": "Bize kendinizden ve geçmişinizden bahsedin.",
-        "Why are you interested in this role?": "Neden bu pozisyonla ilgileniyorsunuz?",
-        "Describe a challenging project you've worked on.": "Üzerinde çalıştığınız zorlu bir projeyi anlatın.",
-        "Introduction": "Giriş",
-        "Motivation": "Motivasyon",
         "Intern": "Stajyer",
         "Junior / New Grad": "Yeni Mezun / Junior",
         "Mid-Level": "Orta Seviye",
@@ -582,6 +590,17 @@ const translations: Translations = {
         "Microphone disabled": "Mikrofon kapalı",
         "this week": "bu hafta",
         "improvement": "gelişme",
+
+        // Interview Content (Explicitly ensuring these are present)
+        "Introduction": "Giriş",
+        "Motivation": "Motivasyon",
+        "Experience": "Deneyim",
+        "Tell me about yourself and your background.": "Bize kendinizden ve geçmişinizden bahsedin.",
+        "Why are you interested in this role?": "Neden bu pozisyonla ilgileniyorsunuz?",
+        "Describe a challenging project you've worked on.": "Üzerinde çalıştığınız zorlu bir projeyi anlatın.",
+        "Clear and concise introduction. Good structure.": "Net ve öz bir giriş. Yapısı güzel.",
+        "Strong passion shown. Could elaborate more on specific aspects of the role.": "Güçlü bir tutku gösterildi. Rolün belirli yönleri hakkında daha fazla detay verilebilir.",
+        "Excellent use of STAR method. Great technical detail.": "STAR yönteminin mükemmel kullanımı. Harika teknik detay.",
 
         // Charts
         "Frontend": "Frontend",

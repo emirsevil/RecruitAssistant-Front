@@ -167,7 +167,7 @@ export default function SchedulePage() {
                                     id="title"
                                     value={newEvent.title}
                                     onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
-                                    placeholder="e.g., Python Data Structures"
+                                    placeholder={t("e.g., Python Data Structures")}
                                 />
                             </div>
                             <div className="grid gap-2">
@@ -209,6 +209,7 @@ export default function SchedulePage() {
 }
 
 function EventCard({ event }: { event: CalendarEvent }) {
+    const { t } = useLanguage()
     const getIcon = (type: any) => {
         switch (type) {
             case "interview": return <MessageSquare className="h-3 w-3" />
@@ -231,7 +232,7 @@ function EventCard({ event }: { event: CalendarEvent }) {
                 {getIcon(event.type)}
                 <span className="truncate">{format(new Date(event.date), "HH:mm")}</span>
             </div>
-            <div className="truncate font-medium">{event.title}</div>
+            <div className="truncate font-medium">{t(event.title)}</div>
         </div>
     )
 }

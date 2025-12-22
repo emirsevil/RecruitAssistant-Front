@@ -112,20 +112,7 @@ export default function MockInterviewPage() {
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label>{t("Language")}</Label>
-                  <Select value={language} onValueChange={setLanguage}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="english">{t("English")}</SelectItem>
-                      <SelectItem value="spanish">{t("Spanish")}</SelectItem>
-                      <SelectItem value="french">{t("French")}</SelectItem>
-                      <SelectItem value="german">{t("German")}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+
 
                 <div className="space-y-4 rounded-lg border border-border p-4">
                   <div className="flex items-center justify-between">
@@ -174,7 +161,7 @@ export default function MockInterviewPage() {
                     </div>
                   </div>
                   <Progress value={progress} className="h-2 mb-2" />
-                  <CardTitle className="text-xl lg:text-2xl leading-relaxed">{mockQuestions[currentQuestion].question}</CardTitle>
+                  <CardTitle className="text-xl lg:text-2xl leading-relaxed">{t(mockQuestions[currentQuestion].question)}</CardTitle>
                 </CardHeader>
                 <CardContent className="flex-1 bg-muted/30 m-6 rounded-lg border border-dashed flex items-center justify-center relative overflow-hidden">
                   <div className="absolute inset-0 bg-black/5 flex items-center justify-center">
@@ -299,15 +286,15 @@ export default function MockInterviewPage() {
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
                       <Badge variant="outline" className="mb-2">
-                        {result.topic}
+                        {t(result.topic)}
                       </Badge>
-                      <p className="font-medium text-pretty">{result.question}</p>
+                      <p className="font-medium text-pretty">{t(result.question)}</p>
                     </div>
                     <div className="text-right">
                       <div className="text-2xl font-bold text-primary">{result.score}%</div>
                     </div>
                   </div>
-                  <p className="text-sm text-muted-foreground text-pretty">{result.feedback}</p>
+                  <p className="text-sm text-muted-foreground text-pretty">{t(result.feedback)}</p>
                 </div>
               ))}
             </CardContent>
