@@ -68,8 +68,8 @@ const quizzes = [
     title: "Advanced Data Structures",
     category: "Data Structures",
     difficulty: "Hard",
-    questions: 10,
-    duration: "30 min",
+    questions: 3,
+    duration: "10 min",
     completed: false,
   },
 ]
@@ -77,21 +77,21 @@ const quizzes = [
 const mockQuizQuestions = [
   {
     id: 1,
-    question: "What is the time complexity of searching in a balanced binary search tree?",
+    question: "What is the worst-case time complexity for lookup in a Hash Table?",
     options: ["O(1)", "O(log n)", "O(n)", "O(n log n)"],
-    correctAnswer: 1,
+    correctAnswer: 2,
   },
   {
     id: 2,
-    question: "Which data structure uses LIFO (Last In First Out) principle?",
-    options: ["Queue", "Stack", "Array", "Linked List"],
-    correctAnswer: 1,
+    question: "Which data structure is primarily used to implement a Priority Queue?",
+    options: ["Stack", "Queue", "Heap", "Linked List"],
+    correctAnswer: 2,
   },
   {
     id: 3,
-    question: "What is the space complexity of merge sort?",
-    options: ["O(1)", "O(log n)", "O(n)", "O(n²)"],
-    correctAnswer: 2,
+    question: "What is the primary advantage of a B-Tree over a Binary Search Tree?",
+    options: ["Faster in-memory search", "Optimized for disk storage", "Simpler implementation", "Uses less memory"],
+    correctAnswer: 1,
   },
 ]
 
