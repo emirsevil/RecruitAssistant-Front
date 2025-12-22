@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Navigation } from "@/components/navigation"
+
 import { PageContainer, PageHeader } from "@/components/page-container"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -29,7 +29,6 @@ export default function ProfilePage() {
 
   return (
     <>
-      <Navigation />
       <PageContainer>
         <PageHeader title="Profile" description="Manage your personal information and professional details" />
 

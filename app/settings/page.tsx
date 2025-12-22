@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Navigation } from "@/components/navigation"
+
 import { PageContainer, PageHeader } from "@/components/page-container"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -35,7 +35,6 @@ export default function SettingsPage() {
 
   return (
     <>
-      <Navigation />
       <PageContainer>
         <PageHeader title="Settings" description="Manage your account settings and preferences" />
 

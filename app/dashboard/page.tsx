@@ -2,8 +2,9 @@
 
 import type React from "react"
 import { format } from "date-fns"
+import { enUS, tr } from "date-fns/locale"
 import { useSchedule } from "@/lib/schedule-context"
-import { Navigation } from "@/components/navigation"
+
 import { PageContainer, PageHeader } from "@/components/page-container"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -15,11 +16,11 @@ import { useLanguage } from "@/lib/language-context"
 
 export default function DashboardPage() {
   const { events } = useSchedule()
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
+  const dateLocale = language === "tr" ? tr : enUS
 
   return (
     <>
-      <Navigation />
       <PageContainer>
         <PageHeader title={`${t("Good evening")}, Deniz`} description={t("Here's your progress overview")} />
 
@@ -30,14 +31,14 @@ export default function DashboardPage() {
             value="12"
             subtitle={t("Completed")}
             icon={<MessageSquare className="h-5 w-5" />}
-            trend="+3 this week"
+            trend={`+3 ${t("this week")}`}
           />
           <KPICard
             title={t("Avg HR Score")}
             value="82%"
             subtitle={t("Last 5 interviews")}
             icon={<Target className="h-5 w-5" />}
-            trend="+5% improvement"
+            trend={`+5% ${t("improvement")}`}
             trendUp
           />
           <KPICard
@@ -45,7 +46,7 @@ export default function DashboardPage() {
             value="78%"
             subtitle={t("Last 5 interviews")}
             icon={<Brain className="h-5 w-5" />}
-            trend="+8% improvement"
+            trend={`+8% ${t("improvement")}`}
             trendUp
           />
           <KPICard
@@ -177,10 +178,10 @@ export default function DashboardPage() {
                 <CardDescription>{t("Based on your recent performance")}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-2">
-                <SkillBadge skill="Communication" score={75} />
-                <SkillBadge skill="System Design" score={70} />
-                <SkillBadge skill="Behavioral Answers" score={80} />
-                <SkillBadge skill="Code Optimization" score={72} />
+                <SkillBadge skill={t("Communication")} score={75} />
+                <SkillBadge skill={t("System Design")} score={70} />
+                <SkillBadge skill={t("Behavioral Answers")} score={80} />
+                <SkillBadge skill={t("Code Optimization")} score={72} />
               </CardContent>
             </Card>
 
@@ -209,9 +210,9 @@ export default function DashboardPage() {
                           <Clock className="mt-0.5 h-4 w-4 text-muted-foreground" />
                         )}
                         <div className="flex-1">
-                          <p className="text-sm font-medium">{event.title}</p>
+                          <p className="text-sm font-medium">{t(event.title)}</p>
                           <p className="text-xs text-muted-foreground">
-                            {format(new Date(event.date), "MMM d, h:mm a")}
+                            {format(new Date(event.date), "MMM d, h:mm a", { locale: dateLocale })}
                           </p>
                         </div>
                       </div>

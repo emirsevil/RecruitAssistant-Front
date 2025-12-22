@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Navigation } from "@/components/navigation"
+
 import { PageContainer } from "@/components/page-container"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -79,7 +79,6 @@ export default function OnboardingPage() {
 
   return (
     <>
-      <Navigation />
       <PageContainer>
         <div className="flex min-h-[calc(100vh-8rem)] items-center justify-center py-8">
           <Card className="w-full max-w-2xl">
@@ -179,11 +178,10 @@ export default function OnboardingPage() {
                   {goals.map((goal) => (
                     <Card
                       key={goal.id}
-                      className={`cursor-pointer transition-all ${
-                        formData.selectedGoals.includes(goal.id)
-                          ? "border-primary bg-primary/5"
-                          : "hover:border-primary/50"
-                      }`}
+                      className={`cursor-pointer transition-all ${formData.selectedGoals.includes(goal.id)
+                        ? "border-primary bg-primary/5"
+                        : "hover:border-primary/50"
+                        }`}
                       onClick={() => toggleGoal(goal.id)}
                     >
                       <CardContent className="flex items-start gap-3 p-4">

@@ -5,6 +5,7 @@ import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 import { ScheduleProvider } from "@/lib/schedule-context"
 import { LanguageProvider } from "@/lib/language-context"
+import { Navigation } from "@/components/navigation"
 
 const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
@@ -42,6 +43,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`font-sans antialiased`}>
         <LanguageProvider>
+          <Navigation />
           <ScheduleProvider>
             {children}
             <Analytics />

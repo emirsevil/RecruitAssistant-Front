@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import {
@@ -41,6 +42,15 @@ const navItems = [
 export function Navigation() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const { t, language, setLanguage } = useLanguage()
+  const pathname = usePathname()
+
+  // Hide navigation on auth pages and onboarding
+  if (pathname?.startsWith("/login") ||
+    pathname?.startsWith("/register") ||
+    pathname?.startsWith("/forgot-password") ||
+    pathname?.startsWith("/reset-password")) {
+    return null
+  }
 
   return (
     <>

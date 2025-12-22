@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { format, addDays, startOfWeek, isSameDay, subWeeks, addWeeks } from "date-fns"
 import { enUS, tr } from "date-fns/locale"
-import { Navigation } from "@/components/navigation"
+
 import { PageContainer, PageHeader } from "@/components/page-container"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -68,7 +68,6 @@ export default function SchedulePage() {
 
     return (
         <>
-            <Navigation />
             <PageContainer>
                 <div className="flex flex-col gap-6">
                     <div className="flex items-center justify-between">
@@ -88,15 +87,15 @@ export default function SchedulePage() {
                                     <ScrollArea className="h-[200px]">
                                         <div className="space-y-4 pr-4">
                                             <HistoryItem
-                                                week="Dec 8 - 14"
+                                                week={t("Dec 8 - 14")}
                                                 stats={{ quiz: 2, interview: 1, practice: "3h" }}
                                             />
                                             <HistoryItem
-                                                week="Dec 1 - 7"
+                                                week={t("Dec 1 - 7")}
                                                 stats={{ quiz: 1, interview: 2, practice: "5h" }}
                                             />
                                             <HistoryItem
-                                                week="Nov 24 - 30"
+                                                week={t("Nov 24 - 30")}
                                                 stats={{ quiz: 3, interview: 0, practice: "2h" }}
                                             />
                                         </div>
@@ -238,17 +237,18 @@ function EventCard({ event }: { event: CalendarEvent }) {
 }
 
 function HistoryItem({ week, stats }: { week: string, stats: { quiz: number, interview: number, practice: string } }) {
+    const { t } = useLanguage()
     return (
         <div className="border rounded-md p-3 text-sm">
             <div className="font-semibold mb-2">{week}</div>
             <div className="grid grid-cols-3 gap-2 text-center text-xs text-muted-foreground">
                 <div className="flex flex-col items-center gap-1">
                     <Brain className="h-3 w-3" />
-                    <span>{stats.quiz} Quizzes</span>
+                    <span>{stats.quiz} {t("Quizzes")}</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
                     <MessageSquare className="h-3 w-3" />
-                    <span>{stats.interview} Intrv.</span>
+                    <span>{stats.interview} {t("Intrv.")}</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
                     <Clock className="h-3 w-3" />

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Navigation } from "@/components/navigation"
+
 import { PageContainer, PageHeader } from "@/components/page-container"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -75,7 +75,6 @@ export default function MockInterviewPage() {
   if (state === "setup") {
     return (
       <>
-        <Navigation />
         <PageContainer>
           <PageHeader title={t("Mock Interview")} description={t("Practice your interview skills with AI-powered feedback")} />
 
@@ -93,8 +92,8 @@ export default function MockInterviewPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="hr">HR / Behavioral</SelectItem>
-                      <SelectItem value="technical">Technical</SelectItem>
+                      <SelectItem value="hr">{t("HR / Behavioral")}</SelectItem>
+                      <SelectItem value="technical">{t("Technical")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -106,9 +105,9 @@ export default function MockInterviewPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="intern">Intern</SelectItem>
-                      <SelectItem value="junior">Junior / New Grad</SelectItem>
-                      <SelectItem value="mid">Mid-Level</SelectItem>
+                      <SelectItem value="intern">{t("Intern")}</SelectItem>
+                      <SelectItem value="junior">{t("Junior / New Grad")}</SelectItem>
+                      <SelectItem value="mid">{t("Mid-Level")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -120,10 +119,10 @@ export default function MockInterviewPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="english">English</SelectItem>
-                      <SelectItem value="spanish">Spanish</SelectItem>
-                      <SelectItem value="french">French</SelectItem>
-                      <SelectItem value="german">German</SelectItem>
+                      <SelectItem value="english">{t("English")}</SelectItem>
+                      <SelectItem value="spanish">{t("Spanish")}</SelectItem>
+                      <SelectItem value="french">{t("French")}</SelectItem>
+                      <SelectItem value="german">{t("German")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -161,7 +160,6 @@ export default function MockInterviewPage() {
     const question = mockQuestions[currentQuestion]
     return (
       <div className="flex min-h-screen flex-col bg-background">
-        <Navigation />
         <main className="flex-1 p-6 md:p-8">
           <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-2 lg:h-[calc(100vh-140px)]">
             {/* Question & Camera Area */}
@@ -266,29 +264,28 @@ export default function MockInterviewPage() {
   // Completed state
   return (
     <>
-      <Navigation />
       <PageContainer>
         <div className="mx-auto max-w-4xl space-y-6">
           {/* Overall Score */}
           <Card className="border-2 border-primary/20 bg-primary/5">
             <CardContent className="p-8 text-center">
-              <div className="mb-2 text-sm font-medium text-muted-foreground">Overall Score</div>
+              <div className="mb-2 text-sm font-medium text-muted-foreground">{t("Overall Score")}</div>
               <div className="mb-4 text-6xl font-bold text-primary">82%</div>
-              <p className="text-sm text-muted-foreground">Great job! You've improved from your last interview.</p>
+              <p className="text-sm text-muted-foreground">{t("Great job! You've improved from your last interview.")}</p>
             </CardContent>
           </Card>
 
           {/* Performance Radar */}
           <Card>
             <CardHeader>
-              <CardTitle>Performance Overview</CardTitle>
-              <CardDescription>Your strengths and areas for improvement</CardDescription>
+              <CardTitle>{t("Performance Overview")}</CardTitle>
+              <CardDescription>{t("Your strengths and areas for improvement")}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex h-64 items-center justify-center rounded-lg bg-secondary/50">
                 <div className="text-center text-muted-foreground">
                   <BarChart3 className="mx-auto mb-2 h-12 w-12" />
-                  <p className="text-sm">Radar Chart Visualization</p>
+                  <p className="text-sm">{t("Radar Chart Visualization")}</p>
                 </div>
               </div>
             </CardContent>
@@ -297,8 +294,8 @@ export default function MockInterviewPage() {
           {/* Question by Question */}
           <Card>
             <CardHeader>
-              <CardTitle>Question-by-Question Breakdown</CardTitle>
-              <CardDescription>Detailed feedback for each question</CardDescription>
+              <CardTitle>{t("Question-by-Question Breakdown")}</CardTitle>
+              <CardDescription>{t("Detailed feedback for each question")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {mockResults.map((result, idx) => (
@@ -324,11 +321,11 @@ export default function MockInterviewPage() {
           <div className="flex flex-col gap-3 sm:flex-row">
             <Button size="lg" className="flex-1 gap-2" onClick={() => setState("setup")}>
               <PlayCircle className="h-5 w-5" />
-              Start Another Interview
+              {t("Start Another Interview")}
             </Button>
             <Link href="/quizzes" className="flex-1">
               <Button size="lg" variant="outline" className="w-full gap-2 bg-transparent">
-                Practice Weak Topics
+                {t("Practice Weak Topics")}
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </Link>

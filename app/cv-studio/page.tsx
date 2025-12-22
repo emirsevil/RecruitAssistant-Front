@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Navigation } from "@/components/navigation"
+
 import { PageContainer, PageHeader } from "@/components/page-container"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -226,7 +226,6 @@ export default function CVStudioPage() {
 
   return (
     <>
-      <Navigation />
       <PageContainer>
         <PageHeader title={t("CV Studio")} description={t("Build and optimize your resume with AI assistance")} />
 

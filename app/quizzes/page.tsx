@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Navigation } from "@/components/navigation"
+
 import { PageContainer, PageHeader } from "@/components/page-container"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -156,7 +156,6 @@ export default function QuizzesPage() {
 
     return (
       <>
-        <Navigation />
         <PageContainer>
           <div className="mx-auto max-w-3xl space-y-6">
             <div className="flex items-center justify-between">
@@ -225,7 +224,6 @@ export default function QuizzesPage() {
 
     return (
       <>
-        <Navigation />
         <PageContainer>
           <div className="mx-auto max-w-3xl space-y-6">
             <Card className="border-2 border-primary/20 bg-primary/5">
@@ -307,7 +305,6 @@ export default function QuizzesPage() {
 
   return (
     <>
-      <Navigation />
       <PageContainer>
         <PageHeader title={t("Quizzes")} description={t("Test your knowledge and track your improvement")} />
 
@@ -320,11 +317,11 @@ export default function QuizzesPage() {
                 <div className="h-2 bg-gradient-to-r from-primary to-accent" />
                 <CardContent className="p-6">
                   <Badge className="mb-3">{t(quiz.category)}</Badge>
-                  <h3 className="mb-2 font-semibold">{quiz.title}</h3>
+                  <h3 className="mb-2 font-semibold">{t(quiz.title)}</h3>
                   <div className="mb-4 flex items-center gap-4 text-sm text-muted-foreground">
                     <span>{quiz.questions} {t("questions")}</span>
                     <span>•</span>
-                    <span>{quiz.duration}</span>
+                    <span>{quiz.duration.replace("min", t("min"))}</span>
                   </div>
                   <Button onClick={startQuiz} className="w-full gap-2">
                     <PlayCircle className="h-4 w-4" />
@@ -383,11 +380,11 @@ export default function QuizzesPage() {
                     {t(quiz.difficulty)}
                   </Badge>
                 </div>
-                <h3 className="mb-2 font-semibold text-balance">{quiz.title}</h3>
+                <h3 className="mb-2 font-semibold text-balance">{t(quiz.title)}</h3>
                 <div className="mb-4 flex items-center gap-4 text-sm text-muted-foreground">
                   <span>{quiz.questions} {t("questions")}</span>
                   <span>•</span>
-                  <span>{quiz.duration}</span>
+                  <span>{quiz.duration.replace("min", t("min"))}</span>
                 </div>
                 {quiz.completed ? (
                   <div className="space-y-2">
