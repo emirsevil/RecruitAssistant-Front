@@ -72,7 +72,7 @@ export function Navigation() {
             </Sheet>
 
             {/* Logo */}
-            <Link href="/dashboard" className="flex items-center gap-2">
+            <Link href="/" className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                 <span className="text-lg font-bold">R</span>
               </div>
@@ -181,12 +181,12 @@ function MobileNav({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex h-16 items-center gap-2 border-b border-border px-6">
+      <Link href="/" className="flex h-16 items-center gap-2 border-b border-border px-6" onClick={onClose}>
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
           <span className="text-lg font-bold">R</span>
         </div>
         <span className="text-lg font-semibold">RecruitAssistant</span>
-      </div>
+      </Link>
       <nav className="flex flex-1 flex-col gap-1 p-4">
         {navItems.map((item) => (
           <Link key={item.href} href={item.href} onClick={onClose}>

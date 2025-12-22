@@ -232,10 +232,6 @@ export default function MockInterviewPage() {
                       <p className="font-semibold mb-1">💡 {t("Tip")}</p>
                       {t("Try to structure your answer using the STAR method (Situation, Task, Action, Result).")}
                     </div>
-                    <div className="rounded-lg bg-blue-500/10 p-4 text-sm text-blue-600 dark:text-blue-400 border border-blue-500/20">
-                      <p className="font-semibold mb-1">👀 {t("Eye Contact")}</p>
-                      {t("Good eye contact maintained. keep it up!")}
-                    </div>
                   </div>
                 </CardContent>
               </Card>
