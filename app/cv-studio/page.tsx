@@ -163,6 +163,12 @@ export default function CVStudioPage() {
     setCvData({ ...cvData, experience: newExperience })
   }
 
+  const removeBullet = (expIndex: number, bulletIndex: number) => {
+    const newExperience = [...cvData.experience]
+    newExperience[expIndex].bullets = newExperience[expIndex].bullets.filter((_, idx) => idx !== bulletIndex)
+    setCvData({ ...cvData, experience: newExperience })
+  }
+
   const updateExperienceBullet = (expIndex: number, bulletIndex: number, value: string) => {
     const newExperience = [...cvData.experience]
     newExperience[expIndex].bullets[bulletIndex] = value
@@ -267,10 +273,10 @@ export default function CVStudioPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label>{t("CV Dili")}</Label>
+                  <Label>{t("CV Language")}</Label>
                   <Select value={language} onValueChange={setLanguage}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select language" />
+                      <SelectValue placeholder={t("Select language")} />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="English">English</SelectItem>
@@ -434,13 +440,24 @@ export default function CVStudioPage() {
                     <div className="space-y-2">
                       <Label>{t("Responsibilities & Achievements")}</Label>
                       {exp.bullets.map((bullet, bulletIdx) => (
-                        <Textarea
-                          key={bulletIdx}
-                          value={bullet}
-                          onChange={(e) => updateExperienceBullet(idx, bulletIdx, e.target.value)}
-                          className="min-h-[60px]"
-                          placeholder="• Developed features that improved..."
-                        />
+                        <div key={bulletIdx} className="flex gap-2">
+                          <Textarea
+                            value={bullet}
+                            onChange={(e) => updateExperienceBullet(idx, bulletIdx, e.target.value)}
+                            className="min-h-[60px] flex-1"
+                            placeholder="• Developed features that improved..."
+                          />
+                          {exp.bullets.length > 1 && (
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 text-destructive self-start mt-1"
+                              onClick={() => removeBullet(idx, bulletIdx)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
                       ))}
                       <Button size="sm" variant="ghost" className="gap-2" onClick={() => addBullet(idx)}>
                         <Plus className="h-3 w-3" />

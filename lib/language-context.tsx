@@ -141,6 +141,8 @@ const translations: Translations = {
         "Live Preview": "Live Preview",
         "Download PDF": "Download PDF",
         "Download .tex": "Download .tex",
+        "CV language": "CV language",
+        "Select language": "Select language",
 
         // Schedule
         "Weekly Schedule": "Weekly Schedule",
@@ -527,6 +529,8 @@ const translations: Translations = {
         "Live Preview": "Canlı Önizleme",
         "Download PDF": "PDF İndir",
         "Download .tex": ".tex İndir",
+        "CV language": "CV Dili",
+        "Select language": "Dil Seç",
 
         // Schedule
         "Weekly Schedule": "Haftalık Program",
