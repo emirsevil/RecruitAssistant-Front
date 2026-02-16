@@ -28,6 +28,20 @@ const translations: Translations = {
         welcome: "Welcome",
         language: "Language",
 
+        // Workspaces
+        workspaces: "Workspaces",
+        createWorkspace: "Create Workspace",
+        createWorkspaceDesc: "Give your new workspace a name to get started.",
+        renameWorkspace: "Rename Workspace",
+        renameWorkspaceDesc: "Enter a new name for this workspace.",
+        deleteWorkspace: "Delete Workspace",
+        deleteWorkspaceDesc: "This action cannot be undone. Are you sure you want to delete",
+        workspaceNamePlaceholder: "e.g. Frontend Role, Google Prep...",
+        currentWorkspace: "Current workspace",
+        cancel: "Cancel",
+        create: "Create",
+        delete: "Delete",
+
         // Dashboard
         "Good evening": "Good evening",
         "Here's your progress overview": "Here's your progress overview",
@@ -312,6 +326,20 @@ const translations: Translations = {
         help: "Yardım",
         welcome: "Hoşgeldiniz",
         language: "Dil",
+
+        // Workspaces
+        workspaces: "Çalışma Alanları",
+        createWorkspace: "Çalışma Alanı Oluştur",
+        createWorkspaceDesc: "Yeni çalışma alanınıza bir isim verin.",
+        renameWorkspace: "Çalışma Alanını Yeniden Adlandır",
+        renameWorkspaceDesc: "Bu çalışma alanı için yeni bir isim girin.",
+        deleteWorkspace: "Çalışma Alanını Sil",
+        deleteWorkspaceDesc: "Bu işlem geri alınamaz. Silmek istediğinize emin misiniz:",
+        workspaceNamePlaceholder: "ör. Frontend Pozisyonu, Google Hazırlık...",
+        currentWorkspace: "Aktif çalışma alanı",
+        cancel: "İptal",
+        create: "Oluştur",
+        delete: "Sil",
 
         // Time
         "2 hours ago": "2 saat önce",
