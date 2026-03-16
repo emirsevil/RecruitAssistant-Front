@@ -11,11 +11,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { Progress } from "@/components/ui/progress"
-import { PlayCircle, Mic, MicOff, Clock, Send, ChevronRight, BarChart3 } from "lucide-react"
+import { PlayCircle, Mic, MicOff, Clock, Send, ChevronRight, BarChart3, SkipForward } from "lucide-react"
 import Link from "next/link"
 import { useLanguage } from "@/lib/language-context"
+import { useMockInterview } from "@/hooks/use-mock-interview"
+import { useToast } from "@/hooks/use-toast"
 
-type InterviewState = "setup" | "active" | "completed"
+type InterviewState = "setup" | "active" | "evaluating" | "completed"
 
 const mockQuestions = [
   { id: 1, question: "Tell me about yourself and your background.", topic: "Introduction", aiResponse: true },
@@ -56,21 +58,79 @@ export default function MockInterviewPage() {
   const [notes, setNotes] = useState("")
   const { t } = useLanguage()
 
-  const startInterview = () => {
-    setState("active")
-    setCurrentQuestion(0)
+  const [workspaceId, setWorkspaceId] = useState("1")
+  const [categories, setCategories] = useState("")
+  const { questions, setQuestions, isLoading, generateQuestions, saveAnswer, answers, evaluation, isEvaluating, evaluateAnswers } = useMockInterview()
+  const { toast } = useToast()
+
+  const startInterview = async () => {
+    const success = await generateQuestions({
+      workspaceId,
+      categories,
+      difficulty,
+      interviewType
+    })
+
+    if (success) {
+      setState("active")
+      setCurrentQuestion(0)
+    } else {
+      toast({
+        title: "Error",
+        description: "Could not generate questions. Does the workspace have a job description?",
+        variant: "destructive"
+      })
+      // Fallback to mockQuestions so development isn't blocked completely
+      setQuestions(mockQuestions)
+      setState("active")
+      setCurrentQuestion(0)
+    }
   }
 
-  const nextQuestion = () => {
-    if (currentQuestion < mockQuestions.length - 1) {
+  const nextQuestion = async () => {
+    // Save the current answer
+    saveAnswer(currentQuestion, userAnswer)
+
+    if (currentQuestion < questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1)
       setUserAnswer("")
     } else {
+      // Last question — trigger evaluation
+      // Pass the current answer as override since saveAnswer setState is async
+      setState("evaluating")
+      const success = await evaluateAnswers({ index: currentQuestion, answer: userAnswer }, difficulty)
+      if (!success) {
+        toast({
+          title: "Evaluation Error",
+          description: "Could not evaluate your answers. Showing results anyway.",
+          variant: "destructive"
+        })
+      }
       setState("completed")
     }
   }
 
-  const progress = ((currentQuestion + 1) / mockQuestions.length) * 100
+  const passQuestion = async () => {
+    saveAnswer(currentQuestion, "(Passed)")
+
+    if (currentQuestion < questions.length - 1) {
+      setCurrentQuestion(currentQuestion + 1)
+      setUserAnswer("")
+    } else {
+      setState("evaluating")
+      const success = await evaluateAnswers({ index: currentQuestion, answer: "(Passed)" }, difficulty)
+      if (!success) {
+        toast({
+          title: "Evaluation Error",
+          description: "Could not evaluate your answers. Showing results anyway.",
+          variant: "destructive"
+        })
+      }
+      setState("completed")
+    }
+  }
+
+  const progress = ((currentQuestion + 1) / questions.length) * 100
 
   if (state === "setup") {
     return (
@@ -112,7 +172,17 @@ export default function MockInterviewPage() {
                   </Select>
                 </div>
 
+                <div className="space-y-2">
+                  <Label>{t("Workspace ID (For Job Description)")}</Label>
+                  <div className="flex">
+                    <input className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background" value={workspaceId} onChange={e => setWorkspaceId(e.target.value)} type="number" />
+                  </div>
+                </div>
 
+                <div className="space-y-2">
+                  <Label>{t("Categories / Topics")}</Label>
+                  <Textarea value={categories} onChange={e => setCategories(e.target.value)} placeholder={t("e.g. React, Node.js, System Design...")} />
+                </div>
 
                 <div className="space-y-4 rounded-lg border border-border p-4">
                   <div className="flex items-center justify-between">
@@ -131,9 +201,13 @@ export default function MockInterviewPage() {
                   </div>
                 </div>
 
-                <Button onClick={startInterview} size="lg" className="w-full gap-2">
-                  <PlayCircle className="h-5 w-5" />
-                  {t("Start Interview")}
+                <Button onClick={startInterview} size="lg" className="w-full gap-2" disabled={isLoading}>
+                  {isLoading ? (
+                    <Clock className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <PlayCircle className="h-5 w-5" />
+                  )}
+                  {isLoading ? t("Generating Questions...") : t("Start Interview")}
                 </Button>
               </CardContent>
             </Card>
@@ -144,7 +218,7 @@ export default function MockInterviewPage() {
   }
 
   if (state === "active") {
-    const question = mockQuestions[currentQuestion]
+    const question = questions[currentQuestion]
     return (
       <div className="flex min-h-screen flex-col bg-background">
         <main className="flex-1 p-6 md:p-8">
@@ -161,7 +235,7 @@ export default function MockInterviewPage() {
                     </div>
                   </div>
                   <Progress value={progress} className="h-2 mb-2" />
-                  <CardTitle className="text-xl lg:text-2xl leading-relaxed">{t(mockQuestions[currentQuestion].question)}</CardTitle>
+                  <CardTitle className="text-xl lg:text-2xl leading-relaxed">{t(questions[currentQuestion].question)}</CardTitle>
                 </CardHeader>
                 <CardContent className="flex-1 bg-muted/30 m-6 rounded-lg border border-dashed flex items-center justify-center relative overflow-hidden">
                   <div className="absolute inset-0 bg-black/5 flex items-center justify-center">
@@ -185,21 +259,32 @@ export default function MockInterviewPage() {
                 </CardFooter>
               </Card>
 
-              {/* Text Input Fallback */}
-              <div className="relative">
-                <Textarea
-                  placeholder={t("Type your answer here...")}
-                  className="min-h-[120px] resize-none pr-12 text-base"
-                  value={userAnswer}
-                  onChange={(e) => setUserAnswer(e.target.value)}
-                />
+              {/* Text Input & Actions */}
+              <div className="space-y-2">
+                <div className="relative">
+                  <Textarea
+                    placeholder={t("Type your answer here...")}
+                    className="min-h-[120px] resize-none pr-12 text-base"
+                    value={userAnswer}
+                    onChange={(e) => setUserAnswer(e.target.value)}
+                  />
+                  <Button
+                    size="icon"
+                    className="absolute bottom-4 right-4 h-8 w-8"
+                    onClick={nextQuestion}
+                    disabled={!userAnswer && !micEnabled}
+                  >
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </div>
                 <Button
-                  size="icon"
-                  className="absolute bottom-4 right-4 h-8 w-8"
-                  onClick={nextQuestion}
-                  disabled={!userAnswer && !micEnabled}
+                  variant="ghost"
+                  size="sm"
+                  className="text-muted-foreground gap-1"
+                  onClick={passQuestion}
                 >
-                  <Send className="h-4 w-4" />
+                  <SkipForward className="h-4 w-4" />
+                  {t("Pass this question")}
                 </Button>
               </div>
             </div>
@@ -244,6 +329,28 @@ export default function MockInterviewPage() {
     )
   }
 
+  // Evaluating state — loading screen
+  if (state === "evaluating") {
+    return (
+      <PageContainer>
+        <div className="mx-auto max-w-2xl flex flex-col items-center justify-center min-h-[60vh] gap-6">
+          <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center animate-pulse">
+            <BarChart3 className="h-8 w-8 text-primary" />
+          </div>
+          <div className="text-center">
+            <h2 className="text-2xl font-bold mb-2">{t("Evaluating Your Answers...")}</h2>
+            <p className="text-muted-foreground">{t("Our AI is reviewing your interview performance")}</p>
+          </div>
+          <Progress value={66} className="w-64 h-2" />
+        </div>
+      </PageContainer>
+    )
+  }
+
+  const results = evaluation?.results || mockResults
+  const overallScore = evaluation?.overall_score || 0
+  const overallFeedback = evaluation?.overall_feedback || ""
+
   // Completed state
   return (
     <>
@@ -253,24 +360,8 @@ export default function MockInterviewPage() {
           <Card className="border-2 border-primary/20 bg-primary/5">
             <CardContent className="p-8 text-center">
               <div className="mb-2 text-sm font-medium text-muted-foreground">{t("Overall Score")}</div>
-              <div className="mb-4 text-6xl font-bold text-primary">82%</div>
-              <p className="text-sm text-muted-foreground">{t("Great job! You've improved from your last interview.")}</p>
-            </CardContent>
-          </Card>
-
-          {/* Performance Radar */}
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("Performance Overview")}</CardTitle>
-              <CardDescription>{t("Your strengths and areas for improvement")}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex h-64 items-center justify-center rounded-lg bg-secondary/50">
-                <div className="text-center text-muted-foreground">
-                  <BarChart3 className="mx-auto mb-2 h-12 w-12" />
-                  <p className="text-sm">{t("Radar Chart Visualization")}</p>
-                </div>
-              </div>
+              <div className="mb-4 text-6xl font-bold text-primary">{overallScore}%</div>
+              <p className="text-sm text-muted-foreground">{overallFeedback || t("Great job! Review your detailed feedback below.")}</p>
             </CardContent>
           </Card>
 
@@ -281,7 +372,7 @@ export default function MockInterviewPage() {
               <CardDescription>{t("Detailed feedback for each question")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {mockResults.map((result, idx) => (
+              {results.map((result, idx) => (
                 <div key={idx} className="rounded-lg border border-border p-4 space-y-2">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
@@ -294,7 +385,7 @@ export default function MockInterviewPage() {
                       <div className="text-2xl font-bold text-primary">{result.score}%</div>
                     </div>
                   </div>
-                  <p className="text-sm text-muted-foreground text-pretty">{t(result.feedback)}</p>
+                  <p className="text-sm text-muted-foreground text-pretty">{result.feedback}</p>
                 </div>
               ))}
             </CardContent>
