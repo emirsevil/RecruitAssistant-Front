@@ -10,8 +10,11 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Progress } from "@/components/ui/progress"
+import { Textarea } from "@/components/ui/textarea"
 import { ChevronRight, ChevronLeft, Check } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { useWorkspace } from "@/lib/workspace-context"
+import { useLanguage } from "@/lib/language-context"
 
 const skills = [
   "Python",
@@ -39,6 +42,8 @@ const goals = [
   { id: "track", label: "Track my progress", description: "Monitor improvement over time" },
 ]
 
+const WORKSPACE_EMOJIS = ["💼", "🚀", "🎯", "📊", "🔬", "🏗️", "💡", "🎨"]
+
 export default function OnboardingPage() {
   const [step, setStep] = useState(1)
   const [formData, setFormData] = useState({
@@ -48,10 +53,16 @@ export default function OnboardingPage() {
     targetRole: "",
     selectedSkills: [] as string[],
     selectedGoals: [] as string[],
+    workspaceName: "",
+    selectedEmoji: "",
+    jobName: "",
+    jobDescription: "",
   })
   const router = useRouter()
+  const { createWorkspace } = useWorkspace()
+  const { t } = useLanguage()
 
-  const totalSteps = 4
+  const totalSteps = 5
   const progress = (step / totalSteps) * 100
 
   const toggleSkill = (skill: string) => {
@@ -73,7 +84,16 @@ export default function OnboardingPage() {
   }
 
   const handleComplete = () => {
-    // In a real app, save data to backend
+    if (step === 5) {
+      createWorkspace(
+        formData.workspaceName.trim() || "My Workspace",
+        formData.selectedEmoji || undefined,
+        {
+          jobName: formData.jobName.trim() || undefined,
+          jobDescription: formData.jobDescription.trim() || undefined,
+        }
+      )
+    }
     router.push("/dashboard")
   }
 
@@ -93,13 +113,15 @@ export default function OnboardingPage() {
                 {step === 1 && "Welcome to RecruitAssistant"}
                 {step === 2 && "Tell us about your skills"}
                 {step === 3 && "What are your goals?"}
-                {step === 4 && "You're all set!"}
+                {step === 4 && t("Your Profile")}
+                {step === 5 && t("onboardingWorkspaceTitle")}
               </CardTitle>
               <CardDescription>
                 {step === 1 && "Let's get to know you better"}
                 {step === 2 && "Select all the skills you have"}
                 {step === 3 && "Choose what you want to achieve"}
                 {step === 4 && "Review your information"}
+                {step === 5 && t("onboardingWorkspaceDesc")}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -253,6 +275,59 @@ export default function OnboardingPage() {
                 </div>
               )}
 
+              {/* Step 5: Create Workspace */}
+              {step === 5 && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="workspaceName">{t("workspaceName")}</Label>
+                    <Input
+                      id="workspaceName"
+                      placeholder={t("workspaceNamePlaceholder")}
+                      value={formData.workspaceName}
+                      onChange={(e) => setFormData({ ...formData, workspaceName: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="jobName">{t("jobName")}</Label>
+                    <Input
+                      id="jobName"
+                      placeholder={t("jobNamePlaceholder")}
+                      value={formData.jobName}
+                      onChange={(e) => setFormData({ ...formData, jobName: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="jobDescription">{t("jobDescription")}</Label>
+                    <Textarea
+                      id="jobDescription"
+                      placeholder={t("jobDescriptionPlaceholder")}
+                      value={formData.jobDescription}
+                      onChange={(e) => setFormData({ ...formData, jobDescription: e.target.value })}
+                      className="min-h-[100px] resize-none"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{t("pickEmoji")}</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {["💼", "🚀", "🎯", "📊", "🔬", "🏗️", "💡", "🎨"].map((emoji) => (
+                        <button
+                          key={emoji}
+                          type="button"
+                          onClick={() => setFormData({ ...formData, selectedEmoji: emoji })}
+                          className={`flex h-10 w-10 items-center justify-center rounded-lg border-2 text-lg transition-colors ${
+                            formData.selectedEmoji === emoji
+                              ? "border-primary bg-primary/10"
+                              : "border-border hover:border-primary/50"
+                          }`}
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Navigation Buttons */}
               <div className="mt-8 flex justify-between gap-4">
                 <Button variant="outline" onClick={() => setStep((s) => Math.max(1, s - 1))} disabled={step === 1}>
@@ -265,8 +340,8 @@ export default function OnboardingPage() {
                     <ChevronRight className="ml-2 h-4 w-4" />
                   </Button>
                 ) : (
-                  <Button onClick={handleComplete}>
-                    Go to Dashboard
+                  <Button onClick={handleComplete} disabled={step === 5 && !formData.workspaceName.trim()}>
+                    {step === 5 ? t("createAndContinue") : "Go to Dashboard"}
                     <ChevronRight className="ml-2 h-4 w-4" />
                   </Button>
                 )}

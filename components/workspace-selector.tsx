@@ -107,6 +107,20 @@ export function WorkspaceSelector() {
     setOpen(false)
   }
 
+  // No workspace yet (e.g. during onboarding) - show placeholder
+  if (!activeWorkspace) {
+    return (
+      <div className="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-muted-foreground">
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-dashed border-muted-foreground/40 text-xs">
+          ?
+        </div>
+        <span className="hidden text-sm font-medium sm:inline-block">
+          {t("createWorkspace")}
+        </span>
+      </div>
+    )
+  }
+
   return (
     <>
       <Popover open={open} onOpenChange={setOpen}>
@@ -119,19 +133,33 @@ export function WorkspaceSelector() {
               "cursor-pointer select-none"
             )}
           >
-            <div
-              className={cn(
-                "flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-sm",
-                activeWorkspace.color,
-                "text-white shadow-sm"
-              )}
-            >
-              {activeWorkspace.emoji}
-            </div>
-            <span className="hidden text-sm font-medium sm:inline-block max-w-[140px] truncate">
-              {activeWorkspace.name}
-            </span>
-            <ChevronsUpDown className="hidden h-3.5 w-3.5 shrink-0 text-muted-foreground sm:inline-block" />
+            {activeWorkspace ? (
+              <>
+                <div
+                  className={cn(
+                    "flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-sm",
+                    activeWorkspace.color,
+                    "text-white shadow-sm"
+                  )}
+                >
+                  {activeWorkspace.emoji}
+                </div>
+                <span className="hidden text-sm font-medium sm:inline-block max-w-[140px] truncate">
+                  {activeWorkspace.name}
+                </span>
+                <ChevronsUpDown className="hidden h-3.5 w-3.5 shrink-0 text-muted-foreground sm:inline-block" />
+              </>
+            ) : (
+              <>
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-dashed border-muted-foreground/50">
+                  <Plus className="h-3.5 w-3.5 text-muted-foreground" />
+                </div>
+                <span className="hidden text-sm font-medium text-muted-foreground sm:inline-block">
+                  {t("createWorkspace")}
+                </span>
+                <ChevronsUpDown className="hidden h-3.5 w-3.5 shrink-0 text-muted-foreground sm:inline-block" />
+              </>
+            )}
           </button>
         </PopoverTrigger>
 

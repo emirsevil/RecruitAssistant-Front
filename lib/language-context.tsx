@@ -41,6 +41,19 @@ const translations: Translations = {
         cancel: "Cancel",
         create: "Create",
         delete: "Delete",
+        Save: "Save",
+
+        // Onboarding - Workspace step
+        onboardingWorkspaceTitle: "Create your first workspace",
+        onboardingWorkspaceDesc: "Set up a workspace for this job application. You can create more later.",
+        workspaceName: "Workspace name",
+        jobName: "Job name",
+        jobNamePlaceholder: "e.g. Software Engineer at Google",
+        jobDescription: "Job description",
+        jobDescriptionPlaceholder: "Paste the job description or key requirements here...",
+        pickEmoji: "Pick an icon",
+        createAndContinue: "Create workspace & continue",
+        "Your Profile": "Your Profile",
 
         // Dashboard
         "Good evening": "Good evening",
@@ -340,6 +353,18 @@ const translations: Translations = {
         cancel: "İptal",
         create: "Oluştur",
         delete: "Sil",
+
+        // Onboarding - Workspace step
+        onboardingWorkspaceTitle: "İlk çalışma alanını oluştur",
+        onboardingWorkspaceDesc: "Bu iş başvurusu için bir çalışma alanı kurun. Daha sonra yeni alanlar ekleyebilirsiniz.",
+        workspaceName: "Çalışma alanı adı",
+        jobName: "İş adı / Rol",
+        jobNamePlaceholder: "ör. Google'da Yazılım Mühendisi",
+        jobDescription: "İş tanımı",
+        jobDescriptionPlaceholder: "İş tanımını veya ana gereksinimleri yapıştırın...",
+        pickEmoji: "Bir ikon seçin",
+        createAndContinue: "Çalışma alanı oluştur ve devam et",
+        "Your Profile": "Profiliniz",
 
         // Time
         "2 hours ago": "2 saat önce",

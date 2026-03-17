@@ -8,13 +8,23 @@ export interface Workspace {
   emoji: string
   color: string
   createdAt: string
+  jobName?: string
+  jobDescription?: string
+}
+
+export interface CreateWorkspaceOptions {
+  name: string
+  emoji?: string
+  jobName?: string
+  jobDescription?: string
 }
 
 interface WorkspaceContextType {
   workspaces: Workspace[]
-  activeWorkspace: Workspace
+  activeWorkspace: Workspace | null
+  isHydrated: boolean
   setActiveWorkspace: (workspace: Workspace) => void
-  createWorkspace: (name: string, emoji?: string) => Workspace
+  createWorkspace: (name: string, emoji?: string, options?: { jobName?: string; jobDescription?: string }) => Workspace
   renameWorkspace: (id: string, name: string) => void
   deleteWorkspace: (id: string) => void
   updateWorkspaceEmoji: (id: string, emoji: string) => void
@@ -48,35 +58,11 @@ function getEmojiForIndex(index: number): string {
   return DEFAULT_EMOJIS[index % DEFAULT_EMOJIS.length]
 }
 
-const defaultWorkspaces: Workspace[] = [
-  {
-    id: generateId(),
-    name: "Workspace 1",
-    emoji: "💼",
-    color: "bg-violet-500",
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: generateId(),
-    name: "Workspace 2",
-    emoji: "🚀",
-    color: "bg-blue-500",
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: generateId(),
-    name: "Workspace 3",
-    emoji: "🎯",
-    color: "bg-emerald-500",
-    createdAt: new Date().toISOString(),
-  },
-]
-
 const WorkspaceContext = createContext<WorkspaceContextType | undefined>(undefined)
 
 export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
-  const [workspaces, setWorkspaces] = useState<Workspace[]>(defaultWorkspaces)
-  const [activeWorkspace, setActiveWorkspaceState] = useState<Workspace>(defaultWorkspaces[0])
+  const [workspaces, setWorkspaces] = useState<Workspace[]>([])
+  const [activeWorkspace, setActiveWorkspaceState] = useState<Workspace | null>(null)
   const [isHydrated, setIsHydrated] = useState(false)
 
   // Hydrate from localStorage on mount
@@ -87,14 +73,20 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
 
       if (savedWorkspaces) {
         const parsed: Workspace[] = JSON.parse(savedWorkspaces)
-        if (parsed.length > 0) {
-          setWorkspaces(parsed)
-          const active = parsed.find((ws) => ws.id === savedActiveId) ?? parsed[0]
+        // Migrate old workspaces: ensure jobName/jobDescription exist
+        const migrated = parsed.map((ws) => ({
+          ...ws,
+          jobName: ws.jobName ?? undefined,
+          jobDescription: ws.jobDescription ?? undefined,
+        }))
+        if (migrated.length > 0) {
+          setWorkspaces(migrated)
+          const active = migrated.find((ws) => ws.id === savedActiveId) ?? migrated[0]
           setActiveWorkspaceState(active)
         }
       }
     } catch {
-      // If parsing fails, keep defaults
+      // If parsing fails, keep empty
     }
     setIsHydrated(true)
   }, [])
@@ -107,7 +99,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
 
   // Persist active workspace ID
   useEffect(() => {
-    if (!isHydrated) return
+    if (!isHydrated || !activeWorkspace) return
     localStorage.setItem(ACTIVE_WORKSPACE_KEY, activeWorkspace.id)
   }, [activeWorkspace, isHydrated])
 
@@ -115,13 +107,19 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     setActiveWorkspaceState(workspace)
   }, [])
 
-  const createWorkspace = useCallback((name: string, emoji?: string): Workspace => {
+  const createWorkspace = useCallback((
+    name: string,
+    emoji?: string,
+    options?: { jobName?: string; jobDescription?: string }
+  ): Workspace => {
     const newWorkspace: Workspace = {
       id: generateId(),
       name,
       emoji: emoji ?? getEmojiForIndex(workspaces.length),
       color: getColorForIndex(workspaces.length),
       createdAt: new Date().toISOString(),
+      jobName: options?.jobName,
+      jobDescription: options?.jobDescription,
     }
     setWorkspaces((prev) => [...prev, newWorkspace])
     setActiveWorkspaceState(newWorkspace)
@@ -133,7 +131,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     setWorkspaces((prev) =>
       prev.map((ws) => (ws.id === id ? { ...ws, name } : ws))
     )
-    setActiveWorkspaceState((prev) => (prev.id === id ? { ...prev, name } : prev))
+    setActiveWorkspaceState((prev) => (prev && prev.id === id ? { ...prev, name } : prev))
   }, [])
 
   const deleteWorkspace = useCallback((id: string) => {
@@ -143,10 +141,9 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       return filtered
     })
     setActiveWorkspaceState((prev) => {
-      if (prev.id === id) {
-        // Switch to another workspace
+      if (!prev || prev.id === id) {
         const remaining = workspaces.filter((ws) => ws.id !== id)
-        return remaining[0] ?? prev
+        return remaining[0] ?? null
       }
       return prev
     })
@@ -157,7 +154,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     setWorkspaces((prev) =>
       prev.map((ws) => (ws.id === id ? { ...ws, emoji } : ws))
     )
-    setActiveWorkspaceState((prev) => (prev.id === id ? { ...prev, emoji } : prev))
+    setActiveWorkspaceState((prev) => (prev && prev.id === id ? { ...prev, emoji } : prev))
   }, [])
 
   return (
@@ -165,6 +162,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       value={{
         workspaces,
         activeWorkspace,
+        isHydrated,
         setActiveWorkspace,
         createWorkspace,
         renameWorkspace,

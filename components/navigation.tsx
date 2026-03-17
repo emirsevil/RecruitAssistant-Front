@@ -200,20 +200,22 @@ function MobileNav({ onClose }: { onClose: () => void }) {
       </div>
 
       {/* Active workspace indicator */}
-      <div className="flex items-center gap-2.5 border-b border-border px-4 py-3">
-        <div
-          className={cn(
-            "flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-sm shadow-sm text-white",
-            activeWorkspace.color
-          )}
-        >
-          {activeWorkspace.emoji}
+      {activeWorkspace && (
+        <div className="flex items-center gap-2.5 border-b border-border px-4 py-3">
+          <div
+            className={cn(
+              "flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-sm shadow-sm text-white",
+              activeWorkspace.color
+            )}
+          >
+            {activeWorkspace.emoji}
+          </div>
+          <div className="flex flex-col">
+            <span className="text-sm font-medium">{activeWorkspace.name}</span>
+            <span className="text-xs text-muted-foreground">{t("currentWorkspace")}</span>
+          </div>
         </div>
-        <div className="flex flex-col">
-          <span className="text-sm font-medium">{activeWorkspace.name}</span>
-          <span className="text-xs text-muted-foreground">{t("currentWorkspace")}</span>
-        </div>
-      </div>
+      )}
 
       {/* Navigation items */}
       <nav className="flex flex-1 flex-col gap-0.5 p-3">

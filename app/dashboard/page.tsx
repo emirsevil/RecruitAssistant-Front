@@ -1,9 +1,12 @@
 "use client"
 
 import type React from "react"
+import { useEffect } from "react"
 import { format } from "date-fns"
 import { enUS, tr } from "date-fns/locale"
+import { useRouter } from "next/navigation"
 import { useSchedule } from "@/lib/schedule-context"
+import { useWorkspace } from "@/lib/workspace-context"
 
 import { PageContainer, PageHeader } from "@/components/page-container"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -15,9 +18,17 @@ import Link from "next/link"
 import { useLanguage } from "@/lib/language-context"
 
 export default function DashboardPage() {
+  const router = useRouter()
   const { events } = useSchedule()
+  const { workspaces, isHydrated } = useWorkspace()
   const { t, language } = useLanguage()
   const dateLocale = language === "tr" ? tr : enUS
+
+  useEffect(() => {
+    if (isHydrated && workspaces.length === 0) {
+      router.replace("/onboarding")
+    }
+  }, [isHydrated, workspaces.length, router])
 
   return (
     <>
