@@ -27,6 +27,7 @@ const translations: Translations = {
         help: "Help",
         welcome: "Welcome",
         language: "Language",
+        interviewHistory: "Interview History",
 
         // Dashboard
         "Good evening": "Good evening",
@@ -104,6 +105,33 @@ const translations: Translations = {
         "Question-by-Question Breakdown": "Question-by-Question Breakdown",
         "Start Another Interview": "Start Another Interview",
         "Practice Weak Topics": "Practice Weak Topics",
+
+        // Interview History
+        "Interview History": "Interview History",
+        "View your past interview sessions and results": "View your past interview sessions and results",
+        "No interviews yet": "No interviews yet",
+        "Start your first mock interview to see your history here.": "Start your first mock interview to see your history here.",
+        "Go to Mock Interview": "Go to Mock Interview",
+        "Text": "Text",
+        "Voice": "Voice",
+        "HR": "HR",
+        "In Progress": "In Progress",
+        "Cancelled": "Cancelled",
+        "N/A": "N/A",
+        "View Details": "View Details",
+        "Back to History": "Back to History",
+        "Interview Details": "Interview Details",
+        "Questions & Answers": "Questions & Answers",
+        "Your Answer": "Your Answer",
+        "AI Feedback": "AI Feedback",
+        "No answer provided": "No answer provided",
+        "Conversation Transcript": "Conversation Transcript",
+        "Full conversation from the voice interview": "Full conversation from the voice interview",
+        "Interview Already Completed": "Interview Already Completed",
+        "This interview has already been completed and evaluated.": "This interview has already been completed and evaluated.",
+        "View Results": "View Results",
+        "Start New Interview": "Start New Interview",
+        "Retake Interview": "Retake Interview",
 
         // CV Studio
         "Build and optimize your resume with AI assistance": "Build and optimize your resume with AI assistance",
@@ -401,6 +429,7 @@ const translations: Translations = {
         help: "Yardım",
         welcome: "Hoşgeldiniz",
         language: "Dil",
+        interviewHistory: "Mülakat Geçmişi",
 
         // Time
         "2 hours ago": "2 saat önce",
@@ -493,6 +522,33 @@ const translations: Translations = {
         "Question-by-Question Breakdown": "Soru Bazlı Analiz",
         "Start Another Interview": "Başka Bir Mülakata Başla",
         "Practice Weak Topics": "Zayıf Konuları Çalış",
+
+        // Interview History
+        "Interview History": "Mülakat Geçmişi",
+        "View your past interview sessions and results": "Geçmiş mülakat oturumlarınızı ve sonuçlarınızı görüntüleyin",
+        "No interviews yet": "Henüz mülakat yok",
+        "Start your first mock interview to see your history here.": "Geçmişinizi burada görmek için ilk mülakatınızı başlatın.",
+        "Go to Mock Interview": "Mülakata Git",
+        "Text": "Metin",
+        "Voice": "Sesli",
+        "HR": "İK",
+        "In Progress": "Devam Ediyor",
+        "Cancelled": "İptal Edildi",
+        "N/A": "N/A",
+        "View Details": "Detayları Gör",
+        "Back to History": "Geçmişe Dön",
+        "Interview Details": "Mülakat Detayları",
+        "Questions & Answers": "Sorular ve Cevaplar",
+        "Your Answer": "Cevabınız",
+        "AI Feedback": "Yapay Zeka Geri Bildirimi",
+        "No answer provided": "Cevap verilmedi",
+        "Conversation Transcript": "Konuşma Dökümü",
+        "Full conversation from the voice interview": "Sesli mülakatın tam konuşma metni",
+        "Interview Already Completed": "Mülakat Zaten Tamamlandı",
+        "This interview has already been completed and evaluated.": "Bu mülakat zaten tamamlanmış ve değerlendirilmiş.",
+        "View Results": "Sonuçları Gör",
+        "Start New Interview": "Yeni Mülakat Başlat",
+        "Retake Interview": "Mülakatı Tekrarla",
 
         // CV Studio
         "Build and optimize your resume with AI assistance": "Yapay zeka desteğiyle CV'ni oluştur ve optimize et",

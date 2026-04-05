@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
+import { useSearchParams, useRouter } from "next/navigation"
 
 import { PageContainer, PageHeader } from "@/components/page-container"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
@@ -11,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { Progress } from "@/components/ui/progress"
-import { PlayCircle, Mic, MicOff, Clock, Send, ChevronRight, BarChart3, SkipForward, Phone, PhoneOff, Volume2, Loader2 } from "lucide-react"
+import { PlayCircle, Mic, MicOff, Clock, Send, ChevronRight, BarChart3, SkipForward, Phone, PhoneOff, Volume2, Loader2, CheckCircle2 } from "lucide-react"
 import Link from "next/link"
 import { useLanguage } from "@/lib/language-context"
 import { useMockInterview } from "@/hooks/use-mock-interview"
@@ -62,11 +63,35 @@ export default function MockInterviewPage() {
 
   const [workspaceId, setWorkspaceId] = useState("1")
   const [categories, setCategories] = useState("")
-  const { questions, setQuestions, isLoading, generateQuestions, saveAnswer, answers, evaluation, isEvaluating, evaluateAnswers } = useMockInterview()
+  const { questions, setQuestions, isLoading, generateQuestions, saveAnswer, answers, evaluation, isEvaluating, evaluateAnswers, interviewId: textInterviewId } = useMockInterview()
   const { toast } = useToast()
+  const searchParams = useSearchParams()
+  const router = useRouter()
 
   // Voice interview hook
   const voice = useVoiceInterview()
+
+  // Back-button guard: check if returning to a completed interview
+  const [alreadyCompleted, setAlreadyCompleted] = useState(false)
+  const [completedInterviewId, setCompletedInterviewId] = useState<number | null>(null)
+
+  useEffect(() => {
+    const existingId = searchParams.get("id")
+    if (existingId) {
+      fetch(`http://localhost:8000/interviews/${existingId}`)
+        .then((res) => {
+          if (!res.ok) return null
+          return res.json()
+        })
+        .then((data) => {
+          if (data && data.status === "completed") {
+            setAlreadyCompleted(true)
+            setCompletedInterviewId(parseInt(existingId))
+          }
+        })
+        .catch(() => {})
+    }
+  }, [searchParams])
 
   // Speech-to-text for text mode (browser-native)
   const stt = useSpeechToText({
@@ -84,6 +109,14 @@ export default function MockInterviewPage() {
       conversationEndRef.current.scrollIntoView({ behavior: "smooth" })
     }
   }, [voice.conversationLog])
+
+  // Push interview ID into URL for back-button guard
+  useEffect(() => {
+    const id = voiceMode ? voice.interviewId : textInterviewId
+    if (id && state === "active") {
+      router.replace(`/mock-interview?id=${id}`, { scroll: false })
+    }
+  }, [textInterviewId, voice.interviewId, state, voiceMode, router])
 
   const startInterview = async () => {
     if (voiceMode) {
@@ -167,9 +200,11 @@ export default function MockInterviewPage() {
     if (!voiceMode) return
 
     if (voice.sessionState === "evaluating") {
+      voice.stopPlayback()  // Stop any lingering TTS audio
       setState("evaluating")
     }
     if (voice.sessionState === "done") {
+      voice.stopPlayback()  // Stop any lingering TTS audio
       setState("completed")
     }
   }, [voice.sessionState, voiceMode])
@@ -192,6 +227,47 @@ export default function MockInterviewPage() {
     : questions.length > 0
     ? ((currentQuestion + 1) / questions.length) * 100
     : 0
+
+  // ─── Already Completed Guard ────────────────────────────────────
+
+  if (alreadyCompleted) {
+    return (
+      <PageContainer>
+        <div className="mx-auto max-w-2xl flex flex-col items-center justify-center min-h-[60vh] gap-6">
+          <div className="h-16 w-16 bg-green-500/10 rounded-full flex items-center justify-center">
+            <CheckCircle2 className="h-8 w-8 text-green-500" />
+          </div>
+          <div className="text-center">
+            <h2 className="text-2xl font-bold mb-2">{t("Interview Already Completed")}</h2>
+            <p className="text-muted-foreground">{t("This interview has already been completed and evaluated.")}</p>
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            {completedInterviewId && (
+              <Link href="/interview-history">
+                <Button size="lg" className="gap-2">
+                  <BarChart3 className="h-5 w-5" />
+                  {t("View Results")}
+                </Button>
+              </Link>
+            )}
+            <Button
+              size="lg"
+              variant="outline"
+              className="gap-2"
+              onClick={() => {
+                setAlreadyCompleted(false)
+                setCompletedInterviewId(null)
+                router.replace("/mock-interview")
+              }}
+            >
+              <PlayCircle className="h-5 w-5" />
+              {t("Start New Interview")}
+            </Button>
+          </div>
+        </div>
+      </PageContainer>
+    )
+  }
 
   // ─── Setup Screen ──────────────────────────────────────────────
 

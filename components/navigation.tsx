@@ -27,12 +27,14 @@ import {
   Calendar,
   Globe,
   Check,
+  ClipboardList,
 } from "lucide-react"
 import { useLanguage } from "@/lib/language-context"
 
 const navItems = [
   { href: "/dashboard", label: "dashboard", icon: LayoutDashboard },
   { href: "/mock-interview", label: "mockInterview", icon: MessageSquare },
+  { href: "/interview-history", label: "interviewHistory", icon: ClipboardList },
   { href: "/quizzes", label: "quizzes", icon: FileQuestion },
   { href: "/cv-studio", label: "cvStudio", icon: FileText },
   { href: "/schedule", label: "schedule", icon: Calendar },

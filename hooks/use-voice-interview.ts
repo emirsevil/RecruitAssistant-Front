@@ -105,6 +105,7 @@ interface UseVoiceInterviewReturn {
   interrupt: () => void
   endSession: () => void
   disconnect: () => void
+  stopPlayback: () => void
 }
 
 export function useVoiceInterview(): UseVoiceInterviewReturn {
@@ -132,6 +133,7 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
   const playbackQueueRef = useRef<ArrayBuffer[]>([])
   const isPlayingRef = useRef(false)
   const currentSourceRef = useRef<AudioBufferSourceNode | null>(null)
+  const shouldPlayAudioRef = useRef(false)
 
   // Track state in refs for use in callbacks
   const sessionStateRef = useRef<SessionState>("idle")
@@ -156,7 +158,7 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
 
   const playNextChunk = useCallback(() => {
     const ctx = playbackContextRef.current
-    if (!ctx || playbackQueueRef.current.length === 0) {
+    if (!ctx || playbackQueueRef.current.length === 0 || !shouldPlayAudioRef.current) {
       isPlayingRef.current = false
       return
     }
@@ -184,6 +186,7 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
 
   const queueAudioChunk = useCallback(
     (data: ArrayBuffer) => {
+      if (!shouldPlayAudioRef.current) return;
       initPlaybackContext()
       playbackQueueRef.current.push(data)
 
@@ -195,6 +198,7 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
   )
 
   const stopPlayback = useCallback(() => {
+    shouldPlayAudioRef.current = false
     // Stop current audio source
     if (currentSourceRef.current) {
       try {
@@ -211,6 +215,10 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
 
   const startMicCapture = useCallback(async () => {
     try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setError("Mikrofon erişimi bu tarayıcı/bağlantıda desteklenmiyor. Lütfen localhost üzerinden erişin.")
+        return
+      }
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
@@ -253,6 +261,7 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
     (event: MessageEvent) => {
       // Binary message = TTS audio
       if (event.data instanceof ArrayBuffer || event.data instanceof Blob) {
+        if (!shouldPlayAudioRef.current) return;
         if (event.data instanceof Blob) {
           event.data.arrayBuffer().then(queueAudioChunk)
         } else {
@@ -271,10 +280,12 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
             setQuestions(data.questions || [])
             setInterviewId(data.interview_id || null)
             setCurrentQuestionIndex(0)
+            shouldPlayAudioRef.current = true
             setSessionState("ai_speaking")
             break
 
           case "ai_speaking":
+            shouldPlayAudioRef.current = true
             setSessionState("ai_speaking")
             setConversationLog((prev) => [
               ...prev,
@@ -318,6 +329,9 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
           case "error":
             setError(data.message || "Bilinmeyen hata")
             console.error("[WS] Server error:", data.message)
+            // Always reset to listening so user isn't stuck on "processing"
+            setSessionState("listening")
+            setMicActive(false)
             break
 
           default:
@@ -422,10 +436,10 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
         audioChunksRef.current = []
 
         if (audioBlob.size === 0) {
-          // If no audio recorded, just submit empty to trigger prompt
-          if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-             wsRef.current.send(JSON.stringify({ type: "submit_answer", transcript: "" }))
-          }
+          // No audio recorded — reset to listening locally, don't hit the server
+          setError("Ses algılanamadı. Lütfen mikrofonu açık tutarak konuşun.")
+          setSessionState("listening")
+          setMicActive(false)
           return
         }
 
@@ -478,6 +492,7 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
   }, [])
 
   const passQuestion = useCallback(() => {
+    stopPlayback()
     setMicActive(false)
     setSessionState("processing")
 
@@ -559,5 +574,6 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
     interrupt,
     endSession,
     disconnect,
+    stopPlayback,
   }
 }
