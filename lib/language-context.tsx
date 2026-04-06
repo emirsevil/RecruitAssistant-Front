@@ -53,6 +53,12 @@ const translations: Translations = {
         jobDescriptionPlaceholder: "Paste the job description or key requirements here...",
         pickEmoji: "Pick an icon",
         createAndContinue: "Create workspace & continue",
+        newWorkspacePageTitle: "New workspace",
+        newWorkspacePageDesc: "Add a workspace for another role or application. Same steps as your first workspace.",
+        editWorkspaceTitle: "Edit workspace",
+        editWorkspaceDesc: "Update name, job details, and icon. Changes are saved in this browser until a backend is connected.",
+        workspaceBack: "Back",
+        workspaceNotFound: "Workspace not found.",
         "Your Profile": "Your Profile",
 
         // Dashboard
@@ -364,6 +370,12 @@ const translations: Translations = {
         jobDescriptionPlaceholder: "İş tanımını veya ana gereksinimleri yapıştırın...",
         pickEmoji: "Bir ikon seçin",
         createAndContinue: "Çalışma alanı oluştur ve devam et",
+        newWorkspacePageTitle: "Yeni çalışma alanı",
+        newWorkspacePageDesc: "Başka bir rol veya başvuru için çalışma alanı ekleyin. İlk alanınızla aynı adımlar.",
+        editWorkspaceTitle: "Çalışma alanını düzenle",
+        editWorkspaceDesc: "İsim, iş bilgileri ve ikonu güncelleyin. Sunucu bağlanana kadar değişiklikler bu tarayıcıda saklanır.",
+        workspaceBack: "Geri",
+        workspaceNotFound: "Çalışma alanı bulunamadı.",
         "Your Profile": "Profiliniz",
 
         // Time

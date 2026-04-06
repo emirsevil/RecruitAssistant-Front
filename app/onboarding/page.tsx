@@ -10,8 +10,8 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Progress } from "@/components/ui/progress"
-import { Textarea } from "@/components/ui/textarea"
 import { ChevronRight, ChevronLeft, Check } from "lucide-react"
+import { WorkspaceForm } from "@/components/workspace-form"
 import { useRouter } from "next/navigation"
 import { useWorkspace } from "@/lib/workspace-context"
 import { useLanguage } from "@/lib/language-context"
@@ -41,8 +41,6 @@ const goals = [
   { id: "cv", label: "Optimize my CV", description: "Create an ATS-friendly resume" },
   { id: "track", label: "Track my progress", description: "Monitor improvement over time" },
 ]
-
-const WORKSPACE_EMOJIS = ["💼", "🚀", "🎯", "📊", "🔬", "🏗️", "💡", "🎨"]
 
 export default function OnboardingPage() {
   const [step, setStep] = useState(1)
@@ -277,55 +275,24 @@ export default function OnboardingPage() {
 
               {/* Step 5: Create Workspace */}
               {step === 5 && (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="workspaceName">{t("workspaceName")}</Label>
-                    <Input
-                      id="workspaceName"
-                      placeholder={t("workspaceNamePlaceholder")}
-                      value={formData.workspaceName}
-                      onChange={(e) => setFormData({ ...formData, workspaceName: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="jobName">{t("jobName")}</Label>
-                    <Input
-                      id="jobName"
-                      placeholder={t("jobNamePlaceholder")}
-                      value={formData.jobName}
-                      onChange={(e) => setFormData({ ...formData, jobName: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="jobDescription">{t("jobDescription")}</Label>
-                    <Textarea
-                      id="jobDescription"
-                      placeholder={t("jobDescriptionPlaceholder")}
-                      value={formData.jobDescription}
-                      onChange={(e) => setFormData({ ...formData, jobDescription: e.target.value })}
-                      className="min-h-[100px] resize-none"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>{t("pickEmoji")}</Label>
-                    <div className="flex flex-wrap gap-2">
-                      {["💼", "🚀", "🎯", "📊", "🔬", "🏗️", "💡", "🎨"].map((emoji) => (
-                        <button
-                          key={emoji}
-                          type="button"
-                          onClick={() => setFormData({ ...formData, selectedEmoji: emoji })}
-                          className={`flex h-10 w-10 items-center justify-center rounded-lg border-2 text-lg transition-colors ${
-                            formData.selectedEmoji === emoji
-                              ? "border-primary bg-primary/10"
-                              : "border-border hover:border-primary/50"
-                          }`}
-                        >
-                          {emoji}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
+                <WorkspaceForm
+                  idPrefix="onboarding"
+                  value={{
+                    workspaceName: formData.workspaceName,
+                    selectedEmoji: formData.selectedEmoji || "💼",
+                    jobName: formData.jobName,
+                    jobDescription: formData.jobDescription,
+                  }}
+                  onChange={(v) =>
+                    setFormData({
+                      ...formData,
+                      workspaceName: v.workspaceName,
+                      selectedEmoji: v.selectedEmoji,
+                      jobName: v.jobName,
+                      jobDescription: v.jobDescription,
+                    })
+                  }
+                />
               )}
 
               {/* Navigation Buttons */}

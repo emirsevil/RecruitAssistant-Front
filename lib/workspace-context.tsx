@@ -19,6 +19,10 @@ export interface CreateWorkspaceOptions {
   jobDescription?: string
 }
 
+export type WorkspaceDetailsUpdate = Partial<
+  Pick<Workspace, "name" | "emoji" | "jobName" | "jobDescription">
+>
+
 interface WorkspaceContextType {
   workspaces: Workspace[]
   activeWorkspace: Workspace | null
@@ -26,6 +30,7 @@ interface WorkspaceContextType {
   setActiveWorkspace: (workspace: Workspace) => void
   createWorkspace: (name: string, emoji?: string, options?: { jobName?: string; jobDescription?: string }) => Workspace
   renameWorkspace: (id: string, name: string) => void
+  updateWorkspace: (id: string, updates: WorkspaceDetailsUpdate) => void
   deleteWorkspace: (id: string) => void
   updateWorkspaceEmoji: (id: string, emoji: string) => void
 }
@@ -134,6 +139,16 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     setActiveWorkspaceState((prev) => (prev && prev.id === id ? { ...prev, name } : prev))
   }, [])
 
+  const updateWorkspace = useCallback((id: string, updates: WorkspaceDetailsUpdate) => {
+    setWorkspaces((prev) =>
+      prev.map((ws) => (ws.id === id ? { ...ws, ...updates } : ws))
+    )
+    setActiveWorkspaceState((prev) => {
+      if (!prev || prev.id !== id) return prev
+      return { ...prev, ...updates }
+    })
+  }, [])
+
   const deleteWorkspace = useCallback((id: string) => {
     setWorkspaces((prev) => {
       const filtered = prev.filter((ws) => ws.id !== id)
@@ -166,6 +181,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         setActiveWorkspace,
         createWorkspace,
         renameWorkspace,
+        updateWorkspace,
         deleteWorkspace,
         updateWorkspaceEmoji,
       }}
