@@ -11,9 +11,11 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Eye, EyeOff } from "lucide-react"
+import { useLanguage } from "@/lib/language-context"
 
 export default function LoginPage() {
   const router = useRouter()
+  const { t } = useLanguage()
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -39,13 +41,13 @@ export default function LoginPage() {
               <span className="text-2xl font-bold">R</span>
             </div>
           </div>
-          <CardTitle className="text-2xl text-center">Welcome back</CardTitle>
-          <CardDescription className="text-center">Sign in to your RecruitAssistant account</CardDescription>
+          <CardTitle className="text-2xl text-center">{t("Welcome back")}</CardTitle>
+          <CardDescription className="text-center">{t("Sign in to your RecruitAssistant account")}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t("Email")}</Label>
               <Input
                 id="email"
                 type="email"
@@ -57,7 +59,7 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t("Password")}</Label>
               <div className="relative">
                 <Input
                   id="password"
@@ -84,20 +86,20 @@ export default function LoginPage() {
 
             <div className="flex items-center justify-between">
               <Link href="/forgot-password" className="text-sm text-primary hover:underline">
-                Forgot password?
+                {t("Forgot password?")}
               </Link>
             </div>
 
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Signing in..." : "Sign In"}
+              {isLoading ? t("Signing in...") : t("Sign In")}
             </Button>
 
             <Separator />
 
             <div className="text-center text-sm text-muted-foreground">
-              Don't have an account?{" "}
+              {t("Don't have an account?")}{" "}
               <Link href="/register" className="text-primary hover:underline font-medium">
-                Sign up
+                {t("Sign up")}
               </Link>
             </div>
           </form>
@@ -106,3 +108,4 @@ export default function LoginPage() {
     </div>
   )
 }
+

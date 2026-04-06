@@ -12,9 +12,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Eye, EyeOff } from "lucide-react"
+import { useLanguage } from "@/lib/language-context"
 
 export default function RegisterPage() {
   const router = useRouter()
+  const { t } = useLanguage()
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [formData, setFormData] = useState({
@@ -30,12 +32,12 @@ export default function RegisterPage() {
     e.preventDefault()
 
     if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match")
+      alert(t("Passwords do not match"))
       return
     }
 
     if (!formData.agreeToTerms) {
-      alert("Please agree to the terms and conditions")
+      alert(t("Please agree to the terms and conditions"))
       return
     }
 
@@ -61,13 +63,13 @@ export default function RegisterPage() {
               <span className="text-2xl font-bold">R</span>
             </div>
           </div>
-          <CardTitle className="text-2xl text-center">Create an account</CardTitle>
-          <CardDescription className="text-center">Start your journey with RecruitAssistant</CardDescription>
+          <CardTitle className="text-2xl text-center">{t("Create an account")}</CardTitle>
+          <CardDescription className="text-center">{t("Start your journey with RecruitAssistant")}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
+              <Label htmlFor="name">{t("Full Name")}</Label>
               <Input
                 id="name"
                 placeholder="John Doe"
@@ -78,7 +80,7 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t("Email")}</Label>
               <Input
                 id="email"
                 type="email"
@@ -90,7 +92,7 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t("Password")}</Label>
               <div className="relative">
                 <Input
                   id="password"
@@ -116,7 +118,7 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Label htmlFor="confirmPassword">{t("Confirm Password")}</Label>
               <div className="relative">
                 <Input
                   id="confirmPassword"
@@ -151,23 +153,23 @@ export default function RegisterPage() {
                 htmlFor="terms"
                 className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
-                I agree to the{" "}
+                {t("I agree to the")}{" "}
                 <Link href="/terms" className="text-primary hover:underline">
-                  terms and conditions
+                  {t("terms and conditions")}
                 </Link>
               </Label>
             </div>
 
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Creating account..." : "Create Account"}
+              {isLoading ? t("Creating account...") : t("Create Account")}
             </Button>
 
             <Separator />
 
             <div className="text-center text-sm text-muted-foreground">
-              Already have an account?{" "}
+              {t("Already have an account?")}{" "}
               <Link href="/login" className="text-primary hover:underline font-medium">
-                Sign in
+                {t("Sign in")}
               </Link>
             </div>
           </form>
@@ -176,3 +178,4 @@ export default function RegisterPage() {
     </div>
   )
 }
+

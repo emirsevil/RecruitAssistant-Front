@@ -27,12 +27,14 @@ import {
   Calendar,
   Globe,
   Check,
+  ClipboardList,
 } from "lucide-react"
 import { useLanguage } from "@/lib/language-context"
 
 const navItems = [
   { href: "/dashboard", label: "dashboard", icon: LayoutDashboard },
   { href: "/mock-interview", label: "mockInterview", icon: MessageSquare },
+  { href: "/interview-history", label: "interviewHistory", icon: ClipboardList },
   { href: "/quizzes", label: "quizzes", icon: FileQuestion },
   { href: "/cv-studio", label: "cvStudio", icon: FileText },
   { href: "/schedule", label: "schedule", icon: Calendar },
@@ -72,7 +74,7 @@ export function Navigation() {
             </Sheet>
 
             {/* Logo */}
-            <Link href="/dashboard" className="flex items-center gap-2">
+            <Link href="/" className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                 <span className="text-lg font-bold">R</span>
               </div>
@@ -135,21 +137,21 @@ export function Navigation() {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/profile" className="flex cursor-pointer">
+                <DropdownMenuItem>
+                  <Link href="/profile" className="flex w-full items-center">
                     <User className="mr-2 h-4 w-4" />
                     {t("profile")}
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/settings" className="flex cursor-pointer">
+                <DropdownMenuItem>
+                  <Link href="/settings" className="flex w-full items-center">
                     <Settings className="mr-2 h-4 w-4" />
                     {t("settings")}
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/login" className="flex cursor-pointer">
+                <DropdownMenuItem>
+                  <Link href="/login" className="flex w-full items-center">
                     <LogOut className="mr-2 h-4 w-4" />
                     {t("logout")}
                   </Link>
@@ -160,18 +162,7 @@ export function Navigation() {
         </div>
       </header>
 
-      <aside className="fixed inset-y-0 left-0 top-16 z-40 hidden w-20 flex-col border-r border-border bg-background lg:flex">
-        <nav className="flex flex-1 flex-col items-center gap-2 py-6">
-          {navItems.map((item) => (
-            <Link key={item.href} href={item.href}>
-              <Button variant="ghost" size="icon" className="h-12 w-12" title={t(item.label)}>
-                <item.icon className="h-5 w-5" />
-                <span className="sr-only">{t(item.label)}</span>
-              </Button>
-            </Link>
-          ))}
-        </nav>
-      </aside>
+
     </>
   )
 }

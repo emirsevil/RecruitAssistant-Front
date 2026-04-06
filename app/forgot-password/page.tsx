@@ -9,8 +9,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowLeft, Mail, CheckCircle2 } from "lucide-react"
+import { useLanguage } from "@/lib/language-context"
 
 export default function ForgotPasswordPage() {
+  const { t } = useLanguage()
   const [email, setEmail] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [emailSent, setEmailSent] = useState(false)
@@ -36,25 +38,25 @@ export default function ForgotPasswordPage() {
                 <CheckCircle2 className="h-6 w-6 text-primary" />
               </div>
             </div>
-            <CardTitle className="text-2xl text-center">Check your email</CardTitle>
+            <CardTitle className="text-2xl text-center">{t("Check your email")}</CardTitle>
             <CardDescription className="text-center">
-              We've sent a password reset link to <strong>{email}</strong>
+              {t("We've sent a password reset link to")} <strong>{email}</strong>
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="rounded-lg bg-muted p-4 text-sm text-muted-foreground">
-              <p>Didn't receive the email? Check your spam folder or try again.</p>
+              <p>{t("Didn't receive the email? Check your spam folder or try again.")}</p>
             </div>
 
             <div className="flex flex-col gap-2">
               <Button variant="outline" onClick={() => setEmailSent(false)} className="w-full">
-                Try another email
+                {t("Try another email")}
               </Button>
 
               <Link href="/login">
                 <Button variant="ghost" className="w-full gap-2">
                   <ArrowLeft className="h-4 w-4" />
-                  Back to login
+                  {t("Back to login")}
                 </Button>
               </Link>
             </div>
@@ -73,15 +75,15 @@ export default function ForgotPasswordPage() {
               <Mail className="h-6 w-6 text-primary" />
             </div>
           </div>
-          <CardTitle className="text-2xl text-center">Forgot password?</CardTitle>
+          <CardTitle className="text-2xl text-center">{t("Forgot password?")}</CardTitle>
           <CardDescription className="text-center">
-            Enter your email and we'll send you a link to reset your password
+            {t("Enter your email and we'll send you a link to reset your password")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t("Email")}</Label>
               <Input
                 id="email"
                 type="email"
@@ -93,13 +95,13 @@ export default function ForgotPasswordPage() {
             </div>
 
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Sending..." : "Send Reset Link"}
+              {isLoading ? t("Sending...") : t("Send Reset Link")}
             </Button>
 
             <Link href="/login">
               <Button variant="ghost" className="w-full gap-2">
                 <ArrowLeft className="h-4 w-4" />
-                Back to login
+                {t("Back to login")}
               </Button>
             </Link>
           </form>
@@ -108,3 +110,4 @@ export default function ForgotPasswordPage() {
     </div>
   )
 }
+
