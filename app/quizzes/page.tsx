@@ -34,6 +34,7 @@ export default function QuizzesPage() {
   useEffect(() => {
     fetchWorkspaceQuizzes(workspaceId)
     fetchUserScores(userId)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const categories = ["All", ...Array.from(new Set(quizGroups.map(g => g.title)))]
@@ -46,11 +47,10 @@ export default function QuizzesPage() {
   }
 
   const filteredQuizzes = quizGroups.filter((group) => {
-    const categoryMatch = selectedCategory === "All" || group.title === selectedCategory
-    // Check if any question in the group matches difficulty or just use a default
-    // For now backend gives "Balanced mix" so we filter titles mostly
-    return categoryMatch
-  })
+    const categoryMatch = selectedCategory === "All" || group.title === selectedCategory;
+    const difficultyMatch = selectedDifficulty === "All" || group.difficulty === selectedDifficulty;
+    return categoryMatch && difficultyMatch;
+  });
 
   const recommendedQuizzes = quizGroups.filter((g) => getGroupScore(g.title, g.difficulty) === null).slice(0, 3)
 
@@ -278,7 +278,7 @@ export default function QuizzesPage() {
               </p>
             )}
             {recommendedQuizzes.map((group) => (
-              <Card key={group.title} className="overflow-hidden">
+              <Card key={`rec-${group.title}-${group.difficulty}`} className="overflow-hidden">
                 <div className="h-2 bg-gradient-to-r from-primary to-accent" />
                 <CardContent className="p-6">
                   <div className="mb-3 flex justify-between items-start">
@@ -348,7 +348,7 @@ export default function QuizzesPage() {
             const completed = score !== null
 
             return (
-              <Card key={group.title} className="transition-colors hover:border-primary/50">
+              <Card key={`${group.title}-${group.difficulty}`} className="transition-colors hover:border-primary/50">
                 <CardContent className="p-6">
                   <div className="mb-4 flex items-start justify-between">
                     <Badge variant="outline">{t("Technical")}</Badge>
