@@ -10,8 +10,10 @@ import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Moon, Sun, Monitor, Bell, Lock, Palette } from "lucide-react"
+import { useLanguage } from "@/lib/language-context"
 
 export default function SettingsPage() {
+  const { t } = useLanguage()
   const [theme, setTheme] = useState("system")
   const [notifications, setNotifications] = useState(true)
   const [emailNotifications, setEmailNotifications] = useState(true)
@@ -36,7 +38,7 @@ export default function SettingsPage() {
   return (
     <>
       <PageContainer>
-        <PageHeader title="Settings" description="Manage your account settings and preferences" />
+        <PageHeader title={t("Settings")} description={t("Manage your account settings and preferences")} />
 
         <div className="space-y-6">
           {/* Appearance Settings */}
@@ -44,13 +46,13 @@ export default function SettingsPage() {
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Palette className="h-5 w-5 text-primary" />
-                <CardTitle>Appearance</CardTitle>
+                <CardTitle>{t("Appearance")}</CardTitle>
               </div>
-              <CardDescription>Customize how the app looks on your device</CardDescription>
+              <CardDescription>{t("Customize how the app looks on your device")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="theme">Theme</Label>
+                <Label htmlFor="theme">{t("Theme")}</Label>
                 <Select value={theme} onValueChange={handleThemeChange}>
                   <SelectTrigger id="theme" className="w-full sm:w-[200px]">
                     <SelectValue />
@@ -59,24 +61,24 @@ export default function SettingsPage() {
                     <SelectItem value="light">
                       <div className="flex items-center gap-2">
                         <Sun className="h-4 w-4" />
-                        Light
+                        {t("Light")}
                       </div>
                     </SelectItem>
                     <SelectItem value="dark">
                       <div className="flex items-center gap-2">
                         <Moon className="h-4 w-4" />
-                        Dark
+                        {t("Dark")}
                       </div>
                     </SelectItem>
                     <SelectItem value="system">
                       <div className="flex items-center gap-2">
                         <Monitor className="h-4 w-4" />
-                        System
+                        {t("System")}
                       </div>
                     </SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-sm text-muted-foreground">Select the theme for the dashboard</p>
+                <p className="text-sm text-muted-foreground">{t("Select the theme for the dashboard")}</p>
               </div>
             </CardContent>
           </Card>
@@ -86,15 +88,15 @@ export default function SettingsPage() {
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Bell className="h-5 w-5 text-primary" />
-                <CardTitle>Notifications</CardTitle>
+                <CardTitle>{t("Notifications")}</CardTitle>
               </div>
-              <CardDescription>Configure how you receive notifications</CardDescription>
+              <CardDescription>{t("Configure how you receive notifications")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label htmlFor="push-notifications">Push Notifications</Label>
-                  <p className="text-sm text-muted-foreground">Receive push notifications for important updates</p>
+                  <Label htmlFor="push-notifications">{t("Push Notifications")}</Label>
+                  <p className="text-sm text-muted-foreground">{t("Receive push notifications for important updates")}</p>
                 </div>
                 <Switch id="push-notifications" checked={notifications} onCheckedChange={setNotifications} />
               </div>
@@ -103,8 +105,8 @@ export default function SettingsPage() {
 
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label htmlFor="email-notifications">Email Notifications</Label>
-                  <p className="text-sm text-muted-foreground">Get notified via email for weekly progress reports</p>
+                  <Label htmlFor="email-notifications">{t("Email Notifications")}</Label>
+                  <p className="text-sm text-muted-foreground">{t("Get notified via email for weekly progress reports")}</p>
                 </div>
                 <Switch id="email-notifications" checked={emailNotifications} onCheckedChange={setEmailNotifications} />
               </div>
@@ -113,8 +115,8 @@ export default function SettingsPage() {
 
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label htmlFor="interview-reminders">Interview Reminders</Label>
-                  <p className="text-sm text-muted-foreground">Remind me to practice mock interviews</p>
+                  <Label htmlFor="interview-reminders">{t("Interview Reminders")}</Label>
+                  <p className="text-sm text-muted-foreground">{t("Remind me to practice mock interviews")}</p>
                 </div>
                 <Switch id="interview-reminders" checked={interviewReminders} onCheckedChange={setInterviewReminders} />
               </div>
@@ -126,26 +128,26 @@ export default function SettingsPage() {
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Lock className="h-5 w-5 text-primary" />
-                <CardTitle>Privacy & Security</CardTitle>
+                <CardTitle>{t("Privacy & Security")}</CardTitle>
               </div>
-              <CardDescription>Manage your privacy and security settings</CardDescription>
+              <CardDescription>{t("Manage your privacy and security settings")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <Button variant="outline" className="w-full sm:w-auto bg-transparent">
-                Change Password
+                {t("Change Password")}
               </Button>
-              <p className="text-sm text-muted-foreground">Update your password to keep your account secure</p>
+              <p className="text-sm text-muted-foreground">{t("Update your password to keep your account secure")}</p>
 
               <Separator />
 
               <div className="space-y-2">
-                <h4 className="text-sm font-medium">Data Management</h4>
+                <h4 className="text-sm font-medium">{t("Data Management")}</h4>
                 <div className="flex flex-wrap gap-2">
                   <Button variant="outline" size="sm">
-                    Download My Data
+                    {t("Download My Data")}
                   </Button>
                   <Button variant="outline" size="sm">
-                    Delete Account
+                    {t("Delete Account")}
                   </Button>
                 </div>
               </div>
@@ -154,10 +156,11 @@ export default function SettingsPage() {
 
           {/* Save Button */}
           <div className="flex justify-end">
-            <Button size="lg">Save Changes</Button>
+            <Button size="lg">{t("Save Changes")}</Button>
           </div>
         </div>
       </PageContainer>
     </>
   )
 }
+

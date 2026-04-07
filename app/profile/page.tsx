@@ -10,8 +10,10 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { User, Briefcase, Camera } from "lucide-react"
+import { useLanguage } from "@/lib/language-context"
 
 export default function ProfilePage() {
+  const { t } = useLanguage()
   const [profile, setProfile] = useState({
     name: "Deniz",
     email: "deniz@example.com",
@@ -30,14 +32,14 @@ export default function ProfilePage() {
   return (
     <>
       <PageContainer>
-        <PageHeader title="Profile" description="Manage your personal information and professional details" />
+        <PageHeader title={t("Profile")} description={t("Manage your personal information and professional details")} />
 
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Profile Picture Card */}
           <Card className="lg:col-span-1">
             <CardHeader>
-              <CardTitle>Profile Picture</CardTitle>
-              <CardDescription>Update your profile photo</CardDescription>
+              <CardTitle>{t("Profile Picture")}</CardTitle>
+              <CardDescription>{t("Update your profile photo")}</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col items-center gap-4">
               <Avatar className="h-32 w-32">
@@ -46,7 +48,7 @@ export default function ProfilePage() {
               </Avatar>
               <Button variant="outline" className="w-full gap-2 bg-transparent">
                 <Camera className="h-4 w-4" />
-                Change Photo
+                {t("Change Photo")}
               </Button>
             </CardContent>
           </Card>
@@ -56,18 +58,18 @@ export default function ProfilePage() {
             <CardHeader>
               <div className="flex items-center gap-2">
                 <User className="h-5 w-5 text-primary" />
-                <CardTitle>Basic Information</CardTitle>
+                <CardTitle>{t("Basic Information")}</CardTitle>
               </div>
-              <CardDescription>Update your personal details</CardDescription>
+              <CardDescription>{t("Update your personal details")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
+                  <Label htmlFor="name">{t("Full Name")}</Label>
                   <Input id="name" value={profile.name} onChange={(e) => handleChange("name", e.target.value)} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
+                  <Label htmlFor="email">{t("Email Address")}</Label>
                   <Input
                     id="email"
                     type="email"
@@ -79,7 +81,7 @@ export default function ProfilePage() {
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
+                  <Label htmlFor="phone">{t("Phone Number")}</Label>
                   <Input
                     id="phone"
                     type="tel"
@@ -88,24 +90,24 @@ export default function ProfilePage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="title">Professional Title</Label>
+                  <Label htmlFor="title">{t("Professional Title")}</Label>
                   <Input id="title" value={profile.title} onChange={(e) => handleChange("title", e.target.value)} />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="address">Address</Label>
+                <Label htmlFor="address">{t("Address")}</Label>
                 <Input id="address" value={profile.address} onChange={(e) => handleChange("address", e.target.value)} />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="bio">Bio</Label>
+                <Label htmlFor="bio">{t("Bio")}</Label>
                 <Textarea
                   id="bio"
                   rows={3}
                   value={profile.bio}
                   onChange={(e) => handleChange("bio", e.target.value)}
-                  placeholder="Tell us about yourself..."
+                  placeholder={t("Tell us about yourself...")}
                 />
               </div>
             </CardContent>
@@ -116,13 +118,13 @@ export default function ProfilePage() {
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Briefcase className="h-5 w-5 text-primary" />
-                <CardTitle>Professional Details</CardTitle>
+                <CardTitle>{t("Professional Details")}</CardTitle>
               </div>
-              <CardDescription>Your education and skills</CardDescription>
+              <CardDescription>{t("Your education and skills")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="education">Education</Label>
+                <Label htmlFor="education">{t("Education")}</Label>
                 <Input
                   id="education"
                   value={profile.education}
@@ -132,7 +134,7 @@ export default function ProfilePage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="skills">Skills</Label>
+                <Label htmlFor="skills">{t("Skills")}</Label>
                 <Textarea
                   id="skills"
                   rows={2}
@@ -147,12 +149,13 @@ export default function ProfilePage() {
           {/* Save Button */}
           <div className="lg:col-span-3 flex justify-end gap-3">
             <Button variant="outline" size="lg">
-              Cancel
+              {t("Cancel")}
             </Button>
-            <Button size="lg">Save Changes</Button>
+            <Button size="lg">{t("Save Changes")}</Button>
           </div>
         </div>
       </PageContainer>
     </>
   )
 }
+
