@@ -128,6 +128,16 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground m-0 min-h-screen;
+  }
+}
+
+/* Centers the 80rem content column on wide viewports (margin:auto alone can fail with some parent chains). */
+@layer components {
+  .page-shell {
+    box-sizing: border-box;
+    width: 100%;
+    padding-left: max(1rem, calc((100vw - 80rem) / 2));
+    padding-right: max(1rem, calc((100vw - 80rem) / 2));
   }
 }

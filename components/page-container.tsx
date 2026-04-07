@@ -8,8 +8,8 @@ interface PageContainerProps {
 
 export function PageContainer({ children, className }: PageContainerProps) {
   return (
-    <div className={cn("lg:pl-24", className)}>
-      <div className="container max-w-7xl px-4 py-6 md:px-6 md:py-8 lg:px-8">{children}</div>
+    <div className={cn("page-shell w-full min-w-0 py-6 md:py-8", className)}>
+      {children}
     </div>
   )
 }
