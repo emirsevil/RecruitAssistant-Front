@@ -36,6 +36,9 @@ const translations: Translations = {
         renameWorkspaceDesc: "Enter a new name for this workspace.",
         deleteWorkspace: "Delete Workspace",
         deleteWorkspaceDesc: "This action cannot be undone. Are you sure you want to delete",
+        /** Use {{name}} placeholder; replaces deleteWorkspaceDesc + name + ? in UI */
+        deleteWorkspaceMessage:
+            'This action cannot be undone. Are you sure you want to delete "{{name}}"?',
         workspaceNamePlaceholder: "e.g. Frontend Role, Google Prep...",
         currentWorkspace: "Current workspace",
         cancel: "Cancel",
@@ -47,7 +50,7 @@ const translations: Translations = {
         onboardingWorkspaceTitle: "Create your first workspace",
         onboardingWorkspaceDesc: "Set up a workspace for this job application. You can create more later.",
         workspaceName: "Workspace name",
-        jobName: "Job name",
+        jobName: "Job title / role",
         jobNamePlaceholder: "e.g. Software Engineer at Google",
         jobDescription: "Job description",
         jobDescriptionPlaceholder: "Paste the job description or key requirements here...",
@@ -59,6 +62,10 @@ const translations: Translations = {
         editWorkspaceDesc: "Update name, job details, and icon. Changes are saved in this browser until a backend is connected.",
         workspaceBack: "Back",
         workspaceNotFound: "Workspace not found.",
+        defaultWorkspaceName: "My workspace",
+        loading: "Loading…",
+        goToDashboard: "Go to Dashboard",
+        onboardingStepProgress: "Step {{step}} of {{total}}",
         "Your Profile": "Your Profile",
 
         // Dashboard
@@ -354,6 +361,8 @@ const translations: Translations = {
         renameWorkspaceDesc: "Bu çalışma alanı için yeni bir isim girin.",
         deleteWorkspace: "Çalışma Alanını Sil",
         deleteWorkspaceDesc: "Bu işlem geri alınamaz. Silmek istediğinize emin misiniz:",
+        deleteWorkspaceMessage:
+            'Bu işlem geri alınamaz. "{{name}}" çalışma alanını silmek istediğinize emin misiniz?',
         workspaceNamePlaceholder: "ör. Frontend Pozisyonu, Google Hazırlık...",
         currentWorkspace: "Aktif çalışma alanı",
         cancel: "İptal",
@@ -376,6 +385,10 @@ const translations: Translations = {
         editWorkspaceDesc: "İsim, iş bilgileri ve ikonu güncelleyin. Sunucu bağlanana kadar değişiklikler bu tarayıcıda saklanır.",
         workspaceBack: "Geri",
         workspaceNotFound: "Çalışma alanı bulunamadı.",
+        defaultWorkspaceName: "Çalışma alanım",
+        loading: "Yükleniyor…",
+        goToDashboard: "Panele git",
+        onboardingStepProgress: "Adım {{step}} / {{total}}",
         "Your Profile": "Profiliniz",
 
         // Time

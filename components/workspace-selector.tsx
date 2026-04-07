@@ -149,6 +149,7 @@ export function WorkspaceSelector() {
                     <button
                       type="button"
                       onClick={(e) => openDeleteDialog(e, workspace)}
+                      aria-label={t("deleteWorkspace")}
                       className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
                     >
                       <Trash2 className="h-3 w-3" />
@@ -183,7 +184,10 @@ export function WorkspaceSelector() {
           <DialogHeader>
             <DialogTitle>{t("deleteWorkspace")}</DialogTitle>
             <DialogDescription>
-              {t("deleteWorkspaceDesc")} <strong>{editingWorkspace?.name}</strong>?
+              {t("deleteWorkspaceMessage").replace(
+                "{{name}}",
+                editingWorkspace?.name ?? ""
+              )}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

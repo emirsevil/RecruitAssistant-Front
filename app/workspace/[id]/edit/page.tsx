@@ -58,7 +58,7 @@ export default function EditWorkspacePage() {
   if (!isHydrated) {
     return (
       <PageContainer>
-        <div className="py-12 text-center text-muted-foreground text-sm">…</div>
+        <div className="py-12 text-center text-muted-foreground text-sm">{t("loading")}</div>
       </PageContainer>
     )
   }

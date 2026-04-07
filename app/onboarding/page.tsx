@@ -84,7 +84,7 @@ export default function OnboardingPage() {
   const handleComplete = () => {
     if (step === 5) {
       createWorkspace(
-        formData.workspaceName.trim() || "My Workspace",
+        formData.workspaceName.trim() || t("defaultWorkspaceName"),
         formData.selectedEmoji || undefined,
         {
           jobName: formData.jobName.trim() || undefined,
@@ -104,7 +104,9 @@ export default function OnboardingPage() {
               <div className="mb-4">
                 <Progress value={progress} className="h-2" />
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Step {step} of {totalSteps}
+                  {t("onboardingStepProgress")
+                    .replace("{{step}}", String(step))
+                    .replace("{{total}}", String(totalSteps))}
                 </p>
               </div>
               <CardTitle className="text-2xl">
@@ -299,16 +301,16 @@ export default function OnboardingPage() {
               <div className="mt-8 flex justify-between gap-4">
                 <Button variant="outline" onClick={() => setStep((s) => Math.max(1, s - 1))} disabled={step === 1}>
                   <ChevronLeft className="mr-2 h-4 w-4" />
-                  Back
+                  {t("workspaceBack")}
                 </Button>
                 {step < totalSteps ? (
                   <Button onClick={() => setStep((s) => Math.min(totalSteps, s + 1))}>
-                    Next
+                    {t("Next")}
                     <ChevronRight className="ml-2 h-4 w-4" />
                   </Button>
                 ) : (
                   <Button onClick={handleComplete} disabled={step === 5 && !formData.workspaceName.trim()}>
-                    {step === 5 ? t("createAndContinue") : "Go to Dashboard"}
+                    {step === 5 ? t("createAndContinue") : t("goToDashboard")}
                     <ChevronRight className="ml-2 h-4 w-4" />
                   </Button>
                 )}
