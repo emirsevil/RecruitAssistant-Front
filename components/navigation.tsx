@@ -30,6 +30,9 @@ import {
   ClipboardList,
 } from "lucide-react"
 import { useLanguage } from "@/lib/language-context"
+import { WorkspaceSelector } from "@/components/workspace-selector"
+import { useWorkspace } from "@/lib/workspace-context"
+import { cn } from "@/lib/utils"
 
 const navItems = [
   { href: "/dashboard", label: "dashboard", icon: LayoutDashboard },
@@ -58,13 +61,13 @@ export function Navigation() {
     <>
       {/* Desktop/Mobile Top Navigation */}
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex h-16 items-center justify-between px-4 md:px-6">
-          <div className="flex items-center gap-6">
+        <div className="page-shell flex h-14 items-center justify-between">
+          <div className="flex items-center gap-3">
             {/* Mobile menu button */}
             <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
               <SheetTrigger asChild className="lg:hidden">
-                <Button variant="ghost" size="icon">
-                  <Menu className="h-5 w-5" />
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <Menu className="h-4 w-4" />
                   <span className="sr-only">Toggle menu</span>
                 </Button>
               </SheetTrigger>
@@ -74,32 +77,50 @@ export function Navigation() {
             </Sheet>
 
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <span className="text-lg font-bold">R</span>
+            <Link href="/dashboard" className="flex items-center gap-2">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                <span className="text-sm font-bold">R</span>
               </div>
-              <span className="hidden text-lg font-semibold sm:inline-block">RecruitAssistant</span>
+              <span className="hidden text-sm font-semibold sm:inline-block">RecruitAssistant</span>
             </Link>
 
+            {/* Separator */}
+            <div className="hidden h-5 w-px bg-border sm:block" />
+
+            {/* Workspace Selector */}
+            <WorkspaceSelector />
+
             {/* Desktop Navigation - hidden on mobile, shown on lg+ */}
-            <nav className="hidden lg:flex lg:gap-1">
-              {navItems.map((item) => (
-                <Link key={item.href} href={item.href}>
-                  <Button variant="ghost" className="gap-2">
-                    <item.icon className="h-4 w-4" />
-                    {t(item.label)}
-                  </Button>
-                </Link>
-              ))}
+            <nav className="hidden lg:flex lg:gap-0.5">
+              {navItems.map((item) => {
+                const isActive = pathname === item.href
+                return (
+                  <Link key={item.href} href={item.href}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={cn(
+                        "gap-1.5 h-8 px-2.5 text-xs font-medium",
+                        isActive
+                          ? "bg-accent text-accent-foreground"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      <item.icon className="h-3.5 w-3.5" />
+                      {t(item.label)}
+                    </Button>
+                  </Link>
+                )
+              })}
             </nav>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             {/* Language Selector */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-9 w-9">
-                  <Globe className="h-4 w-4" />
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <Globe className="h-3.5 w-3.5" />
                   <span className="sr-only">Switch language</span>
                 </Button>
               </DropdownMenuTrigger>
@@ -122,10 +143,10 @@ export function Navigation() {
             {/* User menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-9 w-9 rounded-full">
-                  <Avatar className="h-9 w-9">
+                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                  <Avatar className="h-7 w-7">
                     <AvatarImage src="/diverse-user-avatars.png" alt="User" />
-                    <AvatarFallback>DN</AvatarFallback>
+                    <AvatarFallback className="text-xs">DN</AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
@@ -161,32 +182,64 @@ export function Navigation() {
           </div>
         </div>
       </header>
-
-
     </>
   )
 }
 
 function MobileNav({ onClose }: { onClose: () => void }) {
   const { t } = useLanguage()
+  const { activeWorkspace } = useWorkspace()
+  const pathname = usePathname()
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex h-16 items-center gap-2 border-b border-border px-6">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-          <span className="text-lg font-bold">R</span>
+      {/* Mobile header with workspace info */}
+      <div className="flex h-14 items-center gap-2.5 border-b border-border px-4">
+        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+          <span className="text-sm font-bold">R</span>
         </div>
-        <span className="text-lg font-semibold">RecruitAssistant</span>
+        <span className="text-sm font-semibold">RecruitAssistant</span>
       </div>
-      <nav className="flex flex-1 flex-col gap-1 p-4">
-        {navItems.map((item) => (
-          <Link key={item.href} href={item.href} onClick={onClose}>
-            <Button variant="ghost" className="w-full justify-start gap-3">
-              <item.icon className="h-5 w-5" />
-              {t(item.label)}
-            </Button>
-          </Link>
-        ))}
+
+      {/* Active workspace indicator */}
+      {activeWorkspace && (
+        <div className="flex items-center gap-2.5 border-b border-border px-4 py-3">
+          <div
+            className={cn(
+              "flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-sm shadow-sm text-white",
+              activeWorkspace.color
+            )}
+          >
+            {activeWorkspace.emoji}
+          </div>
+          <div className="flex flex-col">
+            <span className="text-sm font-medium">{activeWorkspace.name}</span>
+            <span className="text-xs text-muted-foreground">{t("currentWorkspace")}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Navigation items */}
+      <nav className="flex flex-1 flex-col gap-0.5 p-3">
+        {navItems.map((item) => {
+          const isActive = pathname === item.href
+          return (
+            <Link key={item.href} href={item.href} onClick={onClose}>
+              <Button
+                variant="ghost"
+                className={cn(
+                  "w-full justify-start gap-3 h-9",
+                  isActive
+                    ? "bg-accent text-accent-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <item.icon className="h-4 w-4" />
+                {t(item.label)}
+              </Button>
+            </Link>
+          )
+        })}
       </nav>
     </div>
   )

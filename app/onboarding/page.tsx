@@ -11,7 +11,10 @@ import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Progress } from "@/components/ui/progress"
 import { ChevronRight, ChevronLeft, Check } from "lucide-react"
+import { WorkspaceForm } from "@/components/workspace-form"
 import { useRouter } from "next/navigation"
+import { useWorkspace } from "@/lib/workspace-context"
+import { useLanguage } from "@/lib/language-context"
 
 const skills = [
   "Python",
@@ -48,10 +51,16 @@ export default function OnboardingPage() {
     targetRole: "",
     selectedSkills: [] as string[],
     selectedGoals: [] as string[],
+    workspaceName: "",
+    selectedEmoji: "",
+    jobName: "",
+    jobDescription: "",
   })
   const router = useRouter()
+  const { createWorkspace } = useWorkspace()
+  const { t } = useLanguage()
 
-  const totalSteps = 4
+  const totalSteps = 5
   const progress = (step / totalSteps) * 100
 
   const toggleSkill = (skill: string) => {
@@ -73,7 +82,16 @@ export default function OnboardingPage() {
   }
 
   const handleComplete = () => {
-    // In a real app, save data to backend
+    if (step === 5) {
+      createWorkspace(
+        formData.workspaceName.trim() || t("defaultWorkspaceName"),
+        formData.selectedEmoji || undefined,
+        {
+          jobName: formData.jobName.trim() || undefined,
+          jobDescription: formData.jobDescription.trim() || undefined,
+        }
+      )
+    }
     router.push("/dashboard")
   }
 
@@ -86,20 +104,24 @@ export default function OnboardingPage() {
               <div className="mb-4">
                 <Progress value={progress} className="h-2" />
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Step {step} of {totalSteps}
+                  {t("onboardingStepProgress")
+                    .replace("{{step}}", String(step))
+                    .replace("{{total}}", String(totalSteps))}
                 </p>
               </div>
               <CardTitle className="text-2xl">
                 {step === 1 && "Welcome to RecruitAssistant"}
                 {step === 2 && "Tell us about your skills"}
                 {step === 3 && "What are your goals?"}
-                {step === 4 && "You're all set!"}
+                {step === 4 && t("Your Profile")}
+                {step === 5 && t("onboardingWorkspaceTitle")}
               </CardTitle>
               <CardDescription>
                 {step === 1 && "Let's get to know you better"}
                 {step === 2 && "Select all the skills you have"}
                 {step === 3 && "Choose what you want to achieve"}
                 {step === 4 && "Review your information"}
+                {step === 5 && t("onboardingWorkspaceDesc")}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -253,20 +275,42 @@ export default function OnboardingPage() {
                 </div>
               )}
 
+              {/* Step 5: Create Workspace */}
+              {step === 5 && (
+                <WorkspaceForm
+                  idPrefix="onboarding"
+                  value={{
+                    workspaceName: formData.workspaceName,
+                    selectedEmoji: formData.selectedEmoji || "💼",
+                    jobName: formData.jobName,
+                    jobDescription: formData.jobDescription,
+                  }}
+                  onChange={(v) =>
+                    setFormData({
+                      ...formData,
+                      workspaceName: v.workspaceName,
+                      selectedEmoji: v.selectedEmoji,
+                      jobName: v.jobName,
+                      jobDescription: v.jobDescription,
+                    })
+                  }
+                />
+              )}
+
               {/* Navigation Buttons */}
               <div className="mt-8 flex justify-between gap-4">
                 <Button variant="outline" onClick={() => setStep((s) => Math.max(1, s - 1))} disabled={step === 1}>
                   <ChevronLeft className="mr-2 h-4 w-4" />
-                  Back
+                  {t("workspaceBack")}
                 </Button>
                 {step < totalSteps ? (
                   <Button onClick={() => setStep((s) => Math.min(totalSteps, s + 1))}>
-                    Next
+                    {t("Next")}
                     <ChevronRight className="ml-2 h-4 w-4" />
                   </Button>
                 ) : (
-                  <Button onClick={handleComplete}>
-                    Go to Dashboard
+                  <Button onClick={handleComplete} disabled={step === 5 && !formData.workspaceName.trim()}>
+                    {step === 5 ? t("createAndContinue") : t("goToDashboard")}
                     <ChevronRight className="ml-2 h-4 w-4" />
                   </Button>
                 )}

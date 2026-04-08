@@ -1,0 +1,129 @@
+import { useState } from "react"
+
+export interface QuizQuestion {
+  id: number
+  workspace_id: number | null
+  title: string | null
+  difficulty: string | null
+  question: string
+  options: string[]
+  created_at: string
+}
+
+export interface QuizGroup {
+  title: string
+  difficulty: string
+  questions: QuizQuestion[]
+}
+
+export interface AnswerItem {
+  quiz_id: number
+  selected_answer: string
+}
+
+export interface QuestionResult {
+  quiz_id: number
+  question: string
+  selected_answer: string
+  correct_answer: string
+  is_correct: boolean
+}
+
+export interface QuizSubmitResponse {
+  quiz_title: string
+  score: number
+  correct_count: number
+  total_questions: number
+  results: QuestionResult[]
+  score_id: number
+}
+
+export interface QuizScore {
+  id: number
+  user_id: number
+  workspace_id: number
+  quiz_title: string
+  difficulty: string
+  score: number
+  total_questions: number
+  correct_answers: number
+  completed_at: string
+}
+
+export interface QuizSubmitRequest {
+  user_id: number
+  workspace_id: number
+  quiz_title: string
+  difficulty: string
+  answers: AnswerItem[]
+}
+
+export function useQuizzes() {
+  const [quizGroups, setQuizGroups] = useState<QuizGroup[]>([])
+  const [userScores, setUserScores] = useState<QuizScore[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [submitResult, setSubmitResult] = useState<QuizSubmitResponse | null>(null)
+
+  const fetchWorkspaceQuizzes = async (workspaceId: string | number) => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const res = await fetch(`http://localhost:8000/workspaces/${workspaceId}/quizzes`)
+      if (!res.ok) throw new Error("Failed to fetch quizzes")
+      const data = await res.json()
+      setQuizGroups(data)
+      return data
+    } catch (e: any) {
+      setError(e.message)
+      return []
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const fetchUserScores = async (userId: string | number) => {
+    try {
+      const res = await fetch(`http://localhost:8000/quizzes/scores/user/${userId}`)
+      if (!res.ok) throw new Error("Failed to fetch scores")
+      const data = await res.json()
+      setUserScores(data)
+      return data
+    } catch (e: any) {
+      console.error(e)
+      return []
+    }
+  }
+
+  const submitQuiz = async (submission: QuizSubmitRequest) => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const res = await fetch("http://localhost:8000/quizzes/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(submission),
+      })
+      if (!res.ok) throw new Error("Failed to submit quiz")
+      const data = await res.json()
+      setSubmitResult(data)
+      return data
+    } catch (e: any) {
+      setError(e.message)
+      return null
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  return {
+    quizGroups,
+    userScores,
+    isLoading,
+    error,
+    submitResult,
+    fetchWorkspaceQuizzes,
+    fetchUserScores,
+    submitQuiz,
+  }
+}

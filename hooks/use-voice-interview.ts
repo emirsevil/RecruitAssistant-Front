@@ -91,6 +91,8 @@ interface UseVoiceInterviewReturn {
   interviewId: number | null
   evaluation: FullEvaluation | null
   error: string | null
+  pendingTranscript: string
+  isTranscribing: boolean
 
   // Actions
   startSession: (config: {
@@ -101,6 +103,8 @@ interface UseVoiceInterviewReturn {
   }) => void
   toggleMic: () => void
   submitAnswer: () => void
+  transcribeRecording: () => Promise<string>
+  submitTextAnswer: (text: string) => void
   passQuestion: () => void
   interrupt: () => void
   endSession: () => void
@@ -120,6 +124,8 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
   const [evaluation, setEvaluation] = useState<FullEvaluation | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [micActive, setMicActive] = useState(false)
+  const [pendingTranscript, setPendingTranscript] = useState("")
+  const [isTranscribing, setIsTranscribing] = useState(false)
 
   // ─── Refs ───────────────────────────────────────────────────────
 
@@ -426,6 +432,87 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
     })
   }, [])
 
+  const transcribeRecording = useCallback(async (): Promise<string> => {
+    setMicActive(false)
+    setIsTranscribing(true)
+
+    return new Promise<string>((resolve) => {
+      const processAudio = async () => {
+        try {
+          const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" })
+          audioChunksRef.current = []
+
+          if (audioBlob.size === 0) {
+            setError("Ses algılanamadı. Lütfen mikrofonu açık tutarak konuşun.")
+            setIsTranscribing(false)
+            resolve("")
+            return
+          }
+
+          const formData = new FormData()
+          formData.append("file", audioBlob, "recording.webm")
+
+          const response = await fetch("http://localhost:8000/voice-interview/transcribe", {
+            method: "POST",
+            body: formData,
+          })
+
+          if (!response.ok) {
+            throw new Error("Transcribe failed")
+          }
+
+          const data = await response.json()
+          const transcriptText = data.transcript || ""
+
+          setPendingTranscript(transcriptText)
+          setIsTranscribing(false)
+          resolve(transcriptText)
+        } catch (err) {
+          console.error("Failed to transcribe:", err)
+          setError("Ses yüklenirken / işlenirken hata oluştu.")
+          setIsTranscribing(false)
+          resolve("")
+        }
+      }
+
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+        mediaRecorderRef.current.onstop = () => {
+          processAudio()
+          if (mediaRecorderRef.current) mediaRecorderRef.current.onstop = null
+        }
+        mediaRecorderRef.current.stop()
+      } else {
+        processAudio()
+      }
+    })
+  }, [])
+
+  const submitTextAnswer = useCallback((text: string) => {
+    const trimmed = text.trim()
+    if (!trimmed) {
+      setError("Lütfen bir cevap yazın veya mikrofonu kullanarak konuşun.")
+      return
+    }
+
+    setSessionState("processing")
+    setPendingTranscript("")
+
+    // Append to local conversation log
+    setConversationLog((log) => [
+      ...log,
+      {
+        role: "candidate",
+        text: trimmed,
+        timestamp: Date.now(),
+      },
+    ])
+
+    // Send via WebSocket
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: "submit_answer", transcript: trimmed }))
+    }
+  }, [])
+
   const submitAnswer = useCallback(() => {
     setMicActive(false)
     setSessionState("processing")
@@ -436,7 +523,6 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
         audioChunksRef.current = []
 
         if (audioBlob.size === 0) {
-          // No audio recorded — reset to listening locally, don't hit the server
           setError("Ses algılanamadı. Lütfen mikrofonu açık tutarak konuşun.")
           setSessionState("listening")
           setMicActive(false)
@@ -479,10 +565,8 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
     }
 
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
-      // Must listen for 'stop' before processing the chunks
       mediaRecorderRef.current.onstop = () => {
         processAudioAndSubmit()
-        // clean up the one-off listener
         if (mediaRecorderRef.current) mediaRecorderRef.current.onstop = null
       }
       mediaRecorderRef.current.stop()
@@ -567,9 +651,13 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
     interviewId,
     evaluation,
     error,
+    pendingTranscript,
+    isTranscribing,
     startSession,
     toggleMic,
     submitAnswer,
+    transcribeRecording,
+    submitTextAnswer,
     passQuestion,
     interrupt,
     endSession,
