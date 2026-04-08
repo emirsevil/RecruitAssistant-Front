@@ -13,7 +13,11 @@ import { Separator } from "@/components/ui/separator"
 import { Download, Sparkles, RotateCcw, Save, Plus, Trash2, AlertCircle, Loader2, FileText, Eye } from "lucide-react"
 import { useLanguage } from "@/lib/language-context"
 
+import Editor from "@monaco-editor/react"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function CVStudioPage() {
   const { t } = useLanguage()
@@ -90,11 +94,18 @@ export default function CVStudioPage() {
 
   // New state for AI generation
   const [isGenerating, setIsGenerating] = useState(false)
+  const [isGeneratingCoverLetter, setIsGeneratingCoverLetter] = useState(false)
   const [generatedLatex, setGeneratedLatex] = useState("")
-  const [generatedHtml, setGeneratedHtml] = useState("")
+  const [generatedPdfBase64, setGeneratedPdfBase64] = useState<string | null>(null)
+  
+  const [generatedCoverLetterLatex, setGeneratedCoverLetterLatex] = useState("")
+  const [generatedCoverLetterPdfBase64, setGeneratedCoverLetterPdfBase64] = useState<string | null>(null)
+  
   const [showLatex, setShowLatex] = useState(false)
   const [generationError, setGenerationError] = useState("")
   const [isGenerated, setIsGenerated] = useState(false)
+  const [isCoverLetterGenerated, setIsCoverLetterGenerated] = useState(false)
+  const [isCompiling, setIsCompiling] = useState(false)
 
   const addExperience = () => {
     setCvData({
@@ -193,71 +204,204 @@ export default function CVStudioPage() {
     setCvData({ ...cvData, education: newEducation })
   }
 
+  const formatCandidateProfile = () => {
+    return {
+      full_name: cvData.name,
+      email: cvData.email,
+      phone: cvData.phone || null,
+      location: cvData.location || null,
+      summary: cvData.summary || null,
+      skills: cvData.skills,
+      experience: cvData.experience.map((e) => ({
+        company: e.company,
+        title: e.role,
+        start_date: e.startDate,
+        end_date: e.endDate || null,
+        bullets: e.bullets,
+      })),
+      education: cvData.education.map((e) => ({
+        institution: e.school,
+        degree: e.degree,
+        start_date: e.startDate || null,
+        end_date: e.endDate || null,
+        gpa: e.gpa || null,
+        highlights: [],
+      })),
+      projects: cvData.projects.map((p) => ({
+        name: p.title,
+        description: p.description,
+        technologies: p.techStack.split(",").map((s) => s.trim()).filter(Boolean),
+      })),
+      certifications: [],
+      languages: [language],
+    };
+  }
+
+  const compileLatexLocally = async (latexContent: string, isCoverLetter: boolean) => {
+    setIsCompiling(true)
+    try {
+      const response = await fetch("http://localhost:8000/api/compile-latex", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ latex_content: latexContent }),
+      })
+      
+      const data = await response.json()
+      if (!response.ok) {
+          throw new Error(data.error || "Compilation failed on backend")
+      }
+      
+      if (isCoverLetter) {
+        setGeneratedCoverLetterPdfBase64(data.pdf_base64)
+      } else {
+        setGeneratedPdfBase64(data.pdf_base64)
+      }
+    } catch(error: any) {
+      console.error("Compile Error:", error.message)
+      if (isCoverLetter) {
+        setGeneratedCoverLetterPdfBase64(null)
+      } else {
+        setGeneratedPdfBase64(null)
+      }
+    } finally {
+      setIsCompiling(false)
+    }
+  }
+
   // Generate CV using AI
   const generateCV = async () => {
     setIsGenerating(true)
+    setIsGenerated(true) // Set immediately for streaming
     setGenerationError("")
+    setGeneratedPdfBase64(null)
+    setGeneratedLatex("")
 
     try {
-      const response = await fetch("/api/generate-cv", {
+      const response = await fetch("http://localhost:8000/api/generate-cv", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ ...cvData, language: language }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          candidate_profile: formatCandidateProfile(),
+          job_description: cvData.targetJob
+        }),
       })
 
-      const data = await response.json()
-
       if (!response.ok) {
-        throw new Error(data.error || "Failed to generate CV")
+        const data = await response.json()
+        throw new Error(data.error || t("Failed to generate CV"))
       }
 
-      setGeneratedLatex(data.latex)
-      setGeneratedHtml(data.html)
-      setIsGenerated(true)
-      setAtsScore(Math.floor(Math.random() * 15) + 85) // Simulated improvement
-      setRoleMatch(Math.floor(Math.random() * 10) + 90) // Simulated improvement
+      if (!response.body) throw new Error("ReadableStream not supported")
+      
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let currentLatex = ""
+
+      while (true) {
+        const { value, done } = await reader.read()
+        if (done) break
+        const chunk = decoder.decode(value, { stream: true })
+        currentLatex += chunk
+        setGeneratedLatex(currentLatex)
+      }
+      
+      setAtsScore(Math.floor(Math.random() * 15) + 85)
+      setRoleMatch(Math.floor(Math.random() * 10) + 90)
+
+      await compileLatexLocally(currentLatex, false)
     } catch (error: any) {
-      setGenerationError(error.message || "An error occurred while generating the CV")
+      setGenerationError(error.message || t("An error occurred while generating the CV"))
+      setIsGenerated(false)
     } finally {
       setIsGenerating(false)
     }
   }
 
-  // Download LaTeX file
-  const downloadLatex = () => {
-    if (!generatedLatex) return
+  // Generate Cover Letter using AI
+  const generateCoverLetter = async () => {
+    setIsGeneratingCoverLetter(true)
+    setIsCoverLetterGenerated(true) // Set immediately for streaming
+    setGenerationError("")
+    setGeneratedCoverLetterPdfBase64(null)
+    setGeneratedCoverLetterLatex("")
 
-    const blob = new Blob([generatedLatex], { type: "text/plain" })
+    try {
+      const response = await fetch("http://localhost:8000/api/generate-cover-letter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          candidate_profile: formatCandidateProfile(),
+          job_description: cvData.targetJob
+        }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || t("Failed to generate Cover Letter"))
+      }
+
+      if (!response.body) throw new Error("ReadableStream not supported")
+      
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let currentLatex = ""
+
+      while (true) {
+        const { value, done } = await reader.read()
+        if (done) break
+        const chunk = decoder.decode(value, { stream: true })
+        currentLatex += chunk
+        setGeneratedCoverLetterLatex(currentLatex)
+      }
+      
+      await compileLatexLocally(currentLatex, true)
+    } catch (error: any) {
+      setGenerationError(error.message || t("An error occurred while generating the Cover Letter"))
+      setIsCoverLetterGenerated(false)
+    } finally {
+      setIsGeneratingCoverLetter(false)
+    }
+  }
+
+  // Download LaTeX file
+  const downloadLatex = (content: string, prefix: string) => {
+    if (!content) return
+    const blob = new Blob([content], { type: "text/plain" })
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url
-    a.download = `${cvData.name.replace(/\s+/g, "_")}_CV.tex`
+    a.download = `${cvData.name.replace(/\s+/g, "_")}_${prefix}.tex`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
   }
 
-  // Download PDF (via Browser Print)
-  const downloadPDF = () => {
-    if (!generatedHtml) return
-
-    // Create a new window with instructions and the HTML code
-    const win = window.open("", "_blank")
-    if (win) {
-      win.document.write(generatedHtml)
-      win.document.close()
-      // Wait for resources to load then print
-      win.onload = () => {
-        setTimeout(() => {
-          win.focus()
-          win.print()
-        }, 500)
+  // Download PDF file
+  const downloadPDF = (base64Content: string | null, prefix: string) => {
+    if (!base64Content) return
+    try {
+      const byteCharacters = atob(base64Content)
+      const byteNumbers = new Array(byteCharacters.length)
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i)
       }
+      const byteArray = new Uint8Array(byteNumbers)
+      const blob = new Blob([byteArray], { type: "application/pdf" })
+      const url = URL.createObjectURL(blob)
+      
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `${cvData.name.replace(/\s+/g, "_")}_${prefix}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error("Error creating PDF download blob:", error)
     }
   }
+
 
   return (
     <>
@@ -575,23 +719,37 @@ export default function CVStudioPage() {
               <Button
                 className="flex-1 gap-2"
                 onClick={generateCV}
-                disabled={isGenerating}
+                disabled={isGenerating || isGeneratingCoverLetter}
               >
                 {isGenerating ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    {t("Generating with AI...")}
+                    {t("Generating CV...")}
                   </>
                 ) : (
                   <>
                     <Sparkles className="h-4 w-4" />
-                    {t("Generate CV Draft")}
+                    {t("Generate CV")}
                   </>
                 )}
               </Button>
-              <Button variant="outline" className="gap-2 bg-transparent">
-                <Save className="h-4 w-4" />
-                {t("Save")}
+              <Button
+                className="flex-1 gap-2"
+                onClick={generateCoverLetter}
+                disabled={isGenerating || isGeneratingCoverLetter}
+                variant="default"
+              >
+                {isGeneratingCoverLetter ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    {t("Generating Letter...")}
+                  </>
+                ) : (
+                  <>
+                    <FileText className="h-4 w-4" />
+                    {t("Generate Cover Letter")}
+                  </>
+                )}
               </Button>
             </div>
           </div>
@@ -613,7 +771,7 @@ export default function CVStudioPage() {
                     <div className="h-full bg-primary transition-all" style={{ width: `${atsScore}%` }} />
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {isGenerated ? "Excellent! AI-optimized for ATS systems" : "Good! Your CV is well-formatted for ATS systems"}
+                    {isGenerated ? t("Excellent! AI-optimized for ATS systems") : t("Good! Your CV is well-formatted for ATS systems")}
                   </p>
                 </div>
 
@@ -628,7 +786,7 @@ export default function CVStudioPage() {
                     <div className="h-full bg-primary transition-all" style={{ width: `${roleMatch}%` }} />
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {isGenerated ? "Optimized for your target role" : "Great alignment with the target role"}
+                    {isGenerated ? t("Optimized for your target role") : t("Great alignment with the target role")}
                   </p>
                 </div>
 
@@ -646,153 +804,186 @@ export default function CVStudioPage() {
                       </Badge>
                     ))}
                   </div>
-                  <p className="text-xs text-muted-foreground">Consider adding these skills if you have experience</p>
+                  <p className="text-xs text-muted-foreground">{t("Consider adding these skills if you have experience")}</p>
                 </div>
               </CardContent>
             </Card>
 
-            {/* CV Preview */}
+            {/* Generated Outputs */}
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-lg">{t("Live Preview")}</CardTitle>
-                <div className="flex gap-2">
-                  {isGenerated && (
-                    <>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        title="Toggle LaTeX View"
-                        onClick={() => setShowLatex(!showLatex)}
-                      >
-                        {showLatex ? <Eye className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        title="Regenerate"
-                        onClick={generateCV}
-                        disabled={isGenerating}
-                      >
-                        <RotateCcw className={`h-4 w-4 ${isGenerating ? 'animate-spin' : ''}`} />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        title="Download PDF"
-                        onClick={downloadPDF}
-                      >
-                        <Download className="h-4 w-4" />
-                      </Button>
-                    </>
-                  )}
-                </div>
+                <CardTitle className="text-lg">{t("Generated Documents")}</CardTitle>
               </CardHeader>
               <CardContent>
-                {isGenerating ? (
+                {isGenerating || isGeneratingCoverLetter ? (
                   <div className="flex flex-col items-center justify-center py-12 space-y-4">
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                     <p className="text-sm text-muted-foreground">{t("Generating with AI...")}</p>
                   </div>
-                ) : isGenerated && showLatex ? (
-                  <div className="rounded-lg border-2 border-border bg-gray-900 p-4 text-green-400 font-mono text-xs overflow-auto max-h-[600px]">
-                    <pre className="whitespace-pre-wrap">{generatedLatex}</pre>
+                ) : (!isGenerated && !isCoverLetterGenerated) ? (
+                  <div className="flex flex-col items-center justify-center py-12 space-y-4 text-center">
+                    <p className="text-sm text-muted-foreground">{t("Fill out the form and generate your personalized CV or Cover Letter.")}</p>
                   </div>
                 ) : (
-                  <div className="rounded-lg border-2 border-border bg-white p-6 text-black">
-                    {/* CV Preview Content */}
-                    <div className="space-y-4">
-                      <div className="text-center">
-                        <h2 className="text-2xl font-bold">{cvData.name}</h2>
-                        <p className="text-sm text-gray-600">
-                          {cvData.email} • {cvData.phone} • {cvData.location}
-                        </p>
-                      </div>
+                  <Tabs defaultValue={isGenerated ? "cv" : "cover-letter"} className="w-full">
+                    {/* Main Tabs: CV vs Cover Letter */}
+                    <TabsList className="grid w-full grid-cols-2 mb-4">
+                      <TabsTrigger value="cv" disabled={!isGenerated}>{t("CV")}</TabsTrigger>
+                      <TabsTrigger value="cover-letter" disabled={!isCoverLetterGenerated}>{t("Cover Letter")}</TabsTrigger>
+                    </TabsList>
 
-                      <Separator />
-
-                      <div>
-                        <h3 className="mb-2 text-sm font-bold uppercase">{t("Professional Summary")}</h3>
-                        <p className="text-xs leading-relaxed text-gray-700 text-pretty">{cvData.summary}</p>
-                      </div>
-
-                      <div>
-                        <h3 className="mb-2 text-sm font-bold uppercase">{t("Experience")}</h3>
-                        <div className="space-y-3">
-                          {cvData.experience.map((exp, idx) => (
-                            <div key={idx} className="space-y-1">
-                              <div className="flex items-start justify-between">
-                                <div>
-                                  <p className="text-xs font-semibold">{exp.role}</p>
-                                  <p className="text-xs text-gray-600">{exp.company}</p>
+                    {/* CV TAB */}
+                    {isGenerated && (
+                      <TabsContent value="cv" className="space-y-4">
+                        <Tabs defaultValue="pdf" className="w-full">
+                          <TabsList className="grid w-full grid-cols-2">
+                            <TabsTrigger value="pdf">{t("PDF View")}</TabsTrigger>
+                            <TabsTrigger value="latex">{t("LaTeX Source")}</TabsTrigger>
+                          </TabsList>
+                          
+                          <TabsContent value="pdf">
+                            <div className="rounded-lg border-2 border-border bg-white h-[600px] overflow-hidden flex flex-col justify-center">
+                              {generatedPdfBase64 ? (
+                                <iframe 
+                                  src={`data:application/pdf;base64,${generatedPdfBase64}`} 
+                                  className="w-full h-full"
+                                  title="CV PDF"
+                                />
+                              ) : isCompiling ? (
+                                <div className="flex flex-col items-center justify-center space-y-4 h-full">
+                                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                  <p className="text-sm text-muted-foreground">{t("Compiling PDF...")}</p>
                                 </div>
-                                <p className="text-xs text-gray-500">
-                                  {exp.startDate} - {exp.endDate}
-                                </p>
-                              </div>
-                              <ul className="ml-4 list-disc space-y-1">
-                                {exp.bullets.map((bullet, bulletIdx) => (
-                                  <li key={bulletIdx} className="text-xs leading-relaxed text-gray-700 text-pretty">
-                                    {bullet}
-                                  </li>
-                                ))}
-                              </ul>
+                              ) : (
+                                <div className="p-6">
+                                  <Alert variant="destructive">
+                                    <AlertCircle className="h-4 w-4" />
+                                    <AlertTitle>{t("Compilation Failed")}</AlertTitle>
+                                    <AlertDescription>
+                                      {t("The backend could not render the LaTeX into a PDF. Please check the LaTeX Source tab, correct any syntax errors, and re-compile.")}
+                                    </AlertDescription>
+                                  </Alert>
+                                </div>
+                              )}
                             </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div>
-                        <h3 className="mb-2 text-sm font-bold uppercase">{t("Projects")}</h3>
-                        <div className="space-y-2">
-                          {cvData.projects.map((project, idx) => (
-                            <div key={idx}>
-                              <p className="text-xs font-semibold">
-                                {project.title} <span className="font-normal text-gray-600">| {project.techStack}</span>
-                              </p>
-                              <p className="text-xs leading-relaxed text-gray-700 text-pretty">{project.description}</p>
+                            <div className="mt-4 flex gap-2">
+                              <Button className="flex-1 gap-2" disabled={!generatedPdfBase64} onClick={() => downloadPDF(generatedPdfBase64, "CV")}>
+                                <Download className="h-4 w-4" />
+                                {t("Download CV PDF")}
+                              </Button>
                             </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div>
-                        <h3 className="mb-2 text-sm font-bold uppercase">{t("Education")}</h3>
-                        {cvData.education.map((edu, idx) => (
-                          <div key={idx} className="flex justify-between">
-                            <div>
-                              <p className="text-xs font-semibold">{edu.degree}</p>
-                              <p className="text-xs text-gray-600">{edu.school}</p>
+                          </TabsContent>
+                          
+                          <TabsContent value="latex">
+                            <div className="rounded-lg border-2 border-border overflow-hidden h-[600px]">
+                              <Editor
+                                height="100%"
+                                defaultLanguage="latex"
+                                theme="vs-dark"
+                                value={generatedLatex}
+                                onChange={(val) => setGeneratedLatex(val || "")}
+                                options={{
+                                  minimap: { enabled: false },
+                                  wordWrap: "on",
+                                  padding: { top: 16 }
+                                }}
+                              />
                             </div>
-                            <div className="text-right">
-                              <p className="text-xs text-gray-500">
-                                {edu.startDate} - {edu.endDate}
-                              </p>
-                              <p className="text-xs text-gray-600">GPA: {edu.gpa}</p>
+                            <div className="mt-4 flex gap-2">
+                              <Button variant="default" className="flex-1 gap-2" disabled={isCompiling} onClick={() => compileLatexLocally(generatedLatex, false)}>
+                                {isCompiling ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
+                                {t("Re-compile PDF")}
+                              </Button>
+                              <Button variant="outline" className="flex-1 gap-2" onClick={() => navigator.clipboard.writeText(generatedLatex)}>
+                                <FileText className="h-4 w-4" />
+                                {t("Copy LaTeX Code")}
+                              </Button>
+                              <Button variant="outline" className="flex-1 gap-2" onClick={() => downloadLatex(generatedLatex, "CV")}>
+                                <Download className="h-4 w-4" />
+                                {t("Download .tex")}
+                              </Button>
                             </div>
-                          </div>
-                        ))}
-                      </div>
+                          </TabsContent>
+                        </Tabs>
+                      </TabsContent>
+                    )}
 
-                      <div>
-                        <h3 className="mb-2 text-sm font-bold uppercase">{t("Skills")}</h3>
-                        <p className="text-xs text-gray-700">{cvData.skills.join(" • ")}</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Download buttons after generation */}
-                {isGenerated && !isGenerating && (
-                  <div className="mt-4 flex gap-2">
-                    <Button className="flex-1 gap-2" onClick={downloadPDF}>
-                      <Download className="h-4 w-4" />
-                      {t("Download PDF")}
-                    </Button>
-                    <Button variant="outline" className="gap-2 bg-transparent" onClick={downloadLatex}>
-                      <FileText className="h-4 w-4" />
-                      {t("Download .tex")}
-                    </Button>
-                  </div>
+                    {/* COVER LETTER TAB */}
+                    {isCoverLetterGenerated && (
+                      <TabsContent value="cover-letter" className="space-y-4">
+                        <Tabs defaultValue="pdf" className="w-full">
+                          <TabsList className="grid w-full grid-cols-2">
+                            <TabsTrigger value="pdf">{t("PDF View")}</TabsTrigger>
+                            <TabsTrigger value="latex">{t("LaTeX Source")}</TabsTrigger>
+                          </TabsList>
+                          
+                          <TabsContent value="pdf">
+                            <div className="rounded-lg border-2 border-border bg-white h-[600px] overflow-hidden flex flex-col justify-center">
+                              {generatedCoverLetterPdfBase64 ? (
+                                <iframe 
+                                  src={`data:application/pdf;base64,${generatedCoverLetterPdfBase64}`} 
+                                  className="w-full h-full"
+                                  title="Cover Letter PDF"
+                                />
+                              ) : isCompiling ? (
+                                <div className="flex flex-col items-center justify-center space-y-4 h-full">
+                                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                  <p className="text-sm text-muted-foreground">{t("Compiling PDF...")}</p>
+                                </div>
+                              ) : (
+                                <div className="p-6">
+                                  <Alert variant="destructive">
+                                    <AlertCircle className="h-4 w-4" />
+                                    <AlertTitle>{t("Compilation Failed")}</AlertTitle>
+                                    <AlertDescription>
+                                      {t("The backend could not render the LaTeX into a PDF. Please check the LaTeX Source tab, correct any syntax errors, and re-compile.")}
+                                    </AlertDescription>
+                                  </Alert>
+                                </div>
+                              )}
+                            </div>
+                            <div className="mt-4 flex gap-2">
+                              <Button className="flex-1 gap-2" disabled={!generatedCoverLetterPdfBase64} onClick={() => downloadPDF(generatedCoverLetterPdfBase64, "CoverLetter")}>
+                                <Download className="h-4 w-4" />
+                                {t("Download Cover Letter PDF")}
+                              </Button>
+                            </div>
+                          </TabsContent>
+                          
+                          <TabsContent value="latex">
+                            <div className="rounded-lg border-2 border-border overflow-hidden h-[600px]">
+                              <Editor
+                                height="100%"
+                                defaultLanguage="latex"
+                                theme="vs-dark"
+                                value={generatedCoverLetterLatex}
+                                onChange={(val) => setGeneratedCoverLetterLatex(val || "")}
+                                options={{
+                                  minimap: { enabled: false },
+                                  wordWrap: "on",
+                                  padding: { top: 16 }
+                                }}
+                              />
+                            </div>
+                            <div className="mt-4 flex gap-2">
+                              <Button variant="default" className="flex-1 gap-2" disabled={isCompiling} onClick={() => compileLatexLocally(generatedCoverLetterLatex, true)}>
+                                {isCompiling ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
+                                {t("Re-compile PDF")}
+                              </Button>
+                              <Button variant="outline" className="flex-1 gap-2" onClick={() => navigator.clipboard.writeText(generatedCoverLetterLatex)}>
+                                <FileText className="h-4 w-4" />
+                                {t("Copy LaTeX Code")}
+                              </Button>
+                              <Button variant="outline" className="flex-1 gap-2" onClick={() => downloadLatex(generatedCoverLetterLatex, "CoverLetter")}>
+                                <Download className="h-4 w-4" />
+                                {t("Download .tex")}
+                              </Button>
+                            </div>
+                          </TabsContent>
+                        </Tabs>
+                      </TabsContent>
+                    )}
+                  </Tabs>
                 )}
               </CardContent>
             </Card>
@@ -802,13 +993,11 @@ export default function CVStudioPage() {
                 <p className="text-xs text-muted-foreground leading-relaxed text-pretty">
                   {isGenerated ? (
                     <>
-                      <strong>✨ AI Generated!</strong> Your CV has been optimized for the target role.
-                      Click "Download PDF" to get your professional resume ready for applications.
+                      <strong>{t("✨ AI Generated!")}</strong> {t("Your CV has been optimized for the target role. Click \"Download PDF\" to get your professional resume ready for applications.")}
                     </>
                   ) : (
                     <>
-                      <strong>Pro Tip:</strong> Use action verbs and quantify your achievements. For example: "Increased
-                      user engagement by 40%" instead of "Improved user engagement."
+                      <strong>{t("Pro Tip:")}</strong> {t("Use action verbs and quantify your achievements. For example: \"Increased user engagement by 40%\" instead of \"Improved user engagement.\"")}
                     </>
                   )}
                 </p>
