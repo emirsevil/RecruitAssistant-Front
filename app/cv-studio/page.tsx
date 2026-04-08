@@ -288,7 +288,7 @@ export default function CVStudioPage() {
 
       if (!response.ok) {
         const data = await response.json()
-        throw new Error(data.error || "Failed to generate CV")
+        throw new Error(data.error || t("Failed to generate CV"))
       }
 
       if (!response.body) throw new Error("ReadableStream not supported")
@@ -310,7 +310,7 @@ export default function CVStudioPage() {
 
       await compileLatexLocally(currentLatex, false)
     } catch (error: any) {
-      setGenerationError(error.message || "An error occurred while generating the CV")
+      setGenerationError(error.message || t("An error occurred while generating the CV"))
       setIsGenerated(false)
     } finally {
       setIsGenerating(false)
@@ -337,7 +337,7 @@ export default function CVStudioPage() {
 
       if (!response.ok) {
         const data = await response.json()
-        throw new Error(data.error || "Failed to generate Cover Letter")
+        throw new Error(data.error || t("Failed to generate Cover Letter"))
       }
 
       if (!response.body) throw new Error("ReadableStream not supported")
@@ -356,7 +356,7 @@ export default function CVStudioPage() {
       
       await compileLatexLocally(currentLatex, true)
     } catch (error: any) {
-      setGenerationError(error.message || "An error occurred while generating the Cover Letter")
+      setGenerationError(error.message || t("An error occurred while generating the Cover Letter"))
       setIsCoverLetterGenerated(false)
     } finally {
       setIsGeneratingCoverLetter(false)
@@ -771,7 +771,7 @@ export default function CVStudioPage() {
                     <div className="h-full bg-primary transition-all" style={{ width: `${atsScore}%` }} />
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {isGenerated ? "Excellent! AI-optimized for ATS systems" : "Good! Your CV is well-formatted for ATS systems"}
+                    {isGenerated ? t("Excellent! AI-optimized for ATS systems") : t("Good! Your CV is well-formatted for ATS systems")}
                   </p>
                 </div>
 
@@ -786,7 +786,7 @@ export default function CVStudioPage() {
                     <div className="h-full bg-primary transition-all" style={{ width: `${roleMatch}%` }} />
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {isGenerated ? "Optimized for your target role" : "Great alignment with the target role"}
+                    {isGenerated ? t("Optimized for your target role") : t("Great alignment with the target role")}
                   </p>
                 </div>
 
@@ -804,7 +804,7 @@ export default function CVStudioPage() {
                       </Badge>
                     ))}
                   </div>
-                  <p className="text-xs text-muted-foreground">Consider adding these skills if you have experience</p>
+                  <p className="text-xs text-muted-foreground">{t("Consider adding these skills if you have experience")}</p>
                 </div>
               </CardContent>
             </Card>
@@ -858,9 +858,9 @@ export default function CVStudioPage() {
                                 <div className="p-6">
                                   <Alert variant="destructive">
                                     <AlertCircle className="h-4 w-4" />
-                                    <AlertTitle>Compilation Failed</AlertTitle>
+                                    <AlertTitle>{t("Compilation Failed")}</AlertTitle>
                                     <AlertDescription>
-                                      The backend could not render the LaTeX into a PDF. Please check the LaTeX Source tab, correct any syntax errors, and re-compile.
+                                      {t("The backend could not render the LaTeX into a PDF. Please check the LaTeX Source tab, correct any syntax errors, and re-compile.")}
                                     </AlertDescription>
                                   </Alert>
                                 </div>
@@ -934,9 +934,9 @@ export default function CVStudioPage() {
                                 <div className="p-6">
                                   <Alert variant="destructive">
                                     <AlertCircle className="h-4 w-4" />
-                                    <AlertTitle>Compilation Failed</AlertTitle>
+                                    <AlertTitle>{t("Compilation Failed")}</AlertTitle>
                                     <AlertDescription>
-                                      The backend could not render the LaTeX into a PDF. Please check the LaTeX Source tab, correct any syntax errors, and re-compile.
+                                      {t("The backend could not render the LaTeX into a PDF. Please check the LaTeX Source tab, correct any syntax errors, and re-compile.")}
                                     </AlertDescription>
                                   </Alert>
                                 </div>
@@ -993,13 +993,11 @@ export default function CVStudioPage() {
                 <p className="text-xs text-muted-foreground leading-relaxed text-pretty">
                   {isGenerated ? (
                     <>
-                      <strong>✨ AI Generated!</strong> Your CV has been optimized for the target role.
-                      Click "Download PDF" to get your professional resume ready for applications.
+                      <strong>{t("✨ AI Generated!")}</strong> {t("Your CV has been optimized for the target role. Click \"Download PDF\" to get your professional resume ready for applications.")}
                     </>
                   ) : (
                     <>
-                      <strong>Pro Tip:</strong> Use action verbs and quantify your achievements. For example: "Increased
-                      user engagement by 40%" instead of "Improved user engagement."
+                      <strong>{t("Pro Tip:")}</strong> {t("Use action verbs and quantify your achievements. For example: \"Increased user engagement by 40%\" instead of \"Improved user engagement.\"")}
                     </>
                   )}
                 </p>
