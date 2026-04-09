@@ -21,14 +21,19 @@ export default function NewWorkspacePage() {
   const { t } = useLanguage()
   const [values, setValues] = useState<WorkspaceFormValues>(emptyWorkspaceFormValues)
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const name = values.workspaceName.trim()
     if (!name) return
-    createWorkspace(name, values.selectedEmoji || undefined, {
-      jobName: values.jobName.trim() || undefined,
-      jobDescription: values.jobDescription.trim() || undefined,
-    })
-    router.push("/dashboard")
+    try {
+      await createWorkspace(name, values.selectedEmoji || undefined, {
+        jobName: values.jobName.trim() || undefined,
+        jobDescription: values.jobDescription.trim() || undefined,
+      })
+      router.push("/dashboard")
+    } catch (error) {
+      console.error("Failed to create workspace:", error)
+      // Optional: Add toast notification here
+    }
   }
 
   return (

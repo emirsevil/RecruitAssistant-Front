@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Download, Sparkles, RotateCcw, Save, Plus, Trash2, AlertCircle, Loader2, FileText, Eye } from "lucide-react"
 import { useLanguage } from "@/lib/language-context"
+import { useWorkspace } from "@/lib/workspace-context"
 
 import Editor from "@monaco-editor/react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -21,6 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function CVStudioPage() {
   const { t } = useLanguage()
+  const { activeWorkspace } = useWorkspace()
   const [language, setLanguage] = useState("English")
   const [cvData, setCvData] = useState({
     name: "Deniz Ozturk",
@@ -240,10 +242,17 @@ export default function CVStudioPage() {
   const compileLatexLocally = async (latexContent: string, isCoverLetter: boolean) => {
     setIsCompiling(true)
     try {
+      const workspaceId = activeWorkspace ? parseInt(activeWorkspace.id) : null
+      const documentType = isCoverLetter ? "cover_letter" : "cv"
+
       const response = await fetch("http://localhost:8000/api/compile-latex", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ latex_content: latexContent }),
+        body: JSON.stringify({ 
+          latex_content: latexContent,
+          workspace_id: workspaceId,
+          document_type: documentType
+        }),
       })
       
       const data = await response.json()
