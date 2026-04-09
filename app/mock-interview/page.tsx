@@ -57,13 +57,13 @@ export default function MockInterviewPage() {
     }
   }, [searchParams])
 
-  const conversationEndRef = useRef<HTMLDivElement>(null)
+  const conversationScrollRef = useRef<HTMLDivElement>(null)
 
-  // Auto-scroll conversation log
+  // Auto-scroll only inside the conversation panel (scrollIntoView was scrolling the whole page)
   useEffect(() => {
-    if (conversationEndRef.current) {
-      conversationEndRef.current.scrollIntoView({ behavior: "smooth" })
-    }
+    const el = conversationScrollRef.current
+    if (!el) return
+    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" })
   }, [voice.conversationLog])
 
   // Push interview ID into URL for back-button guard
@@ -492,34 +492,38 @@ export default function MockInterviewPage() {
                   <CardHeader className="pb-3">
                     <CardTitle className="text-base">{t("Conversation")}</CardTitle>
                   </CardHeader>
-                  <CardContent className="flex-1 overflow-y-auto max-h-[60vh] space-y-3">
-                    {voice.conversationLog.length === 0 && (
-                      <p className="text-sm text-muted-foreground text-center py-8">
-                        {t("Conversation will appear here...")}
-                      </p>
-                    )}
-                    {voice.conversationLog.map((entry, idx) => (
-                      <div
-                        key={idx}
-                        className={`flex gap-2 ${
-                          entry.role === "interviewer" ? "" : "flex-row-reverse"
-                        }`}
-                      >
+                  <CardContent className="flex-1 flex flex-col p-0">
+                    <div
+                      ref={conversationScrollRef}
+                      className="max-h-[60vh] flex-1 overflow-y-auto space-y-3 px-6"
+                    >
+                      {voice.conversationLog.length === 0 && (
+                        <p className="text-sm text-muted-foreground text-center py-8">
+                          {t("Conversation will appear here...")}
+                        </p>
+                      )}
+                      {voice.conversationLog.map((entry, idx) => (
                         <div
-                          className={`rounded-lg px-3 py-2 text-sm max-w-[85%] ${
-                            entry.role === "interviewer"
-                              ? "bg-primary/10 text-foreground"
-                              : "bg-muted text-foreground"
+                          key={idx}
+                          className={`flex gap-2 ${
+                            entry.role === "interviewer" ? "" : "flex-row-reverse"
                           }`}
                         >
-                          <p className="text-xs font-medium mb-1 opacity-60">
-                            {entry.role === "interviewer" ? "🤖 AI" : "👤 Sen"}
-                          </p>
-                          <p className="leading-relaxed">{entry.text}</p>
+                          <div
+                            className={`rounded-lg px-3 py-2 text-sm max-w-[85%] ${
+                              entry.role === "interviewer"
+                                ? "bg-primary/10 text-foreground"
+                                : "bg-muted text-foreground"
+                            }`}
+                          >
+                            <p className="text-xs font-medium mb-1 opacity-60">
+                              {entry.role === "interviewer" ? "🤖 AI" : "👤 Sen"}
+                            </p>
+                            <p className="leading-relaxed">{entry.text}</p>
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                    <div ref={conversationEndRef} />
+                      ))}
+                    </div>
                   </CardContent>
                 </Card>
               </div>
