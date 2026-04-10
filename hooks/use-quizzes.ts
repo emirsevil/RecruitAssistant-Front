@@ -58,10 +58,20 @@ export interface QuizSubmitRequest {
   answers: AnswerItem[]
 }
 
+export interface SkillSelection {
+  title: string
+  difficulties: string[]
+}
+
+export interface TargetedQuizRequest {
+  selections: SkillSelection[]
+}
+
 export function useQuizzes() {
   const [quizGroups, setQuizGroups] = useState<QuizGroup[]>([])
   const [userScores, setUserScores] = useState<QuizScore[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [submitResult, setSubmitResult] = useState<QuizSubmitResponse | null>(null)
 
@@ -116,14 +126,57 @@ export function useQuizzes() {
     }
   }
 
+  const extractSkills = async (workspaceId: string | number) => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const res = await fetch(`http://localhost:8000/workspaces/${workspaceId}/skills/extract`, {
+        method: "POST"
+      })
+      if (!res.ok) throw new Error("Failed to extract skills")
+      const data = await res.json()
+      return data as string[]
+    } catch (e: any) {
+      setError(e.message)
+      return []
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const generateTargetedQuizzes = async (workspaceId: string | number, selections: SkillSelection[]) => {
+    setIsGenerating(true)
+    setError(null)
+    try {
+      const res = await fetch(`http://localhost:8000/workspaces/${workspaceId}/quizzes/generate-targeted`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ selections }),
+      })
+      if (!res.ok) throw new Error("Failed to generate quizzes")
+      const data = await res.json()
+      // Refresh quizzes after generation
+      await fetchWorkspaceQuizzes(workspaceId)
+      return data
+    } catch (e: any) {
+      setError(e.message)
+      return null
+    } finally {
+      setIsGenerating(false)
+    }
+  }
+
   return {
     quizGroups,
     userScores,
     isLoading,
+    isGenerating,
     error,
     submitResult,
     fetchWorkspaceQuizzes,
     fetchUserScores,
     submitQuiz,
+    extractSkills,
+    generateTargetedQuizzes,
   }
 }
