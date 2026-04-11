@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { Download, Sparkles, RotateCcw, Save, Plus, Trash2, AlertCircle, Loader2, FileText, Eye } from "lucide-react"
+import { Download, Sparkles, RotateCcw, Save, Plus, Trash2, AlertCircle, Loader2, FileText, Eye, Upload } from "lucide-react"
 import { useLanguage } from "@/lib/language-context"
 import { useWorkspace } from "@/lib/workspace-context"
 
@@ -88,7 +88,10 @@ export default function CVStudioPage() {
       "GraphQL"
     ],
     targetJob: "",
+    specialInstructions: "",
   })
+
+  const [isParsing, setIsParsing] = useState(false)
 
   const [atsScore, setAtsScore] = useState(0)
   const [roleMatch, setRoleMatch] = useState(0)
@@ -277,6 +280,50 @@ export default function CVStudioPage() {
     }
   }
 
+  const handleResumeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setIsParsing(true)
+    setGenerationError("")
+
+    const formData = new FormData()
+    formData.append("file", file)
+
+    try {
+      const response = await fetch("/api/parse-resume", {
+        method: "POST",
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to parse resume")
+      }
+
+      const parsedData = await response.json()
+
+      // Update cvData with parsed information
+      setCvData((prev) => ({
+        ...prev,
+        name: parsedData.name || prev.name,
+        email: parsedData.email || prev.email,
+        phone: parsedData.phone || prev.phone,
+        location: parsedData.location || prev.location,
+        summary: parsedData.summary || prev.summary,
+        education: parsedData.education?.length ? parsedData.education : prev.education,
+        experience: parsedData.experience?.length ? parsedData.experience : prev.experience,
+        skills: parsedData.skills?.length ? parsedData.skills : prev.skills,
+      }))
+    } catch (error: any) {
+      setGenerationError(error.message || "An error occurred while parsing the resume")
+    } finally {
+      setIsParsing(false)
+      // Reset input
+      e.target.value = ""
+    }
+  }
+
   // Generate CV using AI
   const generateCV = async () => {
     setIsGenerating(true)
@@ -291,7 +338,8 @@ export default function CVStudioPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           candidate_profile: formatCandidateProfile(),
-          job_description: cvData.targetJob
+          job_description: cvData.targetJob,
+          special_instructions: cvData.specialInstructions
         }),
       })
 
@@ -340,7 +388,8 @@ export default function CVStudioPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           candidate_profile: formatCandidateProfile(),
-          job_description: cvData.targetJob
+          job_description: cvData.targetJob,
+          special_instructions: cvData.specialInstructions
         }),
       })
 
@@ -419,16 +468,45 @@ export default function CVStudioPage() {
 
         <div className="grid gap-6 lg:grid-cols-[1fr,400px]">
           {/* Input Form */}
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>{t("Personal Information")}</CardTitle>
+          <div className="space-y-8">
+            <Card className="border-primary/20 bg-primary/5 transition-all duration-300 hover:shadow-lg hover:border-primary/40 group">
+              <CardHeader className="p-8 pb-3">
+                <CardTitle className="text-xl flex items-center gap-2 group-hover:text-primary transition-colors">
+                  <Upload className="h-5 w-5 text-primary group-hover:scale-110 transition-transform" />
+                  {t("Upload Resume")}
+                </CardTitle>
+                <CardDescription className="text-base">
+                  {t("Upload your existing CV (PDF/DOCX) to autofill the form with AI assistance")}
+                </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="p-8 pt-0">
+                <div className="flex items-center gap-4">
+                  <Input
+                    type="file"
+                    accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    onChange={handleResumeUpload}
+                    disabled={isParsing}
+                    className="cursor-pointer file:cursor-pointer hover:border-primary/50 transition-colors focus-visible:ring-primary/20"
+                  />
+                  {isParsing && (
+                    <div className="flex items-center gap-2 text-sm font-medium text-primary animate-pulse">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      {t("Parsing...")}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="transition-all duration-300 hover:shadow-md hover:border-primary/10">
+              <CardHeader className="p-8 pb-4">
+                <CardTitle className="border-l-4 border-primary pl-4">{t("Personal Information")}</CardTitle>
+              </CardHeader>
+              <CardContent className="p-8 pt-0 space-y-6">
                 <div className="space-y-2">
-                  <Label>{t("CV Language")}</Label>
+                  <Label className="text-sm font-semibold">{t("CV Language")}</Label>
                   <Select value={language} onValueChange={setLanguage}>
-                    <SelectTrigger>
+                    <SelectTrigger className="hover:border-primary/30 transition-colors">
                       <SelectValue placeholder={t("Select language")} />
                     </SelectTrigger>
                     <SelectContent>
@@ -437,94 +515,103 @@ export default function CVStudioPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-6 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="name">{t("Full Name")}</Label>
+                    <Label htmlFor="name" className="text-sm font-semibold">{t("Full Name")}</Label>
                     <Input
                       id="name"
                       value={cvData.name}
                       onChange={(e) => setCvData({ ...cvData, name: e.target.value })}
+                      className="focus-visible:ring-primary/20"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="email">{t("Email")}</Label>
+                    <Label htmlFor="email" className="text-sm font-semibold">{t("Email")}</Label>
                     <Input
                       id="email"
                       type="email"
                       value={cvData.email}
                       onChange={(e) => setCvData({ ...cvData, email: e.target.value })}
+                      className="focus-visible:ring-primary/20"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="phone">{t("Phone")}</Label>
+                    <Label htmlFor="phone" className="text-sm font-semibold">{t("Phone")}</Label>
                     <Input
                       id="phone"
                       value={cvData.phone}
                       onChange={(e) => setCvData({ ...cvData, phone: e.target.value })}
+                      className="focus-visible:ring-primary/20"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="location">{t("Location")}</Label>
+                    <Label htmlFor="location" className="text-sm font-semibold">{t("Location")}</Label>
                     <Input
                       id="location"
                       value={cvData.location}
                       onChange={(e) => setCvData({ ...cvData, location: e.target.value })}
+                      className="focus-visible:ring-primary/20"
                     />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="summary">{t("Professional Summary")}</Label>
+                  <Label htmlFor="summary" className="text-sm font-semibold">{t("Professional Summary")}</Label>
                   <Textarea
                     id="summary"
                     value={cvData.summary}
                     onChange={(e) => setCvData({ ...cvData, summary: e.target.value })}
-                    className="min-h-[80px]"
+                    className="min-h-[100px] focus-visible:ring-primary/20 resize-none"
                   />
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>{t("Education")}</CardTitle>
+            <Card className="transition-all duration-300 hover:shadow-md hover:border-primary/10">
+              <CardHeader className="p-8 pb-4">
+                <CardTitle className="border-l-4 border-primary pl-4">{t("Education")}</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="p-8 pt-0 space-y-6">
                 {cvData.education.map((edu, idx) => (
-                  <div key={idx} className="space-y-4 rounded-lg border border-border p-4">
+                  <div key={idx} className="space-y-4 rounded-xl bg-muted/30 p-6 border-none shadow-sm">
                     <div className="space-y-2">
-                      <Label>{t("Degree")}</Label>
+                      <Label className="text-sm font-semibold">{t("Degree")}</Label>
                       <Input
                         value={edu.degree}
                         onChange={(e) => updateEducation(idx, "degree", e.target.value)}
+                        className="bg-background focus-visible:ring-primary/20"
                       />
                     </div>
-                    <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="grid gap-6 sm:grid-cols-2">
                       <div className="space-y-2">
-                        <Label>{t("School")}</Label>
+                        <Label className="text-sm font-semibold">{t("School")}</Label>
                         <Input
                           value={edu.school}
                           onChange={(e) => updateEducation(idx, "school", e.target.value)}
+                          className="bg-background focus-visible:ring-primary/20"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>{t("GPA")}</Label>
+                        <Label className="text-sm font-semibold">{t("GPA")}</Label>
                         <Input
                           value={edu.gpa}
                           onChange={(e) => updateEducation(idx, "gpa", e.target.value)}
+                          className="bg-background focus-visible:ring-primary/20"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>{t("Start Date")}</Label>
+                        <Label className="text-sm font-semibold">{t("Start Date")}</Label>
                         <Input
                           value={edu.startDate}
                           onChange={(e) => updateEducation(idx, "startDate", e.target.value)}
+                          className="bg-background focus-visible:ring-primary/20"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>{t("End Date")}</Label>
+                        <Label className="text-sm font-semibold">{t("End Date")}</Label>
                         <Input
                           value={edu.endDate}
                           onChange={(e) => updateEducation(idx, "endDate", e.target.value)}
+                          className="bg-background focus-visible:ring-primary/20"
                         />
                       </div>
                     </div>
@@ -533,78 +620,82 @@ export default function CVStudioPage() {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
+            <Card className="transition-all duration-300 hover:shadow-md hover:border-primary/10">
+              <CardHeader className="p-8 pb-4">
                 <div className="flex items-center justify-between">
-                  <CardTitle>{t("Experience")}</CardTitle>
-                  <Button onClick={addExperience} size="sm" variant="outline" className="gap-2 bg-transparent">
+                  <CardTitle className="border-l-4 border-primary pl-4">{t("Experience")}</CardTitle>
+                  <Button onClick={addExperience} size="sm" variant="outline" className="gap-2 transition-all hover:bg-primary/5 hover:border-primary/50">
                     <Plus className="h-4 w-4" />
                     {t("Add")}
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="p-8 pt-0 space-y-6">
                 {cvData.experience.map((exp, idx) => (
-                  <div key={idx} className="space-y-4 rounded-lg border border-border p-4 relative">
+                  <div key={idx} className="space-y-6 rounded-xl bg-muted/30 p-6 relative border-none shadow-sm transition-all hover:bg-muted/50">
                     {cvData.experience.length > 1 && (
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="absolute top-2 right-2 h-8 w-8 text-destructive"
+                        className="absolute top-4 right-4 h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                         onClick={() => removeExperience(idx)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     )}
-                    <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="grid gap-6 sm:grid-cols-2">
                       <div className="space-y-2">
-                        <Label>{t("Role")}</Label>
+                        <Label className="text-sm font-semibold">{t("Role")}</Label>
                         <Input
                           value={exp.role}
                           placeholder={t("Software Engineer")}
                           onChange={(e) => updateExperience(idx, "role", e.target.value)}
+                          className="bg-background focus-visible:ring-primary/20"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>{t("Company")}</Label>
+                        <Label className="text-sm font-semibold">{t("Company")}</Label>
                         <Input
                           value={exp.company}
                           placeholder={t("Tech Company Inc.")}
                           onChange={(e) => updateExperience(idx, "company", e.target.value)}
+                          className="bg-background focus-visible:ring-primary/20"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>{t("Start Date")}</Label>
+                        <Label className="text-sm font-semibold">{t("Start Date")}</Label>
                         <Input
                           value={exp.startDate}
                           placeholder={t("Jan 2023")}
                           onChange={(e) => updateExperience(idx, "startDate", e.target.value)}
+                          className="bg-background focus-visible:ring-primary/20"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>{t("End Date")}</Label>
+                        <Label className="text-sm font-semibold">{t("End Date")}</Label>
                         <Input
                           value={exp.endDate}
                           placeholder={t("Present")}
                           onChange={(e) => updateExperience(idx, "endDate", e.target.value)}
+                          className="bg-background focus-visible:ring-primary/20"
                         />
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label>{t("Responsibilities & Achievements")}</Label>
+                    <div className="space-y-4">
+                      <Label className="text-sm font-semibold">{t("Responsibilities & Achievements")}</Label>
                       {exp.bullets.map((bullet, bulletIdx) => (
-                        <div key={bulletIdx} className="flex gap-2">
+                        <div key={bulletIdx} className="flex gap-2 group/bullet">
                           <Textarea
                             value={bullet}
                             onChange={(e) => updateExperienceBullet(idx, bulletIdx, e.target.value)}
-                            className="min-h-[60px] flex-1"
+                            className="min-h-[60px] flex-1 bg-background focus-visible:ring-primary/20 resize-none"
                             placeholder="• Developed features that improved..."
                           />
                           {exp.bullets.length > 1 && (
                             <Button
                               size="icon"
                               variant="ghost"
-                              className="h-8 w-8 text-destructive self-start mt-1"
+                              className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover/bullet:opacity-100 transition-all self-start mt-2"
                               onClick={() => removeBullet(idx, bulletIdx)}
                             >
                               <Trash2 className="h-4 w-4" />
@@ -612,7 +703,7 @@ export default function CVStudioPage() {
                           )}
                         </div>
                       ))}
-                      <Button size="sm" variant="ghost" className="gap-2" onClick={() => addBullet(idx)}>
+                      <Button size="sm" variant="ghost" className="gap-2 text-primary hover:bg-primary/10 hover:text-primary transition-colors" onClick={() => addBullet(idx)}>
                         <Plus className="h-3 w-3" />
                         {t("Add bullet point")}
                       </Button>
@@ -622,51 +713,53 @@ export default function CVStudioPage() {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
+            <Card className="transition-all duration-300 hover:shadow-md hover:border-primary/10">
+              <CardHeader className="p-8 pb-4">
                 <div className="flex items-center justify-between">
-                  <CardTitle>{t("Projects")}</CardTitle>
-                  <Button onClick={addProject} size="sm" variant="outline" className="gap-2 bg-transparent">
+                  <CardTitle className="border-l-4 border-primary pl-4">{t("Projects")}</CardTitle>
+                  <Button onClick={addProject} size="sm" variant="outline" className="gap-2 transition-all hover:bg-primary/5 hover:border-primary/50">
                     <Plus className="h-4 w-4" />
                     {t("Add")}
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="p-8 pt-0 space-y-6">
                 {cvData.projects.map((project, idx) => (
-                  <div key={idx} className="space-y-4 rounded-lg border border-border p-4 relative">
+                  <div key={idx} className="space-y-6 rounded-xl bg-muted/30 p-6 relative border-none shadow-sm transition-all hover:bg-muted/50">
                     {cvData.projects.length > 1 && (
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="absolute top-2 right-2 h-8 w-8 text-destructive"
+                        className="absolute top-4 right-4 h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                         onClick={() => removeProject(idx)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     )}
                     <div className="space-y-2">
-                      <Label>{t("Project Title")}</Label>
+                      <Label className="text-sm font-semibold">{t("Project Title")}</Label>
                       <Input
                         value={project.title}
                         placeholder={t("E-commerce Platform")}
                         onChange={(e) => updateProject(idx, "title", e.target.value)}
+                        className="bg-background focus-visible:ring-primary/20"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>{t("Tech Stack")}</Label>
+                      <Label className="text-sm font-semibold">{t("Tech Stack")}</Label>
                       <Input
                         value={project.techStack}
                         placeholder="React, Node.js, MongoDB"
                         onChange={(e) => updateProject(idx, "techStack", e.target.value)}
+                        className="bg-background focus-visible:ring-primary/20"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>{t("Description")}</Label>
+                      <Label className="text-sm font-semibold">{t("Description")}</Label>
                       <Textarea
                         value={project.description}
                         onChange={(e) => updateProject(idx, "description", e.target.value)}
-                        className="min-h-[80px]"
+                        className="min-h-[100px] bg-background focus-visible:ring-primary/20 resize-none"
                         placeholder={t("Built a full-stack application that...")}
                       />
                     </div>
@@ -675,41 +768,53 @@ export default function CVStudioPage() {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>{t("Skills")}</CardTitle>
+            <Card className="transition-all duration-300 hover:shadow-md hover:border-primary/10">
+              <CardHeader className="p-8 pb-4">
+                <CardTitle className="border-l-4 border-primary pl-4">{t("Skills")}</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
+              <CardContent className="p-8 pt-0">
+                <div className="flex flex-wrap gap-3">
                   {cvData.skills.map((skill, idx) => (
-                    <Badge key={idx} variant="secondary" className="gap-1 px-3 py-1.5">
+                    <Badge key={idx} variant="secondary" className="gap-1 px-4 py-2 text-sm transition-all hover:bg-secondary/80">
                       {skill}
                       <Trash2
-                        className="h-3 w-3 cursor-pointer hover:text-destructive"
+                        className="h-3 w-3 cursor-pointer hover:text-destructive transition-colors ml-1"
                         onClick={() => removeSkill(idx)}
                       />
                     </Badge>
                   ))}
-                  <Button size="sm" variant="outline" className="gap-2 bg-transparent" onClick={addSkill}>
-                    <Plus className="h-3 w-3" />
+                  <Button size="sm" variant="outline" className="gap-2 transition-all hover:bg-primary/5 hover:border-primary/50" onClick={addSkill}>
+                    <Plus className="h-4 w-4" />
                     {t("Add skill")}
                   </Button>
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>{t("Target Job Description")}</CardTitle>
-                <CardDescription>{t("Paste the job description to optimize your CV")}</CardDescription>
+            <Card className="transition-all duration-300 hover:shadow-md hover:border-primary/10">
+              <CardHeader className="p-8 pb-4">
+                <CardTitle className="border-l-4 border-primary pl-4">{t("Target Job Description")}</CardTitle>
+                <CardDescription className="pl-4">{t("Paste the job description to optimize your CV")}</CardDescription>
               </CardHeader>
-              <CardContent>
-                <Textarea
-                  value={cvData.targetJob}
-                  onChange={(e) => setCvData({ ...cvData, targetJob: e.target.value })}
-                  className="min-h-[120px]"
-                  placeholder={t("Paste the full job description here...")}
-                />
+              <CardContent className="p-8 pt-0 space-y-6">
+                <div className="space-y-2">
+                  <Textarea
+                    value={cvData.targetJob}
+                    onChange={(e) => setCvData({ ...cvData, targetJob: e.target.value })}
+                    className="min-h-[160px] focus-visible:ring-primary/20"
+                    placeholder={t("Paste the full job description here...")}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="special-instructions" className="text-sm font-semibold">{t("Special Instructions (Optional)")}</Label>
+                  <Textarea
+                    id="special-instructions"
+                    value={cvData.specialInstructions}
+                    onChange={(e) => setCvData({ ...cvData, specialInstructions: e.target.value })}
+                    className="min-h-[100px] focus-visible:ring-primary/20"
+                    placeholder={t("e.g., 'Make it more professional', 'Focus on my leadership skills', 'Keep it under one page'")}
+                  />
+                </div>
               </CardContent>
             </Card>
 
@@ -724,38 +829,38 @@ export default function CVStudioPage() {
               </Card>
             )}
 
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-4">
               <Button
-                className="flex-1 gap-2"
+                className="flex-1 h-14 text-lg font-bold gap-3 transition-all duration-300 bg-gradient-to-r from-primary to-primary/80 hover:scale-[1.02] hover:shadow-xl hover:shadow-primary/20 hover:brightness-110 active:scale-[0.98]"
                 onClick={generateCV}
                 disabled={isGenerating || isGeneratingCoverLetter}
               >
                 {isGenerating ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Loader2 className="h-5 w-5 animate-spin" />
                     {t("Generating CV...")}
                   </>
                 ) : (
                   <>
-                    <Sparkles className="h-4 w-4" />
+                    <Sparkles className="h-5 w-5" />
                     {t("Generate CV")}
                   </>
                 )}
               </Button>
               <Button
-                className="flex-1 gap-2"
+                className="flex-1 h-14 text-lg font-bold gap-3 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]"
                 onClick={generateCoverLetter}
                 disabled={isGenerating || isGeneratingCoverLetter}
-                variant="default"
+                variant="outline"
               >
                 {isGeneratingCoverLetter ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Loader2 className="h-5 w-5 animate-spin" />
                     {t("Generating Letter...")}
                   </>
                 ) : (
                   <>
-                    <FileText className="h-4 w-4" />
+                    <FileText className="h-5 w-5" />
                     {t("Generate Cover Letter")}
                   </>
                 )}
@@ -766,54 +871,54 @@ export default function CVStudioPage() {
           {/* Preview & Analysis */}
           <div className="space-y-6">
             {/* CV Analysis */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">{t("CV Analysis")}</CardTitle>
+            <Card className="transition-all duration-300 hover:shadow-lg border-primary/10">
+              <CardHeader className="p-8 pb-4">
+                <CardTitle className="text-xl border-l-4 border-primary pl-4">{t("CV Analysis")}</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium">{t("ATS Score")}</span>
-                    <span className="text-2xl font-bold text-primary">{atsScore}%</span>
+              <CardContent className="p-8 pt-0 space-y-8">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-muted-foreground">{t("ATS Score")}</span>
+                    <span className="text-3xl font-black text-primary drop-shadow-sm">{atsScore}%</span>
                   </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-secondary">
-                    <div className="h-full bg-primary transition-all" style={{ width: `${atsScore}%` }} />
+                  <div className="h-3 overflow-hidden rounded-full bg-secondary shadow-inner">
+                    <div className="h-full bg-gradient-to-r from-primary/60 to-primary transition-all duration-1000 ease-out" style={{ width: `${atsScore}%` }} />
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground italic">
                     {isGenerated ? t("Excellent! AI-optimized for ATS systems") : t("Good! Your CV is well-formatted for ATS systems")}
                   </p>
                 </div>
 
                 <Separator />
 
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium">{t("Role Match")}</span>
-                    <span className="text-2xl font-bold text-primary">{roleMatch}%</span>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-muted-foreground">{t("Role Match")}</span>
+                    <span className="text-3xl font-black text-primary drop-shadow-sm">{roleMatch}%</span>
                   </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-secondary">
-                    <div className="h-full bg-primary transition-all" style={{ width: `${roleMatch}%` }} />
+                  <div className="h-3 overflow-hidden rounded-full bg-secondary shadow-inner">
+                    <div className="h-full bg-gradient-to-r from-primary/60 to-primary transition-all duration-1000 ease-out" style={{ width: `${roleMatch}%` }} />
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground italic">
                     {isGenerated ? t("Optimized for your target role") : t("Great alignment with the target role")}
                   </p>
                 </div>
 
                 <Separator />
 
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm font-medium">
-                    <AlertCircle className="h-4 w-4 text-warning" />
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-sm font-bold text-primary">
+                    <AlertCircle className="h-4 w-4" />
                     {t("Missing Skills")}
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {missingSkills.map((skill, idx) => (
-                      <Badge key={idx} variant="outline" className="text-xs">
+                      <Badge key={idx} variant="outline" className="text-xs py-1 px-2 border-primary/20">
                         {skill}
                       </Badge>
                     ))}
                   </div>
-                  <p className="text-xs text-muted-foreground">{t("Consider adding these skills if you have experience")}</p>
+                  <p className="text-xs text-muted-foreground italic">{t("Consider adding these skills if you have experience")}</p>
                 </div>
               </CardContent>
             </Card>
