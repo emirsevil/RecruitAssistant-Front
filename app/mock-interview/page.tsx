@@ -16,6 +16,7 @@ import Link from "next/link"
 import { useLanguage } from "@/lib/language-context"
 import { useVoiceInterview, type ConversationEntry } from "@/hooks/use-voice-interview"
 import { useToast } from "@/hooks/use-toast"
+import { useWorkspace } from "@/lib/workspace-context"
 
 type InterviewState = "setup" | "active" | "evaluating" | "completed"
 
@@ -26,7 +27,7 @@ export default function MockInterviewPage() {
   const [userAnswer, setUserAnswer] = useState("")
   const { t } = useLanguage()
 
-  const [workspaceId, setWorkspaceId] = useState("1")
+  const { activeWorkspace } = useWorkspace()
   const [categories, setCategories] = useState("")
   const { toast } = useToast()
   const searchParams = useSearchParams()
@@ -74,9 +75,18 @@ export default function MockInterviewPage() {
   }, [voice.interviewId, state, router])
 
   const startInterview = async () => {
+    if (!activeWorkspace) {
+      toast({
+        title: t("Warning"),
+        description: t("Please select a workspace from the top menu first."),
+        variant: "destructive",
+      })
+      return
+    }
+
     setState("active")
     voice.startSession({
-      workspaceId: parseInt(workspaceId) || 1,
+      workspaceId: Number(activeWorkspace.id),
       categories: categories || "Genel",
       difficulty,
       interviewType: interviewType,
@@ -233,12 +243,12 @@ export default function MockInterviewPage() {
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label>{t("Workspace ID (For Job Description)")}</Label>
-                  <div className="flex">
-                    <input className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background" value={workspaceId} onChange={e => setWorkspaceId(e.target.value)} type="number" />
+                {activeWorkspace && (
+                  <div className="rounded-lg bg-primary/5 p-4 border border-primary/20">
+                    <p className="text-sm font-medium text-primary mb-1">{t("Active Workspace")}</p>
+                    <p className="text-lg font-bold">{activeWorkspace.name}</p>
                   </div>
-                </div>
+                )}
 
                 <div className="space-y-2">
                   <Label>{t("Categories / Topics")}</Label>

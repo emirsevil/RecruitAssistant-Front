@@ -34,7 +34,7 @@ import { useWorkspace } from "@/lib/workspace-context"
 import { useQuizzes, type QuizGroup, type SkillSelection } from "@/hooks/use-quizzes"
 import { toast } from "sonner"
 
-const userId = 1
+
 
 export default function QuizzesPage() {
   const { t } = useLanguage()
@@ -75,7 +75,7 @@ export default function QuizzesPage() {
   useEffect(() => {
     if (workspaceId) {
       fetchWorkspaceQuizzes(workspaceId)
-      fetchUserScores(userId)
+      fetchUserScores()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workspaceId])
@@ -167,7 +167,6 @@ export default function QuizzesPage() {
         setCurrentAnswer(selectedAnswers[nextIdx] ?? null)
       } else {
         const submission = {
-          user_id: userId,
           workspace_id: workspaceId as number,
           quiz_title: activeQuizGroup.title,
           difficulty: activeQuizGroup.difficulty,
@@ -178,7 +177,7 @@ export default function QuizzesPage() {
         }
         await submitQuiz(submission)
         setQuizState("results")
-        fetchUserScores(userId)
+        fetchUserScores()
       }
     }
   }

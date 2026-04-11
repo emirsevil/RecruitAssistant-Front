@@ -353,7 +353,7 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
   // ─── Public Actions ─────────────────────────────────────────────
 
   const startSession = useCallback(
-    (config: {
+    async (config: {
       workspaceId: number
       categories: string
       difficulty: string
@@ -367,7 +367,23 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
       setCurrentQuestionIndex(0)
       setEvaluation(null)
 
-      const ws = new WebSocket("ws://localhost:8000/ws/voice-interview")
+      // Obtain a WebSocket ticket first
+    let ticket = ""
+    try {
+      const ticketRes = await fetch("http://localhost:8000/auth/ws-ticket", {
+        method: "POST",
+        credentials: "include",
+      })
+      if (ticketRes.ok) {
+        const ticketData = await ticketRes.json()
+        ticket = ticketData.ticket
+      }
+    } catch (err) {
+      console.error("Failed to fetch WS ticket:", err)
+    }
+
+    const wsUrl = `ws://localhost:8000/ws/voice-interview${ticket ? `?ticket=${ticket}` : ""}`
+    const ws = new WebSocket(wsUrl)
       wsRef.current = ws
 
       ws.binaryType = "arraybuffer"
@@ -455,6 +471,7 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
           const response = await fetch("http://localhost:8000/voice-interview/transcribe", {
             method: "POST",
             body: formData,
+            credentials: "include",
           })
 
           if (!response.ok) {
@@ -535,6 +552,7 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
         const response = await fetch("http://localhost:8000/voice-interview/transcribe", {
           method: "POST",
           body: formData,
+          credentials: "include",
         })
 
         if (!response.ok) {

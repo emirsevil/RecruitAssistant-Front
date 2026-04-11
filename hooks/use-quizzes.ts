@@ -51,7 +51,7 @@ export interface QuizScore {
 }
 
 export interface QuizSubmitRequest {
-  user_id: number
+  user_id?: number
   workspace_id: number
   quiz_title: string
   difficulty: string
@@ -79,7 +79,9 @@ export function useQuizzes() {
     setIsLoading(true)
     setError(null)
     try {
-      const res = await fetch(`http://localhost:8000/workspaces/${workspaceId}/quizzes`)
+      const res = await fetch(`http://localhost:8000/workspaces/${workspaceId}/quizzes`, {
+        credentials: "include"
+      })
       if (!res.ok) throw new Error("Failed to fetch quizzes")
       const data = await res.json()
       setQuizGroups(data)
@@ -92,9 +94,11 @@ export function useQuizzes() {
     }
   }
 
-  const fetchUserScores = async (userId: string | number) => {
+  const fetchUserScores = async () => {
     try {
-      const res = await fetch(`http://localhost:8000/quizzes/scores/user/${userId}`)
+      const res = await fetch(`http://localhost:8000/quizzes/scores/me`, {
+        credentials: "include"
+      })
       if (!res.ok) throw new Error("Failed to fetch scores")
       const data = await res.json()
       setUserScores(data)
@@ -113,6 +117,7 @@ export function useQuizzes() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(submission),
+        credentials: "include",
       })
       if (!res.ok) throw new Error("Failed to submit quiz")
       const data = await res.json()
@@ -131,7 +136,8 @@ export function useQuizzes() {
     setError(null)
     try {
       const res = await fetch(`http://localhost:8000/workspaces/${workspaceId}/skills/extract`, {
-        method: "POST"
+        method: "POST",
+        credentials: "include",
       })
       if (!res.ok) throw new Error("Failed to extract skills")
       const data = await res.json()
@@ -152,6 +158,7 @@ export function useQuizzes() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ selections }),
+        credentials: "include",
       })
       if (!res.ok) throw new Error("Failed to generate quizzes")
       const data = await res.json()
