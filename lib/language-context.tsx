@@ -201,7 +201,6 @@ const translations: Translations = {
         "Paste the full job description here...": "Paste the full job description here...",
         "Generate CV Draft": "Generate CV Draft",
         "Generating with AI...": "Generating with AI...",
-        "Save": "Save",
         "CV Analysis": "CV Analysis",
         "ATS Score": "ATS Score",
         "Role Match": "Role Match",
