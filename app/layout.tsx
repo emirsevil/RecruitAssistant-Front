@@ -6,6 +6,7 @@ import "./globals.css"
 import { ScheduleProvider } from "@/lib/schedule-context"
 import { LanguageProvider } from "@/lib/language-context"
 import { WorkspaceProvider } from "@/lib/workspace-context"
+import { AuthProvider } from "@/lib/auth-context"
 import { Navigation } from "@/components/navigation"
 
 const _geist = Geist({ subsets: ["latin"] })
@@ -44,13 +45,15 @@ export default function RootLayout({
     <html lang="en">
       <body className={`font-sans antialiased`}>
         <LanguageProvider>
-          <WorkspaceProvider>
-            <Navigation />
-            <ScheduleProvider>
-              {children}
-              <Analytics />
-            </ScheduleProvider>
-          </WorkspaceProvider>
+          <AuthProvider>
+            <WorkspaceProvider>
+              <Navigation />
+              <ScheduleProvider>
+                {children}
+                <Analytics />
+              </ScheduleProvider>
+            </WorkspaceProvider>
+          </AuthProvider>
         </LanguageProvider>
       </body>
     </html>

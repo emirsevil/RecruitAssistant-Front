@@ -1,7 +1,5 @@
 "use client"
 
-import type React from "react"
-
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -11,12 +9,15 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Eye, EyeOff } from "lucide-react"
+import { Eye, EyeOff, AlertCircle } from "lucide-react"
 import { useLanguage } from "@/lib/language-context"
+import { useAuth } from "@/lib/auth-context"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export default function RegisterPage() {
   const router = useRouter()
   const { t } = useLanguage()
+  const { register } = useAuth()
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [formData, setFormData] = useState({
@@ -27,27 +28,33 @@ export default function RegisterPage() {
     agreeToTerms: false,
   })
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError(null)
 
     if (formData.password !== formData.confirmPassword) {
-      alert(t("Passwords do not match"))
+      setError(t("Passwords do not match"))
       return
     }
 
     if (!formData.agreeToTerms) {
-      alert(t("Please agree to the terms and conditions"))
+      setError(t("Please agree to the terms and conditions"))
       return
     }
 
     setIsLoading(true)
 
-    // Simulate registration
-    setTimeout(() => {
+    try {
+      await register(formData.email, formData.password, formData.name)
+      // Kayıt başarılı, login sayfasına yönlendir
+      router.push("/login?registered=true")
+    } catch (err: any) {
+      setError(err.message || "Kayıt işlemi başarısız oldu.")
+    } finally {
       setIsLoading(false)
-      router.push("/onboarding")
-    }, 1000)
+    }
   }
 
   const handleChange = (field: string, value: string | boolean) => {
@@ -68,6 +75,12 @@ export default function RegisterPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <Alert variant="destructive" className="bg-destructive/10 text-destructive border-destructive/20">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
             <div className="space-y-2">
               <Label htmlFor="name">{t("Full Name")}</Label>
               <Input

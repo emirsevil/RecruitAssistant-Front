@@ -51,17 +51,27 @@ export interface QuizScore {
 }
 
 export interface QuizSubmitRequest {
-  user_id: number
+  user_id?: number
   workspace_id: number
   quiz_title: string
   difficulty: string
   answers: AnswerItem[]
 }
 
+export interface SkillSelection {
+  title: string
+  difficulties: string[]
+}
+
+export interface TargetedQuizRequest {
+  selections: SkillSelection[]
+}
+
 export function useQuizzes() {
   const [quizGroups, setQuizGroups] = useState<QuizGroup[]>([])
   const [userScores, setUserScores] = useState<QuizScore[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [submitResult, setSubmitResult] = useState<QuizSubmitResponse | null>(null)
 
@@ -69,7 +79,9 @@ export function useQuizzes() {
     setIsLoading(true)
     setError(null)
     try {
-      const res = await fetch(`http://localhost:8000/workspaces/${workspaceId}/quizzes`)
+      const res = await fetch(`http://localhost:8000/workspaces/${workspaceId}/quizzes`, {
+        credentials: "include"
+      })
       if (!res.ok) throw new Error("Failed to fetch quizzes")
       const data = await res.json()
       setQuizGroups(data)
@@ -82,9 +94,11 @@ export function useQuizzes() {
     }
   }
 
-  const fetchUserScores = async (userId: string | number) => {
+  const fetchUserScores = async () => {
     try {
-      const res = await fetch(`http://localhost:8000/quizzes/scores/user/${userId}`)
+      const res = await fetch(`http://localhost:8000/quizzes/scores/me`, {
+        credentials: "include"
+      })
       if (!res.ok) throw new Error("Failed to fetch scores")
       const data = await res.json()
       setUserScores(data)
@@ -103,6 +117,7 @@ export function useQuizzes() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(submission),
+        credentials: "include",
       })
       if (!res.ok) throw new Error("Failed to submit quiz")
       const data = await res.json()
@@ -116,14 +131,59 @@ export function useQuizzes() {
     }
   }
 
+  const extractSkills = async (workspaceId: string | number) => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const res = await fetch(`http://localhost:8000/workspaces/${workspaceId}/skills/extract`, {
+        method: "POST",
+        credentials: "include",
+      })
+      if (!res.ok) throw new Error("Failed to extract skills")
+      const data = await res.json()
+      return data as string[]
+    } catch (e: any) {
+      setError(e.message)
+      return []
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const generateTargetedQuizzes = async (workspaceId: string | number, selections: SkillSelection[]) => {
+    setIsGenerating(true)
+    setError(null)
+    try {
+      const res = await fetch(`http://localhost:8000/workspaces/${workspaceId}/quizzes/generate-targeted`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ selections }),
+        credentials: "include",
+      })
+      if (!res.ok) throw new Error("Failed to generate quizzes")
+      const data = await res.json()
+      // Refresh quizzes after generation
+      await fetchWorkspaceQuizzes(workspaceId)
+      return data
+    } catch (e: any) {
+      setError(e.message)
+      return null
+    } finally {
+      setIsGenerating(false)
+    }
+  }
+
   return {
     quizGroups,
     userScores,
     isLoading,
+    isGenerating,
     error,
     submitResult,
     fetchWorkspaceQuizzes,
     fetchUserScores,
     submitQuiz,
+    extractSkills,
+    generateTargetedQuizzes,
   }
 }

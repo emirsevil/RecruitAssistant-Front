@@ -201,7 +201,6 @@ const translations: Translations = {
         "Paste the full job description here...": "Paste the full job description here...",
         "Generate CV Draft": "Generate CV Draft",
         "Generating with AI...": "Generating with AI...",
-        "Save": "Save",
         "CV Analysis": "CV Analysis",
         "ATS Score": "ATS Score",
         "Role Match": "Role Match",
@@ -241,6 +240,11 @@ const translations: Translations = {
         "Your CV has been optimized for the target role. Click \"Download PDF\" to get your professional resume ready for applications.": "Your CV has been optimized for the target role. Click \"Download PDF\" to get your professional resume ready for applications.",
         "Pro Tip:": "Pro Tip:",
         "Use action verbs and quantify your achievements. For example: \"Increased user engagement by 40%\" instead of \"Improved user engagement.\"": "Use action verbs and quantify your achievements. For example: \"Increased user engagement by 40%\" instead of \"Improved user engagement.\"",
+        "Upload Resume": "Upload Resume",
+        "Upload your existing CV (PDF/DOCX) to autofill the form with AI assistance": "Upload your existing CV (PDF/DOCX) to autofill the form with AI assistance",
+        "Parsing...": "Parsing...",
+        "Special Instructions (Optional)": "Special Instructions (Optional)",
+        "e.g., 'Make it more professional', 'Focus on my leadership skills', 'Keep it under one page'": "e.g., 'Make it more professional', 'Focus on my leadership skills', 'Keep it under one page'",
 
         // Schedule
         "Weekly Schedule": "Weekly Schedule",
@@ -725,6 +729,11 @@ const translations: Translations = {
         "Your CV has been optimized for the target role. Click \"Download PDF\" to get your professional resume ready for applications.": "CV'niz hedef rol için optimize edildi. Profesyonel özgeçmişinizi başvurulara hazır hale getirmek için \"PDF İndir\"e tıklayın.",
         "Pro Tip:": "Profesyonel İpucu:",
         "Use action verbs and quantify your achievements. For example: \"Increased user engagement by 40%\" instead of \"Improved user engagement.\"": "Eylem fiilleri kullanın ve başarılarınızı sayılarla ifade edin. Örneğin: \"Kullanıcı etkileşimini iyileştirdim\" yerine \"Kullanıcı etkileşimini %40 artırdım\".",
+        "Upload Resume": "Özgeçmiş Yükle",
+        "Upload your existing CV (PDF/DOCX) to autofill the form with AI assistance": "Formu yapay zeka desteğiyle doldurmak için mevcut CV'nizi (PDF/DOCX) yükleyin",
+        "Parsing...": "Çözümleniyor...",
+        "Special Instructions (Optional)": "Özel Talimatlar (Opsiyonel)",
+        "e.g., 'Make it more professional', 'Focus on my leadership skills', 'Keep it under one page'": "ör. 'Daha profesyonel yap', 'Liderlik becerilerime odaklan', 'Tek sayfa tut'",
 
         // Schedule
         "Weekly Schedule": "Haftalık Program",
