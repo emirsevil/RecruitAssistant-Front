@@ -65,6 +65,7 @@ export interface SkillSelection {
 
 export interface TargetedQuizRequest {
   selections: SkillSelection[]
+  language: string
 }
 
 export function useQuizzes() {
@@ -150,14 +151,14 @@ export function useQuizzes() {
     }
   }
 
-  const generateTargetedQuizzes = async (workspaceId: string | number, selections: SkillSelection[]) => {
+  const generateTargetedQuizzes = async (workspaceId: string | number, selections: SkillSelection[], language: string = "tr") => {
     setIsGenerating(true)
     setError(null)
     try {
       const res = await fetch(`http://localhost:8000/workspaces/${workspaceId}/quizzes/generate-targeted`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ selections }),
+        body: JSON.stringify({ selections, language }),
         credentials: "include",
       })
       if (!res.ok) throw new Error("Failed to generate quizzes")

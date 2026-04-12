@@ -9,6 +9,7 @@ import { Progress } from "@/components/ui/progress"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   PlayCircle,
   Clock,
@@ -71,6 +72,7 @@ export default function QuizzesPage() {
   const [extractedSkills, setExtractedSkills] = useState<string[]>([])
   const [selectedSkills, setSelectedSkills] = useState<string[]>([])
   const [difficultiesBySkill, setDifficultiesBySkill] = useState<Record<string, string[]>>({})
+  const [quizLanguage, setQuizLanguage] = useState("tr")
 
   useEffect(() => {
     if (workspaceId) {
@@ -137,7 +139,7 @@ export default function QuizzesPage() {
       difficulties: difficultiesBySkill[skill] || ["Medium"]
     }))
 
-    const result = await generateTargetedQuizzes(workspaceId, selections)
+    const result = await generateTargetedQuizzes(workspaceId, selections, quizLanguage)
     if (result) {
       setDiscoveryOpen(false)
       setSelectedSkills([])
@@ -503,6 +505,19 @@ export default function QuizzesPage() {
                </div>
             ) : (
               <div className="space-y-8">
+                <div className="space-y-3">
+                  <Label className="text-sm font-black uppercase tracking-widest text-muted-foreground/60">{t("Quiz Language")}</Label>
+                  <Select value={quizLanguage} onValueChange={setQuizLanguage}>
+                    <SelectTrigger className="h-12 rounded-2xl border-2 bg-muted/30 focus:ring-primary">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="tr">{t("Turkish")}</SelectItem>
+                      <SelectItem value="en">{t("English")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div>
                   <div className="flex items-center justify-between mb-4">
                     <h4 className="text-sm font-black uppercase tracking-widest text-muted-foreground/60">{t("Select Skills (Max 5)")}</h4>
@@ -575,7 +590,7 @@ export default function QuizzesPage() {
                 ) : (
                   <>
                     <ArrowRight className="mr-2 h-5 w-5" />
-                    {t("Generate Quizzes for")} {selectedSkills.length} {t("Skills")}
+                    {t("Generate Quizzes for")} {selectedSkills.length} {t("Select Skills")}
                   </>
                 )}
               </Button>

@@ -156,8 +156,8 @@ export function Navigation() {
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>
                   <div className="flex flex-col gap-1">
-                    <p className="text-sm font-medium">{user?.full_name || "User"}</p>
-                    <p className="text-xs text-muted-foreground">{user?.email || "user@example.com"}</p>
+                    <p className="text-sm font-medium">{user?.full_name || t("User")}</p>
+                    <p className="text-xs text-muted-foreground">{user?.email || ""}</p>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />

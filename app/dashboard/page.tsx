@@ -15,20 +15,23 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { ArrowUpRight, MessageSquare, FileText, Brain, TrendingUp, Clock, CheckCircle2, Target } from "lucide-react"
 import Link from "next/link"
+import { useAuth } from "@/lib/auth-context"
 import { useLanguage } from "@/lib/language-context"
 
 export default function DashboardPage() {
   const router = useRouter()
   const { events } = useSchedule()
   const { workspaces, isHydrated } = useWorkspace()
+  const { user } = useAuth()
   const { t, language } = useLanguage()
   const dateLocale = language === "tr" ? tr : enUS
 
   useEffect(() => {
-    if (isHydrated && workspaces.length === 0) {
+    // Only redirect if we ARE sure there are no workspaces after hydration
+    if (isHydrated && workspaces.length === 0 && user) {
       router.replace("/onboarding")
     }
-  }, [isHydrated, workspaces.length, router])
+  }, [isHydrated, workspaces.length, router, user])
 
   return (
     <>

@@ -250,6 +250,7 @@ export default function MockInterviewPage() {
                   </div>
                 )}
 
+
                 <div className="space-y-2">
                   <Label>{t("Categories / Topics")}</Label>
                   <Textarea value={categories} onChange={e => setCategories(e.target.value)} placeholder={t("e.g. React, Node.js, System Design...")} />

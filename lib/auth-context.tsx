@@ -7,15 +7,22 @@ interface User {
   id: number
   email: string
   full_name: string | null
-  university: string | null
+  education: string | null
+  phone: string | null
+  address: string | null
+  bio: string | null
+  professional_title: string | null
+  skills: string | null
+  profile_image: string | null
 }
 
 interface AuthContextType {
   user: User | null
   isLoading: boolean
   login: (email: string, password: string) => Promise<void>
-  register: (email: string, password: string, fullName: string, university?: string) => Promise<void>
+  register: (email: string, password: string, fullName: string, education?: string) => Promise<void>
   logout: () => Promise<void>
+  checkUser: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -80,13 +87,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const register = async (email: string, password: string, fullName: string, university?: string) => {
+  const register = async (email: string, password: string, fullName: string, education?: string) => {
     setIsLoading(true)
     try {
       const response = await fetch(`${API_BASE_URL}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, full_name: fullName, university }),
+        body: JSON.stringify({ email, password, full_name: fullName, education }),
       })
 
       if (!response.ok) {
@@ -117,7 +124,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, register, logout, checkUser }}>
       {children}
     </AuthContext.Provider>
   )
