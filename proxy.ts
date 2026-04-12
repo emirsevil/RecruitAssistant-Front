@@ -6,7 +6,7 @@ import type { NextRequest } from "next/server"
 const PUBLIC_ROUTES = ["/", "/login", "/register", "/forgot-password", "/reset-password"]
 const AUTH_COOKIE_NAME = "access_token"
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   const token = request.cookies.get(AUTH_COOKIE_NAME)
 
