@@ -28,17 +28,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter()
 
   const checkUser = useCallback(async () => {
+    setIsLoading(true)
     try {
       const response = await fetch(`${API_BASE_URL}/auth/me`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
-        credentials: "include", // Important for cookies
+        credentials: "include",
       })
 
       if (response.ok) {
         const userData = await response.json()
         setUser(userData)
       } else {
+        // Clear user if cookie is invalid or expired
         setUser(null)
       }
     } catch (error) {
