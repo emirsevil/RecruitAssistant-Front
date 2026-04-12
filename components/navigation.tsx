@@ -32,6 +32,7 @@ import {
 import { useLanguage } from "@/lib/language-context"
 import { WorkspaceSelector } from "@/components/workspace-selector"
 import { useWorkspace } from "@/lib/workspace-context"
+import { useAuth } from "@/lib/auth-context"
 import { cn } from "@/lib/utils"
 
 const navItems = [
@@ -47,10 +48,12 @@ const navItems = [
 export function Navigation() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const { t, language, setLanguage } = useLanguage()
+  const { user, logout } = useAuth()
   const pathname = usePathname()
 
-  // Hide navigation on auth pages and onboarding
-  if (pathname?.startsWith("/login") ||
+  // Hide navigation on auth pages, onboarding, and the landing page
+  if (pathname === "/" ||
+    pathname?.startsWith("/login") ||
     pathname?.startsWith("/register") ||
     pathname?.startsWith("/forgot-password") ||
     pathname?.startsWith("/reset-password")) {
@@ -153,8 +156,8 @@ export function Navigation() {
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>
                   <div className="flex flex-col gap-1">
-                    <p className="text-sm font-medium">Deniz</p>
-                    <p className="text-xs text-muted-foreground">deniz@example.com</p>
+                    <p className="text-sm font-medium">{user?.full_name || "User"}</p>
+                    <p className="text-xs text-muted-foreground">{user?.email || "user@example.com"}</p>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
@@ -171,11 +174,9 @@ export function Navigation() {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <Link href="/login" className="flex w-full items-center">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    {t("logout")}
-                  </Link>
+                <DropdownMenuItem onClick={() => logout()} className="text-destructive focus:text-destructive cursor-pointer">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>{t("logout")}</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

@@ -57,7 +57,9 @@ export function useInterviewHistory() {
         ? `http://localhost:8000/interviews/?workspace_id=${workspaceId}`
         : "http://localhost:8000/interviews/"
 
-      const res = await fetch(url)
+      const res = await fetch(url, {
+        credentials: "include",
+      })
 
       if (!res.ok) {
         throw new Error("Failed to fetch interview history")
@@ -97,7 +99,9 @@ export function useInterviewDetail(interviewId: number | null) {
     setError(null)
 
     try {
-      const res = await fetch(`http://localhost:8000/interviews/${id}`)
+      const res = await fetch(`http://localhost:8000/interviews/${id}`, {
+        credentials: "include",
+      })
 
       if (!res.ok) {
         if (res.status === 404) {

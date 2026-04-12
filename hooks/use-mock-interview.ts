@@ -59,6 +59,7 @@ export function useMockInterview() {
       const res = await fetch("http://localhost:8000/interviews/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           workspace_id: parseInt(workspaceId) || 1,
           categories: categories || "General",
@@ -117,6 +118,7 @@ export function useMockInterview() {
       const res = await fetch("http://localhost:8000/interviews/evaluate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           interview_id: interviewId,
           difficulty: difficulty || "junior",
