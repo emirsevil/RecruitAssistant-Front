@@ -264,6 +264,7 @@ export default function CVStudioPage() {
           workspace_id: workspaceId,
           document_type: documentType
         }),
+        credentials: "include",
       })
       
       const data = await response.json()
@@ -302,6 +303,7 @@ export default function CVStudioPage() {
       const response = await fetch("/api/parse-resume", {
         method: "POST",
         body: formData,
+        credentials: "include",
       })
 
       if (!response.ok) {
@@ -349,6 +351,7 @@ export default function CVStudioPage() {
           job_description: cvData.targetJob,
           special_instructions: cvData.specialInstructions
         }),
+        credentials: "include",
       })
 
       if (!response.ok) {
@@ -406,6 +409,7 @@ export default function CVStudioPage() {
           job_description: cvData.targetJob,
           special_instructions: coverLetterInstructions
         }),
+        credentials: "include",
       })
 
       if (!response.ok) {
