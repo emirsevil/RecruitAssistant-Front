@@ -1,7 +1,5 @@
 "use client"
 
-import type React from "react"
-
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -10,26 +8,36 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { Eye, EyeOff } from "lucide-react"
+import { Eye, EyeOff, AlertCircle, CheckCircle } from "lucide-react"
 import { useLanguage } from "@/lib/language-context"
+import { useAuth } from "@/lib/auth-context"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { useSearchParams } from "next/navigation"
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { t } = useLanguage()
+  const { login } = useAuth()
   const [showPassword, setShowPassword] = useState(false)
+  const isRegistered = searchParams.get("registered") === "true"
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
+    setError(null)
 
-    // Simulate login
-    setTimeout(() => {
+    try {
+      await login(email, password)
+    } catch (err: any) {
+      setError(err.message || "Giriş yapılamadı. Lütfen bilgilerinizi kontrol edin.")
+    } finally {
       setIsLoading(false)
-      router.push("/dashboard")
-    }, 1000)
+    }
   }
 
   return (
@@ -46,6 +54,18 @@ export default function LoginPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {isRegistered && (
+              <Alert className="bg-primary/10 text-primary border-primary/20">
+                <CheckCircle className="h-4 w-4" />
+                <AlertDescription>Hesabınız başarıyla oluşturuldu! Şimdi giriş yapabilirsiniz.</AlertDescription>
+              </Alert>
+            )}
+            {error && (
+              <Alert variant="destructive" className="bg-destructive/10 text-destructive border-destructive/20">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
             <div className="space-y-2">
               <Label htmlFor="email">{t("Email")}</Label>
               <Input
