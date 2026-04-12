@@ -255,7 +255,16 @@ const translations: Translations = {
         "Activity Title": "Activity Title",
         "Type": "Type",
         "Time": "Time",
+        "Start Time": "Start Time",
+        "End Time": "End Time",
         "Schedule Event": "Schedule Event",
+        "Scheduling": "Scheduling",
+        "Activity title is required": "Activity title is required",
+        "End time must be after start time": "End time must be after start time",
+        "Failed to schedule event": "Failed to schedule event",
+        "No history yet.": "No history yet.",
+        "Practice Session": "Practice Session",
+        "Other": "Other",
 
         // Dashboard Activity items (Static for demo)
         "Completed HR Mock Interview": "Completed HR Mock Interview",
@@ -744,7 +753,16 @@ const translations: Translations = {
         "Activity Title": "Etkinlik Başlığı",
         "Type": "Tür",
         "Time": "Saat",
+        "Start Time": "Başlangıç Saati",
+        "End Time": "Bitiş Saati",
         "Schedule Event": "Etkinliği Planla",
+        "Scheduling": "Planlanıyor",
+        "Activity title is required": "Etkinlik başlığı gerekli",
+        "End time must be after start time": "Bitiş saati başlangıç saatinden sonra olmalı",
+        "Failed to schedule event": "Etkinlik planlanamadı",
+        "No history yet.": "Henüz geçmiş yok.",
+        "Practice Session": "Pratik Oturumu",
+        "Other": "Diğer",
 
         // Dashboard Activity items
         "Completed HR Mock Interview": "İK Mülakatı Tamamlandı",
