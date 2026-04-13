@@ -134,12 +134,22 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
   const audioChunksRef = useRef<Blob[]>([])
   const mediaStreamRef = useRef<MediaStream | null>(null)
 
-  // TTS playback
+  // TTS playback — gapless scheduled audio
   const playbackContextRef = useRef<AudioContext | null>(null)
   const playbackQueueRef = useRef<ArrayBuffer[]>([])
   const isPlayingRef = useRef(false)
-  const currentSourceRef = useRef<AudioBufferSourceNode | null>(null)
   const shouldPlayAudioRef = useRef(false)
+  // Tracks the exact AudioContext time at which the next chunk should start
+  const nextPlayTimeRef = useRef(0)
+  // All scheduled source nodes (so we can stop them on interrupt)
+  const scheduledSourcesRef = useRef<AudioBufferSourceNode[]>([])
+  // Signals that the backend has finished sending all TTS chunks for the current utterance
+  const allChunksReceivedRef = useRef(false)
+  // Callback to invoke when playback actually finishes (after all sources end)
+  const onPlaybackFinishedRef = useRef<(() => void) | null>(null)
+  // Number of chunks to buffer before starting playback (absorbs network jitter)
+  const PRE_BUFFER_COUNT = 3
+  const SAMPLE_RATE = 24000
 
   // Track state in refs for use in callbacks
   const sessionStateRef = useRef<SessionState>("idle")
@@ -153,68 +163,104 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
     micActiveRef.current = micActive
   }, [micActive])
 
-  // ─── Audio Playback (TTS) ───────────────────────────────────────
+  // ─── Audio Playback (TTS) — Gapless Scheduled ───────────────────
 
   const initPlaybackContext = useCallback(() => {
     if (!playbackContextRef.current) {
-      playbackContextRef.current = new AudioContext({ sampleRate: 24000 })
+      playbackContextRef.current = new AudioContext({ sampleRate: SAMPLE_RATE })
     }
     return playbackContextRef.current
   }, [])
 
-  const playNextChunk = useCallback(() => {
+  /**
+   * Drain the queue: schedule as many queued chunks as possible, each at exact
+   * sample-boundary times so there are zero gaps between them.
+   */
+  const drainQueue = useCallback(() => {
     const ctx = playbackContextRef.current
-    if (!ctx || playbackQueueRef.current.length === 0 || !shouldPlayAudioRef.current) {
-      isPlayingRef.current = false
+    if (!ctx || !shouldPlayAudioRef.current) {
       return
     }
 
-    isPlayingRef.current = true
-    const chunk = playbackQueueRef.current.shift()!
+    while (playbackQueueRef.current.length > 0 && shouldPlayAudioRef.current) {
+      const chunk = playbackQueueRef.current.shift()!
+      const float32Data = new Float32Array(chunk)
 
-    // Convert raw PCM f32le bytes to Float32Array
-    const float32Data = new Float32Array(chunk)
-    const audioBuffer = ctx.createBuffer(1, float32Data.length, 24000)
-    audioBuffer.getChannelData(0).set(float32Data)
+      if (float32Data.length === 0) continue
 
-    const source = ctx.createBufferSource()
-    source.buffer = audioBuffer
-    source.connect(ctx.destination)
-    currentSourceRef.current = source
+      const audioBuffer = ctx.createBuffer(1, float32Data.length, SAMPLE_RATE)
+      audioBuffer.getChannelData(0).set(float32Data)
 
-    source.onended = () => {
-      currentSourceRef.current = null
-      playNextChunk()
+      const source = ctx.createBufferSource()
+      source.buffer = audioBuffer
+      source.connect(ctx.destination)
+
+      // If we've fallen behind real-time, snap forward to now + small offset
+      const now = ctx.currentTime
+      if (nextPlayTimeRef.current < now) {
+        nextPlayTimeRef.current = now + 0.01 // 10ms safety margin
+      }
+
+      source.start(nextPlayTimeRef.current)
+      // Advance the cursor by exactly this chunk's duration (sample-accurate)
+      nextPlayTimeRef.current += float32Data.length / SAMPLE_RATE
+
+      // Track for cleanup
+      scheduledSourcesRef.current.push(source)
+
+      // When this source finishes, remove it from the list and check if we're done
+      source.onended = () => {
+        scheduledSourcesRef.current = scheduledSourcesRef.current.filter((s) => s !== source)
+        // If no more sources are scheduled and queue is empty, playback is complete
+        if (scheduledSourcesRef.current.length === 0 && playbackQueueRef.current.length === 0) {
+          isPlayingRef.current = false
+          // If backend already signaled "all chunks sent", fire the finished callback
+          if (allChunksReceivedRef.current && onPlaybackFinishedRef.current) {
+            onPlaybackFinishedRef.current()
+            onPlaybackFinishedRef.current = null
+            allChunksReceivedRef.current = false
+          }
+        }
+      }
     }
-
-    source.start()
   }, [])
 
   const queueAudioChunk = useCallback(
     (data: ArrayBuffer) => {
-      if (!shouldPlayAudioRef.current) return;
+      if (!shouldPlayAudioRef.current) return
       initPlaybackContext()
       playbackQueueRef.current.push(data)
 
       if (!isPlayingRef.current) {
-        playNextChunk()
+        // Wait for a few chunks to arrive before starting (pre-buffer)
+        if (playbackQueueRef.current.length >= PRE_BUFFER_COUNT) {
+          isPlayingRef.current = true
+          nextPlayTimeRef.current = 0 // will snap to ctx.currentTime in drainQueue
+          drainQueue()
+        }
+      } else {
+        // Already playing — schedule this new chunk immediately
+        drainQueue()
       }
     },
-    [initPlaybackContext, playNextChunk]
+    [initPlaybackContext, drainQueue]
   )
 
   const stopPlayback = useCallback(() => {
     shouldPlayAudioRef.current = false
-    // Stop current audio source
-    if (currentSourceRef.current) {
+    allChunksReceivedRef.current = false
+    onPlaybackFinishedRef.current = null
+    // Stop all scheduled sources
+    for (const source of scheduledSourcesRef.current) {
       try {
-        currentSourceRef.current.stop()
+        source.stop()
       } catch {}
-      currentSourceRef.current = null
     }
-    // Clear queue
+    scheduledSourcesRef.current = []
+    // Clear queue and reset state
     playbackQueueRef.current = []
     isPlayingRef.current = false
+    nextPlayTimeRef.current = 0
   }, [])
 
   // ─── Audio Capture (Mic → STT) ─────────────────────────────────
@@ -307,7 +353,19 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
             break
 
           case "ai_done_speaking":
-            setSessionState("listening")
+            // Don't transition immediately — audio may still be playing.
+            // Mark that all chunks have been received.
+            allChunksReceivedRef.current = true
+            // If playback already finished (or no audio was queued), transition now
+            if (!isPlayingRef.current && scheduledSourcesRef.current.length === 0) {
+              setSessionState("listening")
+              allChunksReceivedRef.current = false
+            } else {
+              // Otherwise, defer transition until the last source finishes
+              onPlaybackFinishedRef.current = () => {
+                setSessionState("listening")
+              }
+            }
             break
 
           case "next_question":
