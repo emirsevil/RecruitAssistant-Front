@@ -123,6 +123,7 @@ const translations: Translations = {
         "No upcoming events scheduled.": "No upcoming events scheduled.",
 
         // Quizzes
+        "Test your technical knowledge and validate your skills": "Test your technical knowledge and validate your skills",
         "Test your knowledge and track your improvement": "Test your knowledge and track your improvement",
         "Recommended for You": "Recommended for You",
         "Start Quiz": "Start Quiz",
@@ -154,6 +155,14 @@ const translations: Translations = {
         "Select Skills": "Skills",
         "Quiz Language": "Quiz Language",
         "Select Skills (Max 5)": "Select Skills (Max 5)",
+        "items": "items",
+        "Attempts": "Attempts",
+        "Attempted": "Attempted",
+        "Best Score": "Best Score",
+        "Filter": "Filter",
+        "No quizzes found": "No quizzes found",
+        "Start Discovery": "Start Discovery",
+        "Technical": "Technical",
 
         // Mock Interview
         "Practice your interview skills with AI-powered feedback": "Practice your interview skills with AI-powered feedback",
@@ -683,6 +692,7 @@ const translations: Translations = {
         "No upcoming events scheduled.": "Yaklaşan etkinlik yok.",
 
         // Quizzes
+        "Test your technical knowledge and validate your skills": "Teknik bilginizi test edin ve yeteneklerinizi doğrulayın",
         "Test your knowledge and track your improvement": "Bilgini test et ve gelişimini takip et",
         "Recommended for You": "Önerilenler",
         "Start Quiz": "Teste Başla",
@@ -714,6 +724,14 @@ const translations: Translations = {
         "Select Skills": "Yetenek",
         "Quiz Language": "Quiz Dili",
         "Select Skills (Max 5)": "Yetenekleri Seçin (Maks 5)",
+        "items": "madde",
+        "Attempts": "Deneme",
+        "Attempted": "Başlanıldı",
+        "Best Score": "En İyi Puan",
+        "Filter": "FİLTRELE",
+        "No quizzes found": "Test bulunamadı",
+        "Start Discovery": "Keşfi Başlat",
+        "Technical": "Teknik",
 
         // Mock Interview
         "Practice your interview skills with AI-powered feedback": "Yapay zeka desteğiyle mülakat becerilerini geliştir",
