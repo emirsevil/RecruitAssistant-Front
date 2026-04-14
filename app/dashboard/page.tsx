@@ -183,7 +183,6 @@ export default function DashboardPage() {
   const { user } = useAuth()
   const { data, isLoading, error } = useDashboard()
   const { workspaces, isHydrated } = useWorkspace()
-  const { user } = useAuth()
   const { t, language } = useLanguage()
   const dateLocale = language === "tr" ? tr : enUS
   const recommendedActions = buildRecommendedActions(data, t)
