@@ -319,12 +319,15 @@ export default function MockInterviewClient() {
             )}
 
             {/* ── Main Grid: Avatar + Controls ── */}
-            <div className="grid gap-4 lg:grid-cols-12">
+            <div className="grid gap-4 lg:grid-cols-12 items-start"> {/* Keep items-start here! */}
+              
               {/* ── Left Column: Avatar Video Panel ── */}
-              <div className="lg:col-span-5">
-                <Card className="overflow-hidden border-2 border-primary/10 h-full flex flex-col">
-                  {/* Avatar Canvas */}
-                  <div className="relative flex-1 min-h-[350px] lg:min-h-[420px] bg-gradient-to-b from-slate-800 via-slate-850 to-slate-900">
+              <div className="lg:col-span-5 lg:sticky lg:top-6">
+                
+                <Card className="overflow-hidden border-2 border-primary/10 flex flex-col">
+                  
+                  {/* Replace fixed heights with `aspect-square w-full` */}
+                  <div className="relative w-full aspect-square bg-gradient-to-b from-slate-800 via-slate-850 to-slate-900">
                     <Avatar3D
                       analyserNode={voice.analyserNode}
                       isSpeaking={voice.isAiSpeaking}
