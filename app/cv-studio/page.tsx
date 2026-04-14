@@ -13,6 +13,7 @@ import { Separator } from "@/components/ui/separator"
 import { Download, Sparkles, RotateCcw, Save, Plus, Trash2, AlertCircle, Loader2, FileText, Eye, Upload } from "lucide-react"
 import { useLanguage } from "@/lib/language-context"
 import { useWorkspace } from "@/lib/workspace-context"
+import { API_BASE_URL } from "@/lib/api-config"
 
 import Editor from "@monaco-editor/react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -256,7 +257,7 @@ export default function CVStudioPage() {
       const workspaceId = activeWorkspace ? parseInt(activeWorkspace.id) : null
       const documentType = isCoverLetter ? "cover_letter" : "cv"
 
-      const response = await fetch("https://recruitassistant-back-eo8n.onrender.com/api/compile-latex", {
+      const response = await fetch(`${API_BASE_URL}/api/compile-latex`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
@@ -343,7 +344,7 @@ export default function CVStudioPage() {
     setGeneratedLatex("")
 
     try {
-      const response = await fetch("https://recruitassistant-back-eo8n.onrender.com/api/generate-cv", {
+      const response = await fetch(`${API_BASE_URL}/api/generate-cv`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -402,7 +403,7 @@ export default function CVStudioPage() {
         cvData.specialInstructions
       ].filter(Boolean).join("\n")
 
-      const response = await fetch("https://recruitassistant-back-eo8n.onrender.com/api/generate-cover-letter", {
+      const response = await fetch(`${API_BASE_URL}/api/generate-cover-letter`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

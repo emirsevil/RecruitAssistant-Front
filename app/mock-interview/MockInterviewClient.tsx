@@ -17,9 +17,9 @@ import { useLanguage } from "@/lib/language-context"
 import { useVoiceInterview } from "@/hooks/use-voice-interview"
 import { useToast } from "@/hooks/use-toast"
 import { useWorkspace } from "@/lib/workspace-context"
+import { API_BASE_URL } from "@/lib/api-config"
 
 type InterviewState = "setup" | "active" | "evaluating" | "completed"
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://recruitassistant-back-eo8n.onrender.com"
 
 
 export default function MockInterviewClient() {

@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react"
+import { API_BASE_URL, getVoiceInterviewWebSocketUrl } from "@/lib/api-config"
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -428,7 +429,7 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
       // Obtain a WebSocket ticket first
     let ticket = ""
     try {
-      const ticketRes = await fetch("https://recruitassistant-back-eo8n.onrender.com/auth/ws-ticket", {
+      const ticketRes = await fetch(`${API_BASE_URL}/auth/ws-ticket`, {
         method: "POST",
         credentials: "include",
       })
@@ -440,7 +441,7 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
       console.error("Failed to fetch WS ticket:", err)
     }
 
-    const wsUrl = `ws://localhost:8000/ws/voice-interview${ticket ? `?ticket=${ticket}` : ""}`
+    const wsUrl = getVoiceInterviewWebSocketUrl(ticket)
     const ws = new WebSocket(wsUrl)
       wsRef.current = ws
 
@@ -526,7 +527,7 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
           const formData = new FormData()
           formData.append("file", audioBlob, "recording.webm")
 
-          const response = await fetch("https://recruitassistant-back-eo8n.onrender.com/voice-interview/transcribe", {
+          const response = await fetch(`${API_BASE_URL}/voice-interview/transcribe`, {
             method: "POST",
             body: formData,
             credentials: "include",
@@ -607,7 +608,7 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
         const formData = new FormData()
         formData.append("file", audioBlob, "recording.webm")
 
-        const response = await fetch("https://recruitassistant-back-eo8n.onrender.com/voice-interview/transcribe", {
+        const response = await fetch(`${API_BASE_URL}/voice-interview/transcribe`, {
           method: "POST",
           body: formData,
           credentials: "include",

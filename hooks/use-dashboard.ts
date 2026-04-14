@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react"
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://recruitassistant-back-eo8n.onrender.com"
+import { API_BASE_URL } from "@/lib/api-config"
 
 export interface DashboardStats {
   completed_interviews: number

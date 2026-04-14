@@ -3,6 +3,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react"
 import { addDays, startOfWeek } from "date-fns"
 import { useAuth } from "./auth-context"
+import { API_BASE_URL } from "@/lib/api-config"
 
 export type EventType = "interview" | "quiz" | "practice" | "other"
 
@@ -47,7 +48,6 @@ interface ScheduleContextType {
 }
 
 const ScheduleContext = createContext<ScheduleContextType | undefined>(undefined)
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://recruitassistant-back-eo8n.onrender.com"
 
 function mapApiEvent(event: ApiScheduleEvent): CalendarEvent {
     const startTime = new Date(event.start_time)

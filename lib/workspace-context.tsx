@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react"
 import { useAuth } from "./auth-context"
+import { API_BASE_URL } from "@/lib/api-config"
 
 export interface Workspace {
   id: string
@@ -23,8 +24,6 @@ export interface CreateWorkspaceOptions {
 export type WorkspaceDetailsUpdate = Partial<
   Pick<Workspace, "name" | "emoji" | "jobName" | "jobDescription">
 >
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://recruitassistant-back-eo8n.onrender.com"
 
 interface WorkspaceContextType {
   workspaces: Workspace[]

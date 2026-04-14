@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react"
 import { useRouter } from "next/navigation"
+import { API_BASE_URL } from "@/lib/api-config"
 
 interface User {
   id: number
@@ -26,8 +27,6 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://recruitassistant-back-eo8n.onrender.com"
 
 // ── Configuration ────────────────────────────────────────────────────
 const CHECK_INTERVAL_MS = 60 * 1000          // Check every 1 minute (fast inactivity detection)

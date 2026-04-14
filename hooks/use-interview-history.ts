@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react"
+import { API_BASE_URL } from "@/lib/api-config"
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -54,8 +55,8 @@ export function useInterviewHistory() {
 
     try {
       const url = workspaceId
-        ? `https://recruitassistant-back-eo8n.onrender.com/interviews/?workspace_id=${workspaceId}`
-        : "https://recruitassistant-back-eo8n.onrender.com/interviews/"
+        ? `${API_BASE_URL}/interviews/?workspace_id=${workspaceId}`
+        : `${API_BASE_URL}/interviews/`
 
       const res = await fetch(url, {
         credentials: "include",
@@ -99,7 +100,7 @@ export function useInterviewDetail(interviewId: number | null) {
     setError(null)
 
     try {
-      const res = await fetch(`https://recruitassistant-back-eo8n.onrender.com/interviews/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/interviews/${id}`, {
         credentials: "include",
       })
 

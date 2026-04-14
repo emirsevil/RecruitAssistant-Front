@@ -12,8 +12,7 @@ import { User as UserIcon, Briefcase, Camera, Loader2 } from "lucide-react"
 import { useLanguage } from "@/lib/language-context"
 import { useAuth } from "@/lib/auth-context"
 import { useToast } from "@/hooks/use-toast"
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://recruitassistant-back-eo8n.onrender.com"
+import { API_BASE_URL } from "@/lib/api-config"
 
 export default function ProfilePage() {
   const { t } = useLanguage()

@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { API_BASE_URL } from "@/lib/api-config"
 
 export interface MockQuestion {
   id: number
@@ -56,7 +57,7 @@ export function useMockInterview() {
     setEvaluation(null)
     
     try {
-      const res = await fetch("https://recruitassistant-back-eo8n.onrender.com/interviews/generate", {
+      const res = await fetch(`${API_BASE_URL}/interviews/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -115,7 +116,7 @@ export function useMockInterview() {
         answer: mergedAnswers[idx] || "(No answer provided)",
       }))
 
-      const res = await fetch("https://recruitassistant-back-eo8n.onrender.com/interviews/evaluate", {
+      const res = await fetch(`${API_BASE_URL}/interviews/evaluate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
