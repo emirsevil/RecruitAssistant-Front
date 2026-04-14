@@ -5,6 +5,7 @@ import type React from "react"
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { useLanguage } from "@/lib/language-context"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -13,6 +14,7 @@ import { Eye, EyeOff, Lock } from "lucide-react"
 
 export default function ResetPasswordPage() {
   const router = useRouter()
+  const { t } = useLanguage()
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [password, setPassword] = useState("")
@@ -23,12 +25,12 @@ export default function ResetPasswordPage() {
     e.preventDefault()
 
     if (password !== confirmPassword) {
-      alert("Passwords do not match")
+      alert(t("Passwords do not match"))
       return
     }
 
     if (password.length < 8) {
-      alert("Password must be at least 8 characters")
+      alert(t("Password must be at least 8 characters"))
       return
     }
 
@@ -37,7 +39,7 @@ export default function ResetPasswordPage() {
     // Simulate password reset
     setTimeout(() => {
       setIsLoading(false)
-      alert("Password reset successful!")
+      alert(t("Password reset successful!"))
       router.push("/login")
     }, 1500)
   }
@@ -51,20 +53,20 @@ export default function ResetPasswordPage() {
               <Lock className="h-6 w-6 text-primary" />
             </div>
           </div>
-          <CardTitle className="text-2xl text-center">Reset password</CardTitle>
-          <CardDescription className="text-center">Enter your new password below</CardDescription>
+          <CardTitle className="text-2xl text-center">{t("Reset password")}</CardTitle>
+          <CardDescription className="text-center">{t("Enter your new password below")}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="password">New Password</Label>
+              <Label htmlFor="password">{t("New Password")}</Label>
               <div className="relative">
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="At least 8 characters"
+                  placeholder={t("At least 8 characters")}
                   required
                 />
                 <Button
@@ -84,14 +86,14 @@ export default function ResetPasswordPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm New Password</Label>
+              <Label htmlFor="confirmPassword">{t("Confirm New Password")}</Label>
               <div className="relative">
                 <Input
                   id="confirmPassword"
                   type={showConfirmPassword ? "text" : "password"}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Re-enter your password"
+                  placeholder={t("Re-enter your password")}
                   required
                 />
                 <Button
@@ -111,21 +113,21 @@ export default function ResetPasswordPage() {
             </div>
 
             <div className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">
-              <p className="font-medium mb-1">Password must contain:</p>
+              <p className="font-medium mb-1">{t("Password must contain:")}</p>
               <ul className="space-y-1 list-disc list-inside">
-                <li>At least 8 characters</li>
-                <li>One uppercase letter</li>
-                <li>One number</li>
+                <li>{t("At least 8 characters")}</li>
+                <li>{t("One uppercase letter")}</li>
+                <li>{t("One number")}</li>
               </ul>
             </div>
 
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Resetting..." : "Reset Password"}
+              {isLoading ? t("Resetting...") : t("Reset Password")}
             </Button>
 
             <div className="text-center">
               <Link href="/login" className="text-sm text-primary hover:underline">
-                Back to login
+                {t("Back to login")}
               </Link>
             </div>
           </form>
