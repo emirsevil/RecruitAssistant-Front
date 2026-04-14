@@ -92,5 +92,29 @@ export function useDashboard() {
     isLoading,
     error,
     refetch: fetchDashboard,
+    updateGoals: async (goals: {
+      interviews_target: number
+      quizzes_target: number
+      practice_minutes_target: number
+    }) => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/dashboard/goals`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(goals),
+          credentials: "include",
+        })
+
+        if (!response.ok) {
+          throw new Error("Failed to update goals")
+        }
+
+        await fetchDashboard()
+        return true
+      } catch (e: any) {
+        setError(e.message || "Failed to update goals")
+        return false
+      }
+    },
   }
 }

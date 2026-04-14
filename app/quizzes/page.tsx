@@ -457,7 +457,7 @@ export default function QuizzesPage() {
                   <div className="flex items-center gap-4 text-sm font-semibold text-muted-foreground">
                     <div className="flex items-center gap-1.5">
                       <LayoutGrid className="h-4 w-4" />
-                      <span>{group.questions.length} {t("items")}</span>
+                      <span>{group.questions.length} {t("questions")}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Clock className="h-4 w-4" />

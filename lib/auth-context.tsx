@@ -23,6 +23,7 @@ interface AuthContextType {
   register: (email: string, password: string, fullName: string, education?: string) => Promise<void>
   logout: () => Promise<void>
   checkUser: () => Promise<void>
+  updateProfile: (data: { full_name?: string; education?: string }) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -218,8 +219,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const updateProfile = useCallback(async (profileData: { full_name?: string; education?: string }) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/profile`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(profileData),
+        credentials: "include",
+      })
+
+      if (response.ok) {
+        const updatedUser = await response.json()
+        setUser(updatedUser)
+      } else {
+        const errData = await response.json()
+        throw new Error(errData.detail || "Failed to update profile")
+      }
+    } catch (error) {
+      console.error("Failed to update profile:", error)
+      throw error
+    }
+  }, [])
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, register, logout, checkUser }}>
+    <AuthContext.Provider value={{ user, isLoading, login, register, logout, checkUser, updateProfile }}>
       {children}
     </AuthContext.Provider>
   )
