@@ -9,6 +9,8 @@ import { WorkspaceProvider } from "@/lib/workspace-context"
 import { AuthProvider } from "@/lib/auth-context"
 import { Navigation } from "@/components/navigation"
 
+import { OnboardingGuard } from "@/components/onboarding-guard"
+
 const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
 
@@ -47,11 +49,13 @@ export default function RootLayout({
         <LanguageProvider>
           <AuthProvider>
             <WorkspaceProvider>
-              <Navigation />
-              <ScheduleProvider>
-                {children}
-                <Analytics />
-              </ScheduleProvider>
+              <OnboardingGuard>
+                <Navigation />
+                <ScheduleProvider>
+                  {children}
+                  <Analytics />
+                </ScheduleProvider>
+              </OnboardingGuard>
             </WorkspaceProvider>
           </AuthProvider>
         </LanguageProvider>

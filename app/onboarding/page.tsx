@@ -1,316 +1,220 @@
 "use client"
 
-import { useState } from "react"
-
+import { useState, useEffect } from "react"
 import { PageContainer } from "@/components/page-container"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Progress } from "@/components/ui/progress"
-import { ChevronRight, ChevronLeft, Check } from "lucide-react"
+import { ChevronRight, ChevronLeft, GraduationCap, Briefcase } from "lucide-react"
 import { WorkspaceForm } from "@/components/workspace-form"
 import { useRouter } from "next/navigation"
+import { useAuth } from "@/lib/auth-context"
 import { useWorkspace } from "@/lib/workspace-context"
 import { useLanguage } from "@/lib/language-context"
-
-const skills = [
-  "Python",
-  "Java",
-  "JavaScript",
-  "TypeScript",
-  "React",
-  "Node.js",
-  "SQL",
-  "MongoDB",
-  "AWS",
-  "Docker",
-  "Git",
-  "Machine Learning",
-  "Data Structures",
-  "Algorithms",
-  "System Design",
-  "REST APIs",
-]
-
-const goals = [
-  { id: "hr", label: "Ace HR interviews", description: "Practice behavioral questions and communication" },
-  { id: "tech", label: "Improve technical interviews", description: "Master coding problems and system design" },
-  { id: "cv", label: "Optimize my CV", description: "Create an ATS-friendly resume" },
-  { id: "track", label: "Track my progress", description: "Monitor improvement over time" },
-]
+import { toast } from "sonner"
 
 export default function OnboardingPage() {
   const [step, setStep] = useState(1)
+  const [isUpdating, setIsUpdating] = useState(false)
+  const { user, updateProfile } = useAuth()
+  const { createWorkspace, workspaces } = useWorkspace()
+  const { t } = useLanguage()
+  const router = useRouter()
+
   const [formData, setFormData] = useState({
-    name: "",
     university: "",
-    graduationYear: new Date().getFullYear(),
-    targetRole: "",
-    selectedSkills: [] as string[],
-    selectedGoals: [] as string[],
+    graduationYear: new Date().getFullYear().toString(),
     workspaceName: "",
-    selectedEmoji: "",
+    selectedEmoji: "💼",
     jobName: "",
     jobDescription: "",
   })
-  const router = useRouter()
-  const { createWorkspace } = useWorkspace()
-  const { t } = useLanguage()
 
-  const totalSteps = 5
+  // If user already has workspaces, redirect away
+  useEffect(() => {
+    if (workspaces.length > 0) {
+      router.push("/dashboard")
+    }
+  }, [workspaces, router])
+
+  const totalSteps = 2
   const progress = (step / totalSteps) * 100
 
-  const toggleSkill = (skill: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      selectedSkills: prev.selectedSkills.includes(skill)
-        ? prev.selectedSkills.filter((s) => s !== skill)
-        : [...prev.selectedSkills, skill],
-    }))
-  }
-
-  const toggleGoal = (goalId: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      selectedGoals: prev.selectedGoals.includes(goalId)
-        ? prev.selectedGoals.filter((g) => g !== goalId)
-        : [...prev.selectedGoals, goalId],
-    }))
-  }
-
-  const handleComplete = () => {
-    if (step === 5) {
-      createWorkspace(
-        formData.workspaceName.trim() || t("defaultWorkspaceName"),
-        formData.selectedEmoji || undefined,
-        {
-          jobName: formData.jobName.trim() || undefined,
-          jobDescription: formData.jobDescription.trim() || undefined,
-        }
-      )
+  const handleNext = async () => {
+    if (step === 1) {
+      if (!formData.university || !formData.graduationYear) {
+        toast.error(t("Please fill in all education details"))
+        return
+      }
+      
+      setIsUpdating(true)
+      try {
+        const educationString = `${formData.university}, ${formData.graduationYear}`
+        await updateProfile({ education: educationString })
+        setStep(2)
+      } catch (error) {
+        toast.error(t("Failed to update profile"))
+      } finally {
+        setIsUpdating(false)
+      }
     }
-    router.push("/dashboard")
+  }
+
+  const handleComplete = async () => {
+    if (step === 2) {
+      if (!formData.workspaceName.trim()) {
+        toast.error(t("Please enter a workspace name"))
+        return
+      }
+
+      setIsUpdating(true)
+      try {
+        await createWorkspace(
+          formData.workspaceName.trim(),
+          formData.selectedEmoji,
+          {
+            jobName: formData.jobName.trim() || undefined,
+            jobDescription: formData.jobDescription.trim() || undefined,
+          }
+        )
+        // Redirection will be handled by the guard or manually
+        router.push("/dashboard")
+      } catch (error) {
+        toast.error(t("Failed to create workspace"))
+      } finally {
+        setIsUpdating(false)
+      }
+    }
   }
 
   return (
-    <>
-      <PageContainer>
-        <div className="flex min-h-[calc(100vh-8rem)] items-center justify-center py-8">
-          <Card className="w-full max-w-2xl">
+    <PageContainer>
+      <div className="flex min-h-[calc(100vh-8rem)] items-center justify-center py-8">
+        <div className="w-full max-w-2xl space-y-8">
+          <div className="text-center space-y-2">
+            <h1 className="text-3xl font-bold tracking-tight">
+              {t("Welcome to RecruitAssistant, {{name}}!").replace("{{name}}", user?.full_name || "")}
+            </h1>
+            <p className="text-muted-foreground">
+              {t("Let's set up your profile and your first workspace.")}
+            </p>
+          </div>
+
+          <Card className="border-none shadow-xl bg-card/50 backdrop-blur-sm">
             <CardHeader>
-              <div className="mb-4">
+              <div className="space-y-4">
                 <Progress value={progress} className="h-2" />
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {t("onboardingStepProgress")
-                    .replace("{{step}}", String(step))
-                    .replace("{{total}}", String(totalSteps))}
-                </p>
+                <div className="flex justify-between text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  <span className={step === 1 ? "text-primary" : ""}>{t("1. Education")}</span>
+                  <span className={step === 2 ? "text-primary" : ""}>{t("2. Workspace")}</span>
+                </div>
               </div>
-              <CardTitle className="text-2xl">
-                {step === 1 && "Welcome to RecruitAssistant"}
-                {step === 2 && "Tell us about your skills"}
-                {step === 3 && "What are your goals?"}
-                {step === 4 && t("Your Profile")}
-                {step === 5 && t("onboardingWorkspaceTitle")}
-              </CardTitle>
-              <CardDescription>
-                {step === 1 && "Let's get to know you better"}
-                {step === 2 && "Select all the skills you have"}
-                {step === 3 && "Choose what you want to achieve"}
-                {step === 4 && "Review your information"}
-                {step === 5 && t("onboardingWorkspaceDesc")}
-              </CardDescription>
             </CardHeader>
-            <CardContent>
-              {/* Step 1: Basic Info */}
+            <CardContent className="pt-6">
               {step === 1 && (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">{t("Full Name")}</Label>
-                    <Input
-                      id="name"
-                      placeholder="John Doe"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    />
+                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                      <GraduationCap className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-xl">{t("Where did you study?")}</CardTitle>
+                      <CardDescription>{t("We use this to personalize your interview experience.")}</CardDescription>
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="university">{t("University")}</Label>
-                    <Input
-                      id="university"
-                      placeholder="Massachusetts Institute of Technology"
-                      value={formData.university}
-                      onChange={(e) => setFormData({ ...formData, university: e.target.value })}
-                    />
-                  </div>
-                  <div className="grid gap-4 sm:grid-cols-2">
+
+                  <div className="grid gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="university">{t("University")}</Label>
+                      <Input
+                        id="university"
+                        placeholder="e.g. Middle East Technical University"
+                        className="h-12 rounded-xl"
+                        value={formData.university}
+                        onChange={(e) => setFormData({ ...formData, university: e.target.value })}
+                      />
+                    </div>
                     <div className="space-y-2">
                       <Label htmlFor="graduationYear">{t("Graduation Year")}</Label>
                       <Input
                         id="graduationYear"
                         type="number"
                         placeholder="2024"
+                        className="h-12 rounded-xl"
                         value={formData.graduationYear}
-                        onChange={(e) => setFormData({ ...formData, graduationYear: Number.parseInt(e.target.value) })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="targetRole">{t("Target Role")}</Label>
-                      <Input
-                        id="targetRole"
-                        placeholder="Software Engineer"
-                        value={formData.targetRole}
-                        onChange={(e) => setFormData({ ...formData, targetRole: e.target.value })}
+                        onChange={(e) => setFormData({ ...formData, graduationYear: e.target.value })}
                       />
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* Step 2: Skills */}
               {step === 2 && (
-                <div className="space-y-4">
-                  <div className="flex flex-wrap gap-2">
-                    {skills.map((skill) => (
-                      <Badge
-                        key={skill}
-                        variant={formData.selectedSkills.includes(skill) ? "default" : "outline"}
-                        className="cursor-pointer px-3 py-1.5 text-sm transition-colors"
-                        onClick={() => toggleSkill(skill)}
-                      >
-                        {formData.selectedSkills.includes(skill) && <Check className="mr-1 h-3 w-3" />}
-                        {skill}
-                      </Badge>
-                    ))}
-                  </div>
-                  {formData.selectedSkills.length > 0 && (
-                    <p className="text-sm text-muted-foreground">
-                      {formData.selectedSkills.length} skill{formData.selectedSkills.length !== 1 ? "s" : ""} selected
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {/* Step 3: Goals */}
-              {step === 3 && (
-                <div className="space-y-4">
-                  {goals.map((goal) => (
-                    <Card
-                      key={goal.id}
-                      className={`cursor-pointer transition-all ${formData.selectedGoals.includes(goal.id)
-                        ? "border-primary bg-primary/5"
-                        : "hover:border-primary/50"
-                        }`}
-                      onClick={() => toggleGoal(goal.id)}
-                    >
-                      <CardContent className="flex items-start gap-3 p-4">
-                        <Checkbox checked={formData.selectedGoals.includes(goal.id)} className="mt-0.5" />
-                        <div className="flex-1">
-                          <h4 className="font-medium">{goal.label}</h4>
-                          <p className="text-sm text-muted-foreground">{goal.description}</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-
-              {/* Step 4: Summary */}
-              {step === 4 && (
-                <div className="space-y-6">
-                  <div className="rounded-lg bg-secondary/50 p-4">
-                    <h3 className="mb-3 font-semibold">{t("Your Profile")}</h3>
-                    <dl className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <dt className="text-muted-foreground">{t("Name:")}</dt>
-                        <dd className="font-medium">{formData.name || t("Not provided")}</dd>
-                      </div>
-                      <div className="flex justify-between">
-                        <dt className="text-muted-foreground">{t("University:")}</dt>
-                        <dd className="font-medium">{formData.university || t("Not provided")}</dd>
-                      </div>
-                      <div className="flex justify-between">
-                        <dt className="text-muted-foreground">{t("Graduation:")}</dt>
-                        <dd className="font-medium">{formData.graduationYear}</dd>
-                      </div>
-                      <div className="flex justify-between">
-                        <dt className="text-muted-foreground">{t("Target Role:")}</dt>
-                        <dd className="font-medium">{formData.targetRole || t("Not provided")}</dd>
-                      </div>
-                    </dl>
+                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                      <Briefcase className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-xl">{t("Configure your workspace")}</CardTitle>
+                      <CardDescription>{t("What job are you preparing for right now?")}</CardDescription>
+                    </div>
                   </div>
 
-                  {formData.selectedSkills.length > 0 && (
-                    <div>
-                      <h3 className="mb-2 font-semibold">{t("Selected Skills")}</h3>
-                      <div className="flex flex-wrap gap-2">
-                        {formData.selectedSkills.map((skill) => (
-                          <Badge key={skill} variant="secondary">
-                            {skill}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {formData.selectedGoals.length > 0 && (
-                    <div>
-                      <h3 className="mb-2 font-semibold">{t("Your Goals")}</h3>
-                      <ul className="space-y-1 text-sm">
-                        {formData.selectedGoals.map((goalId) => {
-                          const goal = goals.find((g) => g.id === goalId)
-                          return goal ? (
-                            <li key={goalId} className="flex items-center gap-2">
-                              <Check className="h-4 w-4 text-primary" />
-                              {goal.label}
-                            </li>
-                          ) : null
-                        })}
-                      </ul>
-                    </div>
-                  )}
+                  <WorkspaceForm
+                    idPrefix="onboarding"
+                    value={{
+                      workspaceName: formData.workspaceName,
+                      selectedEmoji: formData.selectedEmoji,
+                      jobName: formData.jobName,
+                      jobDescription: formData.jobDescription,
+                    }}
+                    onChange={(v) =>
+                      setFormData({
+                        ...formData,
+                        workspaceName: v.workspaceName,
+                        selectedEmoji: v.selectedEmoji,
+                        jobName: v.jobName,
+                        jobDescription: v.jobDescription,
+                      })
+                    }
+                  />
                 </div>
               )}
 
-              {/* Step 5: Create Workspace */}
-              {step === 5 && (
-                <WorkspaceForm
-                  idPrefix="onboarding"
-                  value={{
-                    workspaceName: formData.workspaceName,
-                    selectedEmoji: formData.selectedEmoji || "💼",
-                    jobName: formData.jobName,
-                    jobDescription: formData.jobDescription,
-                  }}
-                  onChange={(v) =>
-                    setFormData({
-                      ...formData,
-                      workspaceName: v.workspaceName,
-                      selectedEmoji: v.selectedEmoji,
-                      jobName: v.jobName,
-                      jobDescription: v.jobDescription,
-                    })
-                  }
-                />
-              )}
-
-              {/* Navigation Buttons */}
               <div className="mt-8 flex justify-between gap-4">
-                <Button variant="outline" onClick={() => setStep((s) => Math.max(1, s - 1))} disabled={step === 1}>
-                  <ChevronLeft className="mr-2 h-4 w-4" />
-                  {t("workspaceBack")}
-                </Button>
-                {step < totalSteps ? (
-                  <Button onClick={() => setStep((s) => Math.min(totalSteps, s + 1))}>
-                    {t("Next")}
+                {step === 2 && (
+                  <Button 
+                    variant="ghost" 
+                    onClick={() => setStep(1)}
+                    disabled={isUpdating}
+                    className="rounded-xl h-12"
+                  >
+                    <ChevronLeft className="mr-2 h-4 w-4" />
+                    {t("Back")}
+                  </Button>
+                )}
+                
+                <div className="flex-1" />
+
+                {step === 1 ? (
+                  <Button 
+                    className="rounded-xl h-12 px-8 font-bold shadow-lg shadow-primary/20"
+                    onClick={handleNext}
+                    disabled={isUpdating}
+                  >
+                    {isUpdating ? t("Saving...") : t("Next")}
                     <ChevronRight className="ml-2 h-4 w-4" />
                   </Button>
                 ) : (
-                  <Button onClick={handleComplete} disabled={step === 5 && !formData.workspaceName.trim()}>
-                    {step === 5 ? t("createAndContinue") : t("goToDashboard")}
+                  <Button 
+                    className="rounded-xl h-12 px-8 font-bold shadow-lg shadow-primary/20"
+                    onClick={handleComplete}
+                    disabled={isUpdating || !formData.workspaceName.trim()}
+                  >
+                    {isUpdating ? t("Creating...") : t("Finalize and Explore")}
                     <ChevronRight className="ml-2 h-4 w-4" />
                   </Button>
                 )}
@@ -318,7 +222,7 @@ export default function OnboardingPage() {
             </CardContent>
           </Card>
         </div>
-      </PageContainer>
-    </>
+      </div>
+    </PageContainer>
   )
 }
