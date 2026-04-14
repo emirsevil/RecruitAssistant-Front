@@ -704,8 +704,8 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
       if (wsRef.current) {
         wsRef.current.close()
       }
-      if (playbackContextRef.current) {
-        playbackContextRef.current.close()
+      if (playbackContextRef.current && playbackContextRef.current.state !== "closed") {
+        playbackContextRef.current.close().catch(() => {})
       }
     }
   }, [stopPlayback, stopMicCapture])

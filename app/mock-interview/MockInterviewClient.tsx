@@ -19,6 +19,8 @@ import { useToast } from "@/hooks/use-toast"
 import { useWorkspace } from "@/lib/workspace-context"
 
 type InterviewState = "setup" | "active" | "evaluating" | "completed"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+
 
 export default function MockInterviewClient() {
   const [state, setState] = useState<InterviewState>("setup")
@@ -43,7 +45,9 @@ export default function MockInterviewClient() {
   useEffect(() => {
     const existingId = searchParams.get("id")
     if (existingId) {
-      fetch(`http://localhost:8000/interviews/${existingId}`)
+      fetch(`${API_BASE_URL}/interviews/${existingId}`, {
+        credentials: "include"
+      })
         .then((res) => {
           if (!res.ok) return null
           return res.json()
