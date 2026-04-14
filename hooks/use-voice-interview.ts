@@ -80,6 +80,7 @@ registerProcessor('pcm-capture-processor', PcmCaptureProcessor);
 
 interface UseVoiceInterviewReturn {
   // State
+  analyserNode: AnalyserNode | null
   connectionStatus: ConnectionStatus
   sessionState: SessionState
   isAiSpeaking: boolean
@@ -143,6 +144,8 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
   const nextPlayTimeRef = useRef(0)
   // All scheduled source nodes (so we can stop them on interrupt)
   const scheduledSourcesRef = useRef<AudioBufferSourceNode[]>([])
+  // AnalyserNode for avatar lip-sync (pass-through, does not modify audio)
+  const analyserRef = useRef<AnalyserNode | null>(null)
   // Signals that the backend has finished sending all TTS chunks for the current utterance
   const allChunksReceivedRef = useRef(false)
   // Callback to invoke when playback actually finishes (after all sources end)
@@ -168,6 +171,12 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
   const initPlaybackContext = useCallback(() => {
     if (!playbackContextRef.current) {
       playbackContextRef.current = new AudioContext({ sampleRate: SAMPLE_RATE })
+      // Create a persistent AnalyserNode for avatar lip-sync
+      const analyser = playbackContextRef.current.createAnalyser()
+      analyser.fftSize = 256
+      analyser.smoothingTimeConstant = 0.6
+      analyser.connect(playbackContextRef.current.destination)
+      analyserRef.current = analyser
     }
     return playbackContextRef.current
   }, [])
@@ -193,7 +202,8 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
 
       const source = ctx.createBufferSource()
       source.buffer = audioBuffer
-      source.connect(ctx.destination)
+      // Route through analyser for lip-sync data; analyser already connects to destination
+      source.connect(analyserRef.current || ctx.destination)
 
       // If we've fallen behind real-time, snap forward to now + small offset
       const now = ctx.currentTime
@@ -716,6 +726,7 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
   const isListening = sessionState === "listening"
 
   return {
+    analyserNode: analyserRef.current,
     connectionStatus,
     sessionState,
     isAiSpeaking,
