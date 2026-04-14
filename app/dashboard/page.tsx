@@ -17,7 +17,6 @@ import { ArrowUpRight, MessageSquare, FileText, Brain, Clock, CheckCircle2, Targ
 import Link from "next/link"
 import { useAuth } from "@/lib/auth-context"
 import { useLanguage } from "@/lib/language-context"
-import { useAuth } from "@/lib/auth-context"
 import { DashboardActivity, DashboardData, DashboardUpcomingEvent, useDashboard } from "@/hooks/use-dashboard"
 
 type DashboardAction = {
