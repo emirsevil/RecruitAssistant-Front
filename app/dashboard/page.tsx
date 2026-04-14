@@ -15,6 +15,7 @@ import { Progress } from "@/components/ui/progress"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ArrowUpRight, MessageSquare, FileText, Brain, Clock, CheckCircle2, Target, Sparkles, CalendarPlus } from "lucide-react"
 import Link from "next/link"
+import { useAuth } from "@/lib/auth-context"
 import { useLanguage } from "@/lib/language-context"
 import { useAuth } from "@/lib/auth-context"
 import { DashboardActivity, DashboardData, DashboardUpcomingEvent, useDashboard } from "@/hooks/use-dashboard"
@@ -182,16 +183,18 @@ export default function DashboardPage() {
   const { user } = useAuth()
   const { data, isLoading, error } = useDashboard()
   const { workspaces, isHydrated } = useWorkspace()
+  const { user } = useAuth()
   const { t, language } = useLanguage()
   const dateLocale = language === "tr" ? tr : enUS
   const recommendedActions = buildRecommendedActions(data, t)
   const hasHistory = hasDashboardHistory(data)
 
   useEffect(() => {
-    if (isHydrated && workspaces.length === 0) {
+    // Only redirect if we ARE sure there are no workspaces after hydration
+    if (isHydrated && workspaces.length === 0 && user) {
       router.replace("/onboarding")
     }
-  }, [isHydrated, workspaces.length, router])
+  }, [isHydrated, workspaces.length, router, user])
 
   return (
     <>

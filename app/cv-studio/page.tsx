@@ -23,7 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 export default function CVStudioPage() {
   const { t } = useLanguage()
   const { activeWorkspace } = useWorkspace()
-  const [language, setLanguage] = useState("English")
+  const [language, setLanguage] = useState("en")
   const [cvData, setCvData] = useState({
     name: "Deniz Ozturk",
     email: "deniz.ozturk@example.com",
@@ -349,7 +349,8 @@ export default function CVStudioPage() {
         body: JSON.stringify({
           candidate_profile: formatCandidateProfile(),
           job_description: cvData.targetJob,
-          special_instructions: cvData.specialInstructions
+          special_instructions: cvData.specialInstructions,
+          language: language
         }),
         credentials: "include",
       })
@@ -407,7 +408,8 @@ export default function CVStudioPage() {
         body: JSON.stringify({
           candidate_profile: formatCandidateProfile(),
           job_description: cvData.targetJob,
-          special_instructions: coverLetterInstructions
+          special_instructions: coverLetterInstructions,
+          language: language
         }),
         credentials: "include",
       })
@@ -523,13 +525,13 @@ export default function CVStudioPage() {
               <CardContent className="space-y-6 p-0">
                 <div className="space-y-2">
                   <Label className="text-sm font-medium text-gray-700">{t("CV Language")}</Label>
-                  <Select value={language} onValueChange={setLanguage}>
+                    <Select value={language} onValueChange={setLanguage}>
                     <SelectTrigger className="h-12 rounded-xl border-0 bg-gray-50 shadow-none transition-all hover:bg-gray-100 focus:ring-2 focus:ring-black">
                       <SelectValue placeholder={t("Select language")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="English">English</SelectItem>
-                      <SelectItem value="Turkish">Türkçe</SelectItem>
+                      <SelectItem value="en">English</SelectItem>
+                      <SelectItem value="tr">Türkçe</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

@@ -2,27 +2,26 @@ import { useState } from "react"
 
 export interface QuizQuestion {
   id: number
-  workspace_id: number | null
-  title: string | null
-  difficulty: string | null
   question: string
   options: string[]
   created_at: string
 }
 
 export interface QuizGroup {
+  id: number
   title: string
   difficulty: string
   questions: QuizQuestion[]
+  attempts_count: number
 }
 
 export interface AnswerItem {
-  quiz_id: number
+  question_id: number
   selected_answer: string
 }
 
 export interface QuestionResult {
-  quiz_id: number
+  question_id: number
   question: string
   selected_answer: string
   correct_answer: string
@@ -30,31 +29,30 @@ export interface QuestionResult {
 }
 
 export interface QuizSubmitResponse {
-  quiz_title: string
+  quiz_id: number
   score: number
   correct_count: number
   total_questions: number
   results: QuestionResult[]
   score_id: number
+  attempt_number: number
 }
 
 export interface QuizScore {
   id: number
   user_id: number
-  workspace_id: number
+  quiz_id: number
   quiz_title: string
   difficulty: string
   score: number
   total_questions: number
   correct_answers: number
+  attempt_number: number
   completed_at: string
 }
 
 export interface QuizSubmitRequest {
-  user_id?: number
-  workspace_id: number
-  quiz_title: string
-  difficulty: string
+  quiz_id: number
   answers: AnswerItem[]
 }
 
@@ -65,6 +63,7 @@ export interface SkillSelection {
 
 export interface TargetedQuizRequest {
   selections: SkillSelection[]
+  language: string
 }
 
 export function useQuizzes() {
@@ -119,7 +118,12 @@ export function useQuizzes() {
         body: JSON.stringify(submission),
         credentials: "include",
       })
-      if (!res.ok) throw new Error("Failed to submit quiz")
+      
+      if (!res.ok) {
+        const errData = await res.json()
+        throw new Error(errData.detail || "Failed to submit quiz")
+      }
+      
       const data = await res.json()
       setSubmitResult(data)
       return data
@@ -128,6 +132,18 @@ export function useQuizzes() {
       return null
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const checkCanStart = async (quizId: number) => {
+    try {
+      const res = await fetch(`http://localhost:8000/quizzes/${quizId}/can-start`, {
+        credentials: "include"
+      })
+      if (!res.ok) return { can_start: false }
+      return await res.json()
+    } catch (e) {
+      return { can_start: false }
     }
   }
 
@@ -150,14 +166,14 @@ export function useQuizzes() {
     }
   }
 
-  const generateTargetedQuizzes = async (workspaceId: string | number, selections: SkillSelection[]) => {
+  const generateTargetedQuizzes = async (workspaceId: string | number, selections: SkillSelection[], language: string = "tr") => {
     setIsGenerating(true)
     setError(null)
     try {
       const res = await fetch(`http://localhost:8000/workspaces/${workspaceId}/quizzes/generate-targeted`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ selections }),
+        body: JSON.stringify({ selections, language }),
         credentials: "include",
       })
       if (!res.ok) throw new Error("Failed to generate quizzes")
@@ -183,6 +199,7 @@ export function useQuizzes() {
     fetchWorkspaceQuizzes,
     fetchUserScores,
     submitQuiz,
+    checkCanStart,
     extractSkills,
     generateTargetedQuizzes,
   }

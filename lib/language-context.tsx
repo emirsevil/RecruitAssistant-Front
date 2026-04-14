@@ -143,6 +143,19 @@ const translations: Translations = {
         "Easy": "Easy",
         "Medium": "Medium",
         "Hard": "Hard",
+        "Smart Quiz Discovery": "Smart Quiz Discovery",
+        "Generating Smart Quizzes...": "Generating Smart Quizzes...",
+        "Analyze JD, extracting skills, and creating questions just for you.": "Analyze JD, extracting skills, and creating questions just for you.",
+        "Sit tight, we're fetching your personalized quizzes.": "Sit tight, we're fetching your personalized quizzes.",
+        "Try discovery to create new ones based on your Job Description.": "Try discovery to create new ones based on your Job Description.",
+        "We analyzed the Job Description. Pick the skills you want to test.": "We analyzed the Job Description. Pick the skills you want to test.",
+        "Analyzing Job Description...": "Analyzing Job Description...",
+        "Customize Difficulty": "Customize Difficulty",
+        "Generating Your personalized Quizzes...": "Generating Your personalized Quizzes...",
+        "Generate Quizzes for": "Generate Quizzes for",
+        "Select Skills": "Skills",
+        "Quiz Language": "Quiz Language",
+        "Select Skills (Max 5)": "Select Skills (Max 5)",
 
         // Mock Interview
         "Practice your interview skills with AI-powered feedback": "Practice your interview skills with AI-powered feedback",
@@ -434,6 +447,9 @@ const translations: Translations = {
         "Intern": "Intern",
         "Junior / New Grad": "Junior / New Grad",
         "Mid-Level": "Mid-Level",
+        "HR / Behavioral": "HR / Behavioral",
+        "English": "English",
+        "Turkish": "Turkish",
         "Clear and concise introduction. Good structure.": "Clear and concise introduction. Good structure.",
         "Strong passion shown. Could elaborate more on specific aspects of the role.": "Strong passion shown. Could elaborate more on specific aspects of the role.",
         "Excellent use of STAR method. Great technical detail.": "Excellent use of STAR method. Great technical detail.",
@@ -661,6 +677,19 @@ const translations: Translations = {
         "Easy": "Kolay",
         "Medium": "Orta",
         "Hard": "Zor",
+        "Smart Quiz Discovery": "Akıllı Quiz Keşfi",
+        "Generating Smart Quizzes...": "Akıllı Quizler Oluşturuluyor...",
+        "Analyze JD, extracting skills, and creating questions just for you.": "İş tanımı analiz ediliyor, yetenekler çıkarılıyor ve size özel sorular oluşturuluyor.",
+        "Sit tight, we're fetching your personalized quizzes.": "Lütfen bekleyin, size özel testlerinizi getiriyoruz.",
+        "Try discovery to create new ones based on your Job Description.": "İş tanımınıza göre yeni testler oluşturmak için keşfi deneyin.",
+        "We analyzed the Job Description. Pick the skills you want to test.": "İş tanımını analiz ettik. Test etmek istediğiniz yetenekleri seçin.",
+        "Analyzing Job Description...": "İş Tanımı Analiz Ediliyor...",
+        "Customize Difficulty": "Zorluğu Özelleştir",
+        "Generating Your personalized Quizzes...": "Size özel testleriniz oluşturuluyor...",
+        "Generate Quizzes for": "Testleri Oluştur -",
+        "Select Skills": "Yetenek",
+        "Quiz Language": "Quiz Dili",
+        "Select Skills (Max 5)": "Yetenekleri Seçin (Maks 5)",
 
         // Mock Interview
         "Practice your interview skills with AI-powered feedback": "Yapay zeka desteğiyle mülakat becerilerini geliştir",
@@ -926,6 +955,7 @@ const translations: Translations = {
         "Mid-Level": "Orta Seviye",
         "HR / Behavioral": "İK / Davranışsal",
         "English": "İngilizce",
+        "Turkish": "Türkçe",
         "Spanish": "İspanyolca",
         "French": "Fransızca",
         "German": "Almanca",
@@ -1040,7 +1070,7 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined)
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-    const [language, setLanguage] = useState<Language>("en")
+    const [language, setLanguage] = useState<Language>("tr")
 
     useEffect(() => {
         // Basic persistence
