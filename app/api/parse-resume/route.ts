@@ -7,10 +7,13 @@ const pdf = require("pdf-parse/lib/pdf-parse.js");
 const mammoth = require("mammoth");
 import OpenAI from "openai";
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+function getOpenAI() {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    throw new Error("OPENAI_API_KEY is not configured");
+  }
+  return new OpenAI({ apiKey });
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -45,6 +48,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Call OpenAI to parse the extracted text
+    const openai = getOpenAI();
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
