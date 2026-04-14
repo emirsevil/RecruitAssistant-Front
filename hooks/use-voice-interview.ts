@@ -428,7 +428,7 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
       // Obtain a WebSocket ticket first
     let ticket = ""
     try {
-      const ticketRes = await fetch("http://localhost:8000/auth/ws-ticket", {
+      const ticketRes = await fetch("https://recruitassistant-back-eo8n.onrender.com/auth/ws-ticket", {
         method: "POST",
         credentials: "include",
       })
@@ -526,7 +526,7 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
           const formData = new FormData()
           formData.append("file", audioBlob, "recording.webm")
 
-          const response = await fetch("http://localhost:8000/voice-interview/transcribe", {
+          const response = await fetch("https://recruitassistant-back-eo8n.onrender.com/voice-interview/transcribe", {
             method: "POST",
             body: formData,
             credentials: "include",
@@ -607,7 +607,7 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
         const formData = new FormData()
         formData.append("file", audioBlob, "recording.webm")
 
-        const response = await fetch("http://localhost:8000/voice-interview/transcribe", {
+        const response = await fetch("https://recruitassistant-back-eo8n.onrender.com/voice-interview/transcribe", {
           method: "POST",
           body: formData,
           credentials: "include",

@@ -47,7 +47,7 @@ interface ScheduleContextType {
 }
 
 const ScheduleContext = createContext<ScheduleContextType | undefined>(undefined)
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://recruitassistant-back-eo8n.onrender.com"
 
 function mapApiEvent(event: ApiScheduleEvent): CalendarEvent {
     const startTime = new Date(event.start_time)

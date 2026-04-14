@@ -54,8 +54,8 @@ export function useInterviewHistory() {
 
     try {
       const url = workspaceId
-        ? `http://localhost:8000/interviews/?workspace_id=${workspaceId}`
-        : "http://localhost:8000/interviews/"
+        ? `https://recruitassistant-back-eo8n.onrender.com/interviews/?workspace_id=${workspaceId}`
+        : "https://recruitassistant-back-eo8n.onrender.com/interviews/"
 
       const res = await fetch(url, {
         credentials: "include",
@@ -99,7 +99,7 @@ export function useInterviewDetail(interviewId: number | null) {
     setError(null)
 
     try {
-      const res = await fetch(`http://localhost:8000/interviews/${id}`, {
+      const res = await fetch(`https://recruitassistant-back-eo8n.onrender.com/interviews/${id}`, {
         credentials: "include",
       })
 

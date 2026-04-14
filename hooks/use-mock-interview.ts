@@ -56,7 +56,7 @@ export function useMockInterview() {
     setEvaluation(null)
     
     try {
-      const res = await fetch("http://localhost:8000/interviews/generate", {
+      const res = await fetch("https://recruitassistant-back-eo8n.onrender.com/interviews/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -115,7 +115,7 @@ export function useMockInterview() {
         answer: mergedAnswers[idx] || "(No answer provided)",
       }))
 
-      const res = await fetch("http://localhost:8000/interviews/evaluate", {
+      const res = await fetch("https://recruitassistant-back-eo8n.onrender.com/interviews/evaluate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

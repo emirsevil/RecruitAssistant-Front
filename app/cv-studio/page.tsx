@@ -256,7 +256,7 @@ export default function CVStudioPage() {
       const workspaceId = activeWorkspace ? parseInt(activeWorkspace.id) : null
       const documentType = isCoverLetter ? "cover_letter" : "cv"
 
-      const response = await fetch("http://localhost:8000/api/compile-latex", {
+      const response = await fetch("https://recruitassistant-back-eo8n.onrender.com/api/compile-latex", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
@@ -343,7 +343,7 @@ export default function CVStudioPage() {
     setGeneratedLatex("")
 
     try {
-      const response = await fetch("http://localhost:8000/api/generate-cv", {
+      const response = await fetch("https://recruitassistant-back-eo8n.onrender.com/api/generate-cv", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -402,7 +402,7 @@ export default function CVStudioPage() {
         cvData.specialInstructions
       ].filter(Boolean).join("\n")
 
-      const response = await fetch("http://localhost:8000/api/generate-cover-letter", {
+      const response = await fetch("https://recruitassistant-back-eo8n.onrender.com/api/generate-cover-letter", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
