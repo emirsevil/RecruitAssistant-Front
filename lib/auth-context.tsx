@@ -139,8 +139,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    // Initial refresh on mount
-    refreshTokens()
+    // Do not call refreshTokens() immediately: Set-Cookie from login may not be visible to the
+    // next cross-site request yet (race on Safari / mobile). Periodic tick handles refresh after 12m.
 
     refreshTimerRef.current = setInterval(tick, CHECK_INTERVAL_MS)
 
@@ -170,7 +170,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const data = await response.json()
       setUser(data.user)
-      lastActivityRef.current = Date.now() // Reset activity timer on login
+      lastActivityRef.current = Date.now()
+      lastRefreshRef.current = Date.now() // Login just issued tokens; skip immediate refresh race
       router.push("/dashboard")
     } catch (error) {
       throw error
