@@ -308,11 +308,11 @@ export default function QuizzesPage() {
                        <span className="text-sm font-bold text-muted-foreground uppercase">{t("Question")} {idx + 1}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-[10px] font-bold">Attempt #{submitResult.attempt_number}</Badge>
+                      <Badge variant="outline" className="text-[10px] font-bold">{t("Attempt #")}{submitResult.attempt_number}</Badge>
                       {result.is_correct ? (
-                        <Badge variant="secondary" className="bg-success/10 text-success border-success/20">+{Math.round(100/submitResult.total_questions)} pts</Badge>
+                        <Badge variant="secondary" className="bg-success/10 text-success border-success/20">+{Math.round(100/submitResult.total_questions)} {t("pts")}</Badge>
                       ) : (
-                        <Badge variant="secondary" className="bg-destructive/10 text-destructive border-destructive/20">0 pts</Badge>
+                        <Badge variant="secondary" className="bg-destructive/10 text-destructive border-destructive/20">0 {t("pts")}</Badge>
                       )}
                     </div>
                   </div>

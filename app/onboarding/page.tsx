@@ -129,7 +129,7 @@ export default function OnboardingPage() {
               {step === 1 && (
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
+                    <Label htmlFor="name">{t("Full Name")}</Label>
                     <Input
                       id="name"
                       placeholder="John Doe"
@@ -138,7 +138,7 @@ export default function OnboardingPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="university">University</Label>
+                    <Label htmlFor="university">{t("University")}</Label>
                     <Input
                       id="university"
                       placeholder="Massachusetts Institute of Technology"
@@ -148,7 +148,7 @@ export default function OnboardingPage() {
                   </div>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
-                      <Label htmlFor="graduationYear">Graduation Year</Label>
+                      <Label htmlFor="graduationYear">{t("Graduation Year")}</Label>
                       <Input
                         id="graduationYear"
                         type="number"
@@ -158,7 +158,7 @@ export default function OnboardingPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="targetRole">Target Role</Label>
+                      <Label htmlFor="targetRole">{t("Target Role")}</Label>
                       <Input
                         id="targetRole"
                         placeholder="Software Engineer"
@@ -222,30 +222,30 @@ export default function OnboardingPage() {
               {step === 4 && (
                 <div className="space-y-6">
                   <div className="rounded-lg bg-secondary/50 p-4">
-                    <h3 className="mb-3 font-semibold">Your Profile</h3>
+                    <h3 className="mb-3 font-semibold">{t("Your Profile")}</h3>
                     <dl className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <dt className="text-muted-foreground">Name:</dt>
-                        <dd className="font-medium">{formData.name || "Not provided"}</dd>
+                        <dt className="text-muted-foreground">{t("Name:")}</dt>
+                        <dd className="font-medium">{formData.name || t("Not provided")}</dd>
                       </div>
                       <div className="flex justify-between">
-                        <dt className="text-muted-foreground">University:</dt>
-                        <dd className="font-medium">{formData.university || "Not provided"}</dd>
+                        <dt className="text-muted-foreground">{t("University:")}</dt>
+                        <dd className="font-medium">{formData.university || t("Not provided")}</dd>
                       </div>
                       <div className="flex justify-between">
-                        <dt className="text-muted-foreground">Graduation:</dt>
+                        <dt className="text-muted-foreground">{t("Graduation:")}</dt>
                         <dd className="font-medium">{formData.graduationYear}</dd>
                       </div>
                       <div className="flex justify-between">
-                        <dt className="text-muted-foreground">Target Role:</dt>
-                        <dd className="font-medium">{formData.targetRole || "Not provided"}</dd>
+                        <dt className="text-muted-foreground">{t("Target Role:")}</dt>
+                        <dd className="font-medium">{formData.targetRole || t("Not provided")}</dd>
                       </div>
                     </dl>
                   </div>
 
                   {formData.selectedSkills.length > 0 && (
                     <div>
-                      <h3 className="mb-2 font-semibold">Selected Skills</h3>
+                      <h3 className="mb-2 font-semibold">{t("Selected Skills")}</h3>
                       <div className="flex flex-wrap gap-2">
                         {formData.selectedSkills.map((skill) => (
                           <Badge key={skill} variant="secondary">
@@ -258,7 +258,7 @@ export default function OnboardingPage() {
 
                   {formData.selectedGoals.length > 0 && (
                     <div>
-                      <h3 className="mb-2 font-semibold">Your Goals</h3>
+                      <h3 className="mb-2 font-semibold">{t("Your Goals")}</h3>
                       <ul className="space-y-1 text-sm">
                         {formData.selectedGoals.map((goalId) => {
                           const goal = goals.find((g) => g.id === goalId)

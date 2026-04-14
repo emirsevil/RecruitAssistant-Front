@@ -57,7 +57,7 @@ export default function LoginPage() {
             {isRegistered && (
               <Alert className="bg-primary/10 text-primary border-primary/20">
                 <CheckCircle className="h-4 w-4" />
-                <AlertDescription>Hesabınız başarıyla oluşturuldu! Şimdi giriş yapabilirsiniz.</AlertDescription>
+                <AlertDescription>{t("Your account has been created successfully! You can now log in.")}</AlertDescription>
               </Alert>
             )}
             {error && (
