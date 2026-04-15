@@ -9,6 +9,7 @@ import { Progress } from "@/components/ui/progress"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   PlayCircle,
   Clock,
@@ -51,6 +52,7 @@ export default function QuizzesPage() {
     fetchWorkspaceQuizzes,
     fetchUserScores,
     submitQuiz,
+    checkCanStart,
     extractSkills,
     generateTargetedQuizzes
   } = useQuizzes()
@@ -71,6 +73,7 @@ export default function QuizzesPage() {
   const [extractedSkills, setExtractedSkills] = useState<string[]>([])
   const [selectedSkills, setSelectedSkills] = useState<string[]>([])
   const [difficultiesBySkill, setDifficultiesBySkill] = useState<Record<string, string[]>>({})
+  const [quizLanguage, setQuizLanguage] = useState("tr")
 
   useEffect(() => {
     if (workspaceId) {
@@ -84,8 +87,8 @@ export default function QuizzesPage() {
   const categories = ["All", ...Array.from(new Set(quizGroups.map(g => g.title || "Technical")))]
   const difficulties = ["All", "Easy", "Medium", "Hard"]
 
-  const getGroupScore = (title: string, difficulty: string) => {
-    const scores = userScores.filter(s => s.quiz_title === title && s.difficulty === difficulty)
+  const getGroupScore = (quizId: number) => {
+    const scores = userScores.filter(s => s.quiz_id === quizId)
     if (scores.length === 0) return null
     return Math.max(...scores.map(s => s.score))
   }
@@ -137,7 +140,7 @@ export default function QuizzesPage() {
       difficulties: difficultiesBySkill[skill] || ["Medium"]
     }))
 
-    const result = await generateTargetedQuizzes(workspaceId, selections)
+    const result = await generateTargetedQuizzes(workspaceId, selections, quizLanguage)
     if (result) {
       setDiscoveryOpen(false)
       setSelectedSkills([])
@@ -147,7 +150,13 @@ export default function QuizzesPage() {
   }
 
   // -- Quiz Taking Handlers --
-  const startQuiz = (group: QuizGroup) => {
+  const startQuiz = async (group: QuizGroup) => {
+    const status = await checkCanStart(group.id)
+    if (!status.can_start) {
+      toast.error(t("Maksimum deneme sayısına ulaştınız (3)."))
+      return
+    }
+
     setActiveQuizGroup(group)
     setQuizState("taking")
     setCurrentQuestion(0)
@@ -167,17 +176,16 @@ export default function QuizzesPage() {
         setCurrentAnswer(selectedAnswers[nextIdx] ?? null)
       } else {
         const submission = {
-          workspace_id: workspaceId as number,
-          quiz_title: activeQuizGroup.title,
-          difficulty: activeQuizGroup.difficulty,
+          quiz_id: activeQuizGroup.id,
           answers: activeQuizGroup.questions.map((q, idx) => ({
-            quiz_id: q.id,
+            question_id: q.id,
             selected_answer: q.options[newAnswers[idx] as number]
           }))
         }
         await submitQuiz(submission)
         setQuizState("results")
         fetchUserScores()
+        if (workspaceId) fetchWorkspaceQuizzes(workspaceId)
       }
     }
   }
@@ -299,11 +307,14 @@ export default function QuizzesPage() {
                        {result.is_correct ? <CheckCircle2 className="h-5 w-5 text-success" /> : <XCircle className="h-5 w-5 text-destructive" />}
                        <span className="text-sm font-bold text-muted-foreground uppercase">{t("Question")} {idx + 1}</span>
                     </div>
-                    {result.is_correct ? (
-                      <Badge variant="secondary" className="bg-success/10 text-success border-success/20">+{Math.round(100/submitResult.total_questions)} pts</Badge>
-                    ) : (
-                      <Badge variant="secondary" className="bg-destructive/10 text-destructive border-destructive/20">0 pts</Badge>
-                    )}
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-[10px] font-bold">{t("Attempt #")}{submitResult.attempt_number}</Badge>
+                      {result.is_correct ? (
+                        <Badge variant="secondary" className="bg-success/10 text-success border-success/20">+{Math.round(100/submitResult.total_questions)} {t("pts")}</Badge>
+                      ) : (
+                        <Badge variant="secondary" className="bg-destructive/10 text-destructive border-destructive/20">0 {t("pts")}</Badge>
+                      )}
+                    </div>
                   </div>
                   <p className="text-lg font-semibold leading-snug">{result.question}</p>
                   
@@ -329,7 +340,12 @@ export default function QuizzesPage() {
               {t("Back to Quizzes")}
             </Button>
             {activeQuizGroup && (
-              <Button variant="outline" className="flex-1 h-12 text-base font-bold bg-transparent" onClick={() => startQuiz(activeQuizGroup)}>
+              <Button 
+                variant="outline" 
+                className="flex-1 h-12 text-base font-bold bg-transparent" 
+                onClick={() => startQuiz(activeQuizGroup)}
+                disabled={activeQuizGroup.attempts_count >= 3}
+              >
                 <RotateCcw className="mr-2 h-4 w-4" />
                 {t("Retry Quiz")}
               </Button>
@@ -413,11 +429,11 @@ export default function QuizzesPage() {
           </div>
         ) : (
           filteredQuizzes.map((group) => {
-            const score = getGroupScore(group.title, group.difficulty)
-            const completed = score !== null
+            const score = getGroupScore(group.id)
+            const completed = group.attempts_count > 0
 
             return (
-              <Card key={`${group.title}-${group.difficulty}`} className="group relative overflow-hidden transition-all hover:shadow-xl hover:-translate-y-1 border-border/50">
+              <Card key={group.id} className="group relative overflow-hidden transition-all hover:shadow-xl hover:-translate-y-1 border-border/50">
                 <div className={`absolute top-0 right-0 h-24 w-24 translate-x-12 -translate-y-12 rounded-full opacity-10 blur-2xl group-hover:opacity-20 transition-opacity ${group.difficulty === "Easy" ? "bg-success" : group.difficulty === "Medium" ? "bg-primary" : "bg-destructive"}`} />
                 
                 <CardHeader className="pb-4">
@@ -441,7 +457,11 @@ export default function QuizzesPage() {
                   <div className="flex items-center gap-4 text-sm font-semibold text-muted-foreground">
                     <div className="flex items-center gap-1.5">
                       <LayoutGrid className="h-4 w-4" />
-                      <span>{group.questions.length} {t("items")}</span>
+                      <span>{group.questions.length} {t("questions")}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Clock className="h-4 w-4" />
+                      <span>{group.attempts_count} / 3 {t("Attempts")}</span>
                     </div>
                     {completed && (
                        <div className="flex items-center gap-1.5">
@@ -503,6 +523,19 @@ export default function QuizzesPage() {
                </div>
             ) : (
               <div className="space-y-8">
+                <div className="space-y-3">
+                  <Label className="text-sm font-black uppercase tracking-widest text-muted-foreground/60">{t("Quiz Language")}</Label>
+                  <Select value={quizLanguage} onValueChange={setQuizLanguage}>
+                    <SelectTrigger className="h-12 rounded-2xl border-2 bg-muted/30 focus:ring-primary">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="tr">{t("Turkish")}</SelectItem>
+                      <SelectItem value="en">{t("English")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div>
                   <div className="flex items-center justify-between mb-4">
                     <h4 className="text-sm font-black uppercase tracking-widest text-muted-foreground/60">{t("Select Skills (Max 5)")}</h4>
@@ -575,7 +608,7 @@ export default function QuizzesPage() {
                 ) : (
                   <>
                     <ArrowRight className="mr-2 h-5 w-5" />
-                    {t("Generate Quizzes for")} {selectedSkills.length} {t("Skills")}
+                    {t("Generate Quizzes for")} {selectedSkills.length} {t("Select Skills")}
                   </>
                 )}
               </Button>

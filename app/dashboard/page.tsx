@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { format } from "date-fns"
 import { enUS, tr } from "date-fns/locale"
 import { useRouter } from "next/navigation"
@@ -13,10 +13,14 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Skeleton } from "@/components/ui/skeleton"
-import { ArrowUpRight, MessageSquare, FileText, Brain, Clock, CheckCircle2, Target, Sparkles, CalendarPlus } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { toast } from "sonner"
+import { ArrowUpRight, MessageSquare, FileText, Brain, Clock, CheckCircle2, Target, Sparkles, CalendarPlus, Edit2 } from "lucide-react"
 import Link from "next/link"
-import { useLanguage } from "@/lib/language-context"
 import { useAuth } from "@/lib/auth-context"
+import { useLanguage } from "@/lib/language-context"
 import { DashboardActivity, DashboardData, DashboardUpcomingEvent, useDashboard } from "@/hooks/use-dashboard"
 
 type DashboardAction = {
@@ -28,10 +32,11 @@ type DashboardAction = {
   priority?: "high" | "normal"
 }
 
-function formatPracticeHours(minutes: number) {
+function formatPracticeHours(minutes: number, t: (key: string) => string) {
   const hours = minutes / 60
-  if (Number.isInteger(hours)) return `${hours}h`
-  return `${hours.toFixed(1)}h`
+  const unit = t("H")
+  if (Number.isInteger(hours)) return `${hours}${unit}`
+  return `${hours.toFixed(1)}${unit}`
 }
 
 function goalProgress(actual: number, target: number) {
@@ -91,86 +96,91 @@ function buildRecommendedActions(data: DashboardData | null, t: (key: string) =>
   if (!data) return []
 
   const actions: DashboardAction[] = []
+  const { stats, weekly_goals, skill_scores, upcoming_events } = data
 
-  if (!hasDashboardHistory(data)) {
-    return [
-      {
-        title: t("Take a baseline quiz"),
-        description: t("Start with a quick skill check so your dashboard can personalize the next steps."),
-        action: t("Take Quiz"),
-        href: "/quizzes",
-        icon: <Brain className="h-5 w-5" />,
-        priority: "high",
-      },
-      {
-        title: t("Set up your CV"),
-        description: t("Upload or build your CV to unlock readiness tracking."),
-        action: t("Edit CV"),
-        href: "/cv-studio",
-        icon: <FileText className="h-5 w-5" />,
-      },
-      {
-        title: t("Schedule your first interview"),
-        description: t("Add a mock interview to your weekly plan and build momentum."),
-        action: t("Open Schedule"),
-        href: "/schedule",
-        icon: <CalendarPlus className="h-5 w-5" />,
-      },
-    ]
-  }
+  // 1. URGENT: Upcoming events today
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+  const tomorrow = today + 24 * 60 * 60 * 1000
+  
+  const todayEvent = upcoming_events.find(e => {
+    const startTime = new Date(e.start_time).getTime()
+    return startTime >= today && startTime < tomorrow
+  })
 
-  const weakestSkill = data.skill_scores.find((skill) => skill.score < 80)
-  if (weakestSkill) {
-    const isCommunicationSkill = /communication|behavioral/i.test(weakestSkill.skill_name)
+  if (todayEvent) {
+    const isInterview = todayEvent.event_type === "interview"
     actions.push({
-      title: isCommunicationSkill ? t("Practice Behavioral Questions") : `${weakestSkill.skill_name} ${t("Practice")}`,
-      description: `${t("Your score")}: ${weakestSkill.score}%. ${t("Let's improve it!")}`,
-      action: isCommunicationSkill ? t("Start Interview") : t("Take Quiz"),
-      href: isCommunicationSkill ? "/mock-interview" : "/quizzes",
-      icon: isCommunicationSkill ? <MessageSquare className="h-5 w-5" /> : <Brain className="h-5 w-5" />,
+      title: `${t("Upcoming")}: ${t(todayEvent.title)}`,
+      description: isInterview 
+        ? t("You have an interview scheduled for today. Best of luck!") 
+        : t("Don't forget your scheduled practice session today."),
+      action: isInterview ? t("Start Interview") : t("Open Schedule"),
+      href: isInterview ? "/mock-interview" : "/schedule",
+      icon: isInterview ? <MessageSquare className="h-5 w-5" /> : <Clock className="h-5 w-5" />,
       priority: "high",
     })
   }
 
-  if (data.weekly_goals.quizzes_actual < data.weekly_goals.quizzes_target) {
+  // 2. KNOWLEDGE GAP: Practice weakest skill
+  const weakestSkill = skill_scores[0] // Backend returns them ordered by score asc
+  if (weakestSkill && weakestSkill.score < 80) {
+    const isBehavioral = /behavioral|communication|soft skill/i.test(weakestSkill.skill_name)
     actions.push({
-      title: t("Complete Algorithms Quiz"),
-      description: t("Test your data structures knowledge with 15 questions"),
+      title: `${t("Improve")} ${t(weakestSkill.skill_name)}`,
+      description: `${t("Your current score is")} ${weakestSkill.score}%. ${t("Targeting 80%+ will boost your readiness.")}`,
+      action: isBehavioral ? t("Start Interview") : t("Take Quiz"),
+      href: isBehavioral ? "/mock-interview" : "/quizzes",
+      icon: isBehavioral ? <MessageSquare className="h-5 w-5" /> : <Brain className="h-5 w-5" />,
+      priority: actions.length === 0 ? "high" : "normal",
+    })
+  }
+
+  // 3. GOAL GAP: Weekly goals progress
+  const quizProgress = weekly_goals.quizzes_target > 0 ? weekly_goals.quizzes_actual / weekly_goals.quizzes_target : 1
+  const interviewProgress = weekly_goals.interviews_target > 0 ? weekly_goals.interviews_actual / weekly_goals.interviews_target : 1
+
+  // Show Interview goal if not met
+  if (interviewProgress < 1 && actions.length < 3) {
+    actions.push({
+      title: t("Weekly Interview Goal"),
+      description: `${t("You've completed")} ${weekly_goals.interviews_actual}/${weekly_goals.interviews_target} ${t("interviews")}. ${t("Keep the momentum going!")}`,
+      action: t("Start Interview"),
+      href: "/mock-interview",
+      icon: <MessageSquare className="h-5 w-5" />,
+    })
+  }
+
+  // Show Quiz goal if not met and there is space
+  if (quizProgress < 1 && actions.length < 3) {
+    actions.push({
+      title: t("Weekly Quiz Goal"),
+      description: `${t("You've completed")} ${weekly_goals.quizzes_actual}/${weekly_goals.quizzes_target} ${t("quizzes")}. ${t("Complete one more to stay on track!")}`,
       action: t("Take Quiz"),
       href: "/quizzes",
       icon: <Brain className="h-5 w-5" />,
     })
   }
 
-  if (data.stats.completed_interviews === 0) {
+  // 4. CV OPTIMIZATION
+  if (actions.length < 3 && stats.cv_ats_score < 85) {
     actions.push({
-      title: t("Schedule your first interview"),
-      description: t("Add a mock interview to your weekly plan and build momentum."),
-      action: t("Open Schedule"),
-      href: "/schedule",
-      icon: <CalendarPlus className="h-5 w-5" />,
-      priority: actions.length === 0 ? "high" : undefined,
-    })
-  }
-
-  if (data.stats.completed_interviews > 0 && data.stats.avg_hr_score < 80) {
-    actions.push({
-      title: t("Practice Behavioral Questions"),
-      description: `${t("Avg HR Score")}: ${data.stats.avg_hr_score}%. ${t("Let's improve it!")}`,
-      action: t("Start Interview"),
-      href: "/mock-interview",
-      icon: <MessageSquare className="h-5 w-5" />,
-      priority: actions.length === 0 ? "high" : undefined,
-    })
-  }
-
-  if (data.stats.cv_ats_score < 85) {
-    actions.push({
-      title: t("Update Your CV"),
-      description: t("Add your latest project to boost your CV score"),
+      title: t("Optimize Your CV"),
+      description: `${t("Your CV score is")} ${stats.cv_ats_score}%. ${t("Improving it can significantly increase your response rate.")}`,
       action: t("Edit CV"),
       href: "/cv-studio",
       icon: <FileText className="h-5 w-5" />,
+    })
+  }
+
+  // Fallback if still empty (though unlikely for active users)
+  if (actions.length === 0) {
+    actions.push({
+      title: t("Explore New Topics"),
+      description: t("Try a mock interview or a new quiz to discover your strengths."),
+      action: t("Go to Quizzes"),
+      href: "/quizzes",
+      icon: <Brain className="h-5 w-5" />,
     })
   }
 
@@ -180,7 +190,7 @@ function buildRecommendedActions(data: DashboardData | null, t: (key: string) =>
 export default function DashboardPage() {
   const router = useRouter()
   const { user } = useAuth()
-  const { data, isLoading, error } = useDashboard()
+  const { data, isLoading, error, updateGoals } = useDashboard()
   const { workspaces, isHydrated } = useWorkspace()
   const { t, language } = useLanguage()
   const dateLocale = language === "tr" ? tr : enUS
@@ -188,10 +198,11 @@ export default function DashboardPage() {
   const hasHistory = hasDashboardHistory(data)
 
   useEffect(() => {
-    if (isHydrated && workspaces.length === 0) {
+    // Only redirect if we ARE sure there are no workspaces after hydration
+    if (isHydrated && workspaces.length === 0 && user) {
       router.replace("/onboarding")
     }
-  }, [isHydrated, workspaces.length, router])
+  }, [isHydrated, workspaces.length, router, user])
 
   return (
     <>
@@ -329,7 +340,11 @@ export default function DashboardPage() {
                       <TimelineItem
                         key={activity.id}
                         title={t(activity.title)}
-                        description={activity.description ? t(activity.description) : ""}
+                        description={activity.description?.startsWith("Scored") 
+                          ? activity.description.replace("Scored", t("Scored")) 
+                          : activity.description?.includes("correct")
+                          ? activity.description.replace("correct", t("correct"))
+                          : t(activity.description || "")}
                         time={formatRelativeTime(activity.created_at)}
                         icon={getActivityIcon(activity)}
                       />
@@ -345,7 +360,21 @@ export default function DashboardPage() {
             {/* Quick Stats */}
             <Card>
               <CardHeader>
-                <CardTitle>{t("This Week")}</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle>{t("This Week")}</CardTitle>
+                  {data && (
+                    <GoalEditModal
+                      currentGoals={data.weekly_goals}
+                      onSave={async (newGoals) => {
+                        const success = await updateGoals(newGoals)
+                        if (success) {
+                          toast.success(t("Goals updated successfully!"))
+                        }
+                      }}
+                      t={t}
+                    />
+                  )}
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 {isLoading || !data ? (
@@ -373,10 +402,10 @@ export default function DashboardPage() {
                     <div className="space-y-2">
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-muted-foreground">{t("Practice Time")}</span>
-                        <span className="font-semibold">{formatPracticeHours(data.weekly_goals.practice_minutes_actual)}</span>
+                        <span className="font-semibold">{formatPracticeHours(data.weekly_goals.practice_minutes_actual, t)}</span>
                       </div>
                       <Progress value={goalProgress(data.weekly_goals.practice_minutes_actual, data.weekly_goals.practice_minutes_target)} className="h-2" />
-                      <p className="text-xs text-muted-foreground">{t("Goal")}: {formatPracticeHours(data.weekly_goals.practice_minutes_target)}</p>
+                      <p className="text-xs text-muted-foreground">{t("Goal")}: {formatPracticeHours(data.weekly_goals.practice_minutes_target, t)}</p>
                     </div>
                   </>
                 )}
@@ -673,5 +702,88 @@ function UpcomingSkeleton() {
         <Skeleton className="h-3 w-24" />
       </div>
     </div>
+  )
+}
+
+function GoalEditModal({
+  currentGoals,
+  onSave,
+  t,
+}: {
+  currentGoals: any
+  onSave: (goals: any) => Promise<void>
+  t: any
+}) {
+  const [isOpen, setIsOpen] = useState(false)
+  const [isUpdating, setIsUpdating] = useState(false)
+  const [goals, setGoals] = useState({
+    interviews_target: currentGoals.interviews_target,
+    quizzes_target: currentGoals.quizzes_target,
+    practice_minutes_target: currentGoals.practice_minutes_target,
+  })
+
+  // Update local state if currentGoals change (e.g. after a refetch)
+  useEffect(() => {
+    setGoals({
+      interviews_target: currentGoals.interviews_target,
+      quizzes_target: currentGoals.quizzes_target,
+      practice_minutes_target: currentGoals.practice_minutes_target,
+    })
+  }, [currentGoals])
+
+  const handleSave = async () => {
+    setIsUpdating(true)
+    await onSave(goals)
+    setIsUpdating(false)
+    setIsOpen(false)
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="icon" className="h-8 w-8">
+          <Edit2 className="h-4 w-4" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>{t("Weekly Targets")}</DialogTitle>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <div className="grid gap-2">
+            <Label htmlFor="interviews">{t("Interviews")} ({t("per week")})</Label>
+            <Input
+              id="interviews"
+              type="number"
+              value={goals.interviews_target}
+              onChange={(e) => setGoals({ ...goals, interviews_target: parseInt(e.target.value) || 0 })}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="quizzes">{t("Quizzes")} ({t("per week")})</Label>
+            <Input
+              id="quizzes"
+              type="number"
+              value={goals.quizzes_target}
+              onChange={(e) => setGoals({ ...goals, quizzes_target: parseInt(e.target.value) || 0 })}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="practice">{t("Practice Time")} ({t("Min")})</Label>
+            <Input
+              id="practice"
+              type="number"
+              value={goals.practice_minutes_target}
+              onChange={(e) => setGoals({ ...goals, practice_minutes_target: parseInt(e.target.value) || 0 })}
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button onClick={handleSave} disabled={isUpdating}>
+            {isUpdating ? t("Updating...") : t("Save Goals")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }

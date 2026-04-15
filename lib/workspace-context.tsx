@@ -64,7 +64,7 @@ function getEmojiForIndex(index: number): string {
 const WorkspaceContext = createContext<WorkspaceContextType | undefined>(undefined)
 
 export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth()
+  const { user, isLoading: isAuthLoading } = useAuth()
   const [workspaces, setWorkspaces] = useState<Workspace[]>([])
   const [activeWorkspace, setActiveWorkspaceState] = useState<Workspace | null>(null)
   const [isHydrated, setIsHydrated] = useState(false)
@@ -85,6 +85,8 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   // Hydrate from API on mount or when user changes
   useEffect(() => {
     const fetchWorkspaces = async () => {
+      if (isAuthLoading) return // Wait for auth to resolve before making decisions
+      
       if (!user) {
         setWorkspaces([])
         setActiveWorkspaceState(null)
@@ -120,7 +122,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     }
 
     fetchWorkspaces()
-  }, [mapApiToWorkspace, user])
+  }, [mapApiToWorkspace, user, isAuthLoading])
 
   // Persist active workspace ID
   useEffect(() => {

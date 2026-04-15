@@ -23,7 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 export default function CVStudioPage() {
   const { t } = useLanguage()
   const { activeWorkspace } = useWorkspace()
-  const [language, setLanguage] = useState("English")
+  const [language, setLanguage] = useState("en")
   const [cvData, setCvData] = useState({
     name: "Deniz Ozturk",
     email: "deniz.ozturk@example.com",
@@ -566,8 +566,8 @@ export default function CVStudioPage() {
                       <SelectValue placeholder={t("Select language")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="English">English</SelectItem>
-                      <SelectItem value="Turkish">Türkçe</SelectItem>
+                      <SelectItem value="en">{t("English")}</SelectItem>
+                      <SelectItem value="tr">{t("Turkish")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -610,7 +610,7 @@ export default function CVStudioPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="linkedin" className="text-sm font-medium text-gray-700">LinkedIn URL</Label>
+                    <Label htmlFor="linkedin" className="text-sm font-medium text-gray-700">{t("LinkedIn URL")}</Label>
                     <Input
                       id="linkedin"
                       value={cvData.linkedin}
@@ -619,7 +619,7 @@ export default function CVStudioPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="github" className="text-sm font-medium text-gray-700">GitHub/Portfolio URL</Label>
+                    <Label htmlFor="github" className="text-sm font-medium text-gray-700">{t("GitHub/Portfolio URL")}</Label>
                     <Input
                       id="github"
                       value={cvData.github}
@@ -821,7 +821,7 @@ export default function CVStudioPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-sm font-medium text-gray-700">Project Date</Label>
+                        <Label className="text-sm font-medium text-gray-700">{t("Project Date")}</Label>
                         <Input
                           value={project.date}
                           placeholder="2024"
