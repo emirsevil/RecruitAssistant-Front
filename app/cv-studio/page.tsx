@@ -246,7 +246,6 @@ export default function CVStudioPage() {
         technologies: p.techStack.split(",").map((s) => s.trim()).filter(Boolean),
       })),
       certifications: [],
-      languages: [language],
     };
   }
 
@@ -267,6 +266,13 @@ export default function CVStudioPage() {
     }
 
     return parts.join("\n\n")
+  }
+
+  const normalizeResumeSectionDividers = (latexContent: string) => {
+    return latexContent.replace(
+      /(\\section\*\{[^{}]+\})\s*(?:\\vspace\{[^{}]+\}\s*)?\\hrule\s*(?:\\vspace\{[^{}]+\}\s*)?/g,
+      "$1\\vspace{-0.65em}\n\\hrule\n\\vspace{0.45em}\n"
+    )
   }
 
   const compileLatexLocally = async (latexContent: string, isCoverLetter: boolean) => {
@@ -372,7 +378,8 @@ export default function CVStudioPage() {
         body: JSON.stringify({
           candidate_profile: formatCandidateProfile(),
           job_description: targetJobContext,
-          special_instructions: cvData.specialInstructions
+          special_instructions: cvData.specialInstructions,
+          output_language: language
         }),
         credentials: "include",
       })
@@ -396,6 +403,8 @@ export default function CVStudioPage() {
         setGeneratedLatex(currentLatex)
       }
       
+      currentLatex = normalizeResumeSectionDividers(currentLatex)
+      setGeneratedLatex(currentLatex)
       setAtsScore(Math.floor(Math.random() * 15) + 85)
       setRoleMatch(Math.floor(Math.random() * 10) + 90)
 
@@ -417,11 +426,15 @@ export default function CVStudioPage() {
     setGeneratedCoverLetterLatex("")
 
     try {
-      const currentDate = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+      const dateLocale = language === "Turkish" ? "tr-TR" : "en-US"
+      const currentDate = new Date().toLocaleDateString(dateLocale, { month: "long", day: "numeric", year: "numeric" })
       const targetJobContext = buildTargetJobContext()
+      const recipientInstruction = language === "Turkish"
+        ? "Alıcı bloğunda İşe Alım Yetkilisi ifadesini ve iş ilanından çıkarılabilirse gerçek şirket adını kullan. Hiring Manager, Company Address, Address veya başka İngilizce alıcı/adres etiketi yazma. Bilinmeyen adres satırlarını tamamen atla. Yer/ülke bilgisi gerekiyorsa Türkçe kullan."
+        : "In the recipient block, include Hiring Manager and the actual company name extracted from the job description when available. Do not include a Company Address line. Never output placeholder text."
       const coverLetterInstructions = [
         `Use this exact cover letter date: ${currentDate}.`,
-        "In the recipient block, include Hiring Manager and the actual company name extracted from the job description when available. Do not include a Company Address line. Never output placeholder text.",
+        recipientInstruction,
         cvData.specialInstructions
       ].filter(Boolean).join("\n")
 
@@ -431,7 +444,8 @@ export default function CVStudioPage() {
         body: JSON.stringify({
           candidate_profile: formatCandidateProfile(),
           job_description: targetJobContext,
-          special_instructions: coverLetterInstructions
+          special_instructions: coverLetterInstructions,
+          output_language: language
         }),
         credentials: "include",
       })
@@ -546,7 +560,7 @@ export default function CVStudioPage() {
               </CardHeader>
               <CardContent className="space-y-6 p-0">
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-gray-700">{t("CV Language")}</Label>
+                  <Label className="text-sm font-medium text-gray-700">{t("CV language")}</Label>
                   <Select value={language} onValueChange={setLanguage}>
                     <SelectTrigger className="h-12 rounded-xl border-0 bg-gray-50 shadow-none transition-all hover:bg-gray-100 focus:ring-2 focus:ring-black">
                       <SelectValue placeholder={t("Select language")} />
