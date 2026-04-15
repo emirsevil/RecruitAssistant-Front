@@ -56,10 +56,17 @@ export async function POST(request: NextRequest) {
           - email (string)
           - phone (string)
           - location (string)
+          - linkedin (string)
+          - github (string)
           - summary (string)
           - education (array of objects with keys: degree, school, gpa, startDate, endDate)
           - experience (array of objects with keys: role, company, startDate, endDate, bullets (array of strings))
+          - projects (array of objects with keys: title, techStack, date, description)
           - skills (array of strings)
+
+          For linkedin, return the candidate's LinkedIn profile URL if present.
+          For github, return a GitHub, portfolio, personal website, or developer profile URL if present.
+          Handle plain URLs, labeled links, and labels separated from URLs by line breaks.
           
           If a field is not found, use an empty string or empty array.`,
         },
