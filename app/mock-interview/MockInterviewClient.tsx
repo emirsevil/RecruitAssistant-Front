@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, type CSSProperties } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 
 import { PageContainer, PageHeader } from "@/components/page-container"
@@ -14,10 +14,28 @@ import { Progress } from "@/components/ui/progress"
 import { PlayCircle, Mic, MicOff, Clock, Send, ChevronRight, BarChart3, SkipForward, Phone, PhoneOff, Volume2, Loader2, CheckCircle2 } from "lucide-react"
 import Link from "next/link"
 import { useLanguage } from "@/lib/language-context"
-import { useVoiceInterview, type ConversationEntry } from "@/hooks/use-voice-interview"
+import { useVoiceInterview } from "@/hooks/use-voice-interview"
 import { useToast } from "@/hooks/use-toast"
 
 type InterviewState = "setup" | "active" | "evaluating" | "completed"
+
+const AVATAR_IDLE_FRAME = "/avatar/interviewer.png"
+const AVATAR_FRAME_STYLE = {
+  objectPosition: "50% 0%",
+  scale: 1.08,
+}
+const AVATAR_SPEAKING_FRAMES = [
+  { src: "/avatar/interviewer-1.png", duration: 240 },
+  { src: "/avatar/interviewer-2.png", duration: 310 },
+  { src: "/avatar/interviewer-1.png", duration: 210 },
+  { src: "/avatar/interviewer.png", duration: 200 },
+  { src: "/avatar/interviewer-3.png", duration: 300 },
+  { src: "/avatar/interviewer-2.png", duration: 370 },
+  { src: "/avatar/interviewer-1.png", duration: 260 },
+  { src: "/avatar/interviewer-1.png", duration: 330 },
+  { src: "/avatar/interviewer-2.png", duration: 280 },
+  { src: "/avatar/interviewer.png", duration: 100 },
+]
 
 export default function MockInterviewClient() {
   const [state, setState] = useState<InterviewState>("setup")
@@ -267,7 +285,7 @@ export default function MockInterviewClient() {
     return (
       <div className="flex min-h-screen flex-col bg-background">
         <main className="flex-1 p-6 md:p-8">
-          <div className="mx-auto max-w-5xl space-y-6">
+          <div className="mx-auto max-w-6xl space-y-6">
             {/* Header */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -332,17 +350,12 @@ export default function MockInterviewClient() {
                 {/* Voice Status Indicator */}
                 {(voice.isAiSpeaking || voice.sessionState === "processing" || voice.sessionState === "idle") && (
                   <Card className="overflow-hidden">
-                    <CardContent className="p-8">
+                    <CardContent className="p-4 sm:p-6">
                       <div className="flex flex-col items-center justify-center gap-6">
                         {/* AI Speaking Indicator */}
                         {voice.isAiSpeaking && (
-                          <div className="text-center space-y-4">
-                            <div className="relative mx-auto">
-                              <div className="h-24 w-24 rounded-full bg-primary/10 flex items-center justify-center">
-                                <Volume2 className="h-10 w-10 text-primary animate-pulse" />
-                              </div>
-                              <div className="absolute inset-0 rounded-full border-2 border-primary/30 animate-ping" />
-                            </div>
+                          <div className="w-full text-center space-y-4">
+                            <InterviewerAvatarDisplay isSpeaking />
                             <p className="text-sm font-medium text-muted-foreground">{t("AI is speaking...")}</p>
                             <Button
                               variant="outline"
@@ -359,20 +372,22 @@ export default function MockInterviewClient() {
                         {/* Processing Indicator */}
                         {voice.sessionState === "processing" && (
                           <div className="text-center space-y-4">
-                            <div className="h-24 w-24 rounded-full bg-yellow-500/10 flex items-center justify-center mx-auto">
-                              <Loader2 className="h-10 w-10 text-yellow-500 animate-spin" />
-                            </div>
-                            <p className="text-sm font-medium text-muted-foreground">{t("Processing your answer...")}</p>
+                            <InterviewerAvatarDisplay />
+                            <p className="flex items-center justify-center gap-2 text-sm font-medium text-muted-foreground">
+                              <Loader2 className="h-4 w-4 animate-spin text-yellow-500" />
+                              {t("Processing your answer...")}
+                            </p>
                           </div>
                         )}
 
                         {/* Idle / Connecting */}
                         {voice.sessionState === "idle" && (
                           <div className="text-center space-y-4">
-                            <div className="h-24 w-24 rounded-full bg-muted flex items-center justify-center mx-auto">
-                              <Loader2 className="h-10 w-10 text-muted-foreground animate-spin" />
-                            </div>
-                            <p className="text-sm font-medium text-muted-foreground">{t("Preparing interview...")}</p>
+                            <InterviewerAvatarDisplay />
+                            <p className="flex items-center justify-center gap-2 text-sm font-medium text-muted-foreground">
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              {t("Preparing interview...")}
+                            </p>
                           </div>
                         )}
                       </div>
@@ -509,6 +524,13 @@ export default function MockInterviewClient() {
                             entry.role === "interviewer" ? "" : "flex-row-reverse"
                           }`}
                         >
+                          {entry.role === "interviewer" && (
+                            <img
+                              src="/avatar/interviewer.png"
+                              alt={t("AI interviewer")}
+                              className="mt-1 h-8 w-8 shrink-0 rounded-md border object-cover object-top"
+                            />
+                          )}
                           <div
                             className={`rounded-lg px-3 py-2 text-sm max-w-[85%] ${
                               entry.role === "interviewer"
@@ -517,7 +539,7 @@ export default function MockInterviewClient() {
                             }`}
                           >
                             <p className="text-xs font-medium mb-1 opacity-60">
-                              {entry.role === "interviewer" ? "🤖 AI" : "👤 Sen"}
+                              {entry.role === "interviewer" ? t("AI Interviewer") : "👤 Sen"}
                             </p>
                             <p className="leading-relaxed">{entry.text}</p>
                           </div>
@@ -651,6 +673,72 @@ export default function MockInterviewClient() {
         </div>
       </PageContainer>
     </>
+  )
+}
+
+function InterviewerAvatarDisplay({
+  isSpeaking = false,
+}: {
+  isSpeaking?: boolean
+}) {
+  const [frameIndex, setFrameIndex] = useState(0)
+
+  useEffect(() => {
+    for (const src of [AVATAR_IDLE_FRAME, ...AVATAR_SPEAKING_FRAMES.map((frame) => frame.src)]) {
+      const image = new Image()
+      image.src = src
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!isSpeaking) {
+      setFrameIndex(0)
+      return
+    }
+
+    const currentFrame = AVATAR_SPEAKING_FRAMES[frameIndex]
+    const timeout = window.setTimeout(() => {
+      setFrameIndex((index) => (index + 1) % AVATAR_SPEAKING_FRAMES.length)
+    }, currentFrame.duration)
+
+    return () => window.clearTimeout(timeout)
+  }, [frameIndex, isSpeaking])
+
+  const currentFrame = isSpeaking ? AVATAR_SPEAKING_FRAMES[frameIndex] : null
+  const avatarFrame = currentFrame?.src || AVATAR_IDLE_FRAME
+  const imageStyle = {
+    objectPosition: AVATAR_FRAME_STYLE.objectPosition,
+    transform: `scale(${AVATAR_FRAME_STYLE.scale})`,
+  } satisfies CSSProperties
+
+  return (
+    <div className="mx-auto w-full space-y-3">
+      <div
+        className={`relative mx-auto h-[380px] w-[270px] overflow-hidden rounded-lg border bg-muted shadow-sm sm:h-[470px] sm:w-[335px] ${
+          isSpeaking ? "ring-2 ring-primary/30" : ""
+        }`}
+      >
+        <div className="absolute inset-0 origin-center">
+          <img
+            src={avatarFrame}
+            alt="AI interviewer"
+            draggable={false}
+            style={imageStyle}
+            className="h-full w-full select-none object-cover transition-[transform,opacity] duration-150 ease-out"
+          />
+        </div>
+        {isSpeaking && (
+          <div className="absolute bottom-2 right-2 rounded-md bg-background/85 p-1.5 text-primary shadow-sm">
+            <Volume2 className="h-4 w-4 animate-pulse" />
+          </div>
+        )}
+      </div>
+      {isSpeaking && (
+        <div className="mx-auto h-1.5 w-36 overflow-hidden rounded-full bg-primary/10">
+          <div className="h-full w-1/2 animate-pulse rounded-full bg-primary" />
+        </div>
+      )}
+    </div>
   )
 }
 

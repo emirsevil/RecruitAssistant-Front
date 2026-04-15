@@ -250,6 +250,25 @@ export default function CVStudioPage() {
     };
   }
 
+  const buildTargetJobContext = () => {
+    const manualJobDescription = cvData.targetJob.trim()
+    const workspaceJobDescription = activeWorkspace?.jobDescription?.trim()
+    const jobDescription = manualJobDescription || workspaceJobDescription || ""
+
+    const parts: string[] = []
+    if (activeWorkspace?.name?.trim()) {
+      parts.push(`Company: ${activeWorkspace.name.trim()}`)
+    }
+    if (activeWorkspace?.jobName?.trim()) {
+      parts.push(`Role: ${activeWorkspace.jobName.trim()}`)
+    }
+    if (jobDescription) {
+      parts.push(`Job Description:\n${jobDescription}`)
+    }
+
+    return parts.join("\n\n")
+  }
+
   const compileLatexLocally = async (latexContent: string, isCoverLetter: boolean) => {
     setIsCompiling(true)
     try {
@@ -320,9 +339,12 @@ export default function CVStudioPage() {
         email: parsedData.email || prev.email,
         phone: parsedData.phone || prev.phone,
         location: parsedData.location || prev.location,
+        linkedin: parsedData.linkedin || prev.linkedin,
+        github: parsedData.github || prev.github,
         summary: parsedData.summary || prev.summary,
         education: parsedData.education?.length ? parsedData.education : prev.education,
         experience: parsedData.experience?.length ? parsedData.experience : prev.experience,
+        projects: parsedData.projects?.length ? parsedData.projects : prev.projects,
         skills: parsedData.skills?.length ? parsedData.skills : prev.skills,
       }))
     } catch (error: any) {
@@ -343,12 +365,13 @@ export default function CVStudioPage() {
     setGeneratedLatex("")
 
     try {
+      const targetJobContext = buildTargetJobContext()
       const response = await fetch("http://localhost:8000/api/generate-cv", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           candidate_profile: formatCandidateProfile(),
-          job_description: cvData.targetJob,
+          job_description: targetJobContext,
           special_instructions: cvData.specialInstructions
         }),
         credentials: "include",
@@ -395,6 +418,7 @@ export default function CVStudioPage() {
 
     try {
       const currentDate = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+      const targetJobContext = buildTargetJobContext()
       const coverLetterInstructions = [
         `Use this exact cover letter date: ${currentDate}.`,
         "In the recipient block, include Hiring Manager and the actual company name extracted from the job description when available. Do not include a Company Address line. Never output placeholder text.",
@@ -406,7 +430,7 @@ export default function CVStudioPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           candidate_profile: formatCandidateProfile(),
-          job_description: cvData.targetJob,
+          job_description: targetJobContext,
           special_instructions: coverLetterInstructions
         }),
         credentials: "include",
