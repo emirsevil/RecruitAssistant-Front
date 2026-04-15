@@ -544,8 +544,8 @@ export default function MockInterviewClient() {
             <Button size="lg" variant="outline" className="w-full">{t("Return to Dashboard")}</Button>
           </Link>
         </div>
-      </PageContainer>
-    </>
+      </div>
+    </PageContainer>
   )
 }
 
@@ -622,6 +622,6 @@ function FeedbackMetric({ label, value }: { label: string; value: number }) {
         <span className="font-medium">{label}</span>
         <span className="text-muted-foreground">{value}%</span>
       </div>
-    </PageContainer>
+    </div>
   )
 }
