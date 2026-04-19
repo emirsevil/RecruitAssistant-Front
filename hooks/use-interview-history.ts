@@ -43,18 +43,18 @@ export interface InterviewDetail {
 
 // ─── List Hook ──────────────────────────────────────────────────────
 
-export function useInterviewHistory() {
+export function useInterviewHistory(workspaceId?: number) {
   const [interviews, setInterviews] = useState<InterviewSummary[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchInterviews = useCallback(async (workspaceId?: number) => {
+  const fetchInterviews = useCallback(async (wsId?: number) => {
     setIsLoading(true)
     setError(null)
 
     try {
-      const url = workspaceId
-        ? `http://localhost:8000/interviews/?workspace_id=${workspaceId}`
+      const url = wsId
+        ? `http://localhost:8000/interviews/?workspace_id=${wsId}`
         : "http://localhost:8000/interviews/"
 
       const res = await fetch(url, {
@@ -76,14 +76,14 @@ export function useInterviewHistory() {
   }, [])
 
   useEffect(() => {
-    fetchInterviews()
-  }, [fetchInterviews])
+    fetchInterviews(workspaceId)
+  }, [fetchInterviews, workspaceId])
 
   return {
     interviews,
     isLoading,
     error,
-    refetch: fetchInterviews,
+    refetch: () => fetchInterviews(workspaceId),
   }
 }
 

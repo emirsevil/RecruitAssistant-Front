@@ -22,14 +22,16 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { useLanguage } from "@/lib/language-context"
+import { useWorkspace } from "@/lib/workspace-context"
 import { useInterviewHistory, useInterviewDetail } from "@/hooks/use-interview-history"
 import type { InterviewSummary } from "@/hooks/use-interview-history"
-import { STATIC_STATUS_PAGE_GET_INITIAL_PROPS_ERROR } from "next/dist/lib/constants"
 
 export default function InterviewHistoryPage() {
   const { t, language } = useLanguage()
   const dateLocale = language === "tr" ? tr : enUS
-  const { interviews, isLoading, error } = useInterviewHistory()
+  const { activeWorkspace } = useWorkspace()
+  const workspaceId = activeWorkspace ? Number(activeWorkspace.id) : undefined
+  const { interviews, isLoading, error, refetch } = useInterviewHistory(workspaceId)
   const [selectedId, setSelectedId] = useState<number | null>(null)
 
   // Detail view
@@ -338,7 +340,7 @@ function InterviewDetailView({
                   {/* Answer */}
                   <div className="rounded-md bg-muted/50 p-3">
                     <p className="text-xs font-medium text-muted-foreground mb-1">{t("Your Answer")}</p>
-                    <p className="text-sm">
+                    <p className="text-sm whitespace-pre-wrap">
                       {qa.answer || <span className="italic text-muted-foreground">{t("No answer provided")}</span>}
                     </p>
                   </div>

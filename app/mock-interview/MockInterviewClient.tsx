@@ -9,9 +9,9 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
 import { Progress } from "@/components/ui/progress"
-import { PlayCircle, Mic, MicOff, Send, ChevronRight, BarChart3, SkipForward, Phone, PhoneOff, Volume2, Loader2, CheckCircle2 } from "lucide-react"
+import { Textarea } from "@/components/ui/textarea"
+import { PlayCircle, Mic, MicOff, Send, ChevronRight, BarChart3, SkipForward, Phone, PhoneOff, Volume2, Loader2, CheckCircle2, Check, Tag } from "lucide-react"
 import Link from "next/link"
 import { useLanguage } from "@/lib/language-context"
 import { useVoiceInterview } from "@/hooks/use-voice-interview"
@@ -43,12 +43,20 @@ const AVATAR_SPEAKING_FRAMES = [
 export default function MockInterviewClient() {
   const [state, setState] = useState<InterviewState>("setup")
   const [interviewType, setInterviewType] = useState("hr")
+
+  // Clear categories when switching to HR (categories are only for technical)
+  const handleInterviewTypeChange = (value: string) => {
+    setInterviewType(value)
+    if (value === "hr") {
+      setSelectedCategories([])
+    }
+  }
   const [difficulty, setDifficulty] = useState("junior")
   const [userAnswer, setUserAnswer] = useState("")
   const { t } = useLanguage()
 
   const { activeWorkspace } = useWorkspace()
-  const [categories, setCategories] = useState("")
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const { toast } = useToast()
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -109,7 +117,7 @@ export default function MockInterviewClient() {
     setState("active")
     voice.startSession({
       workspaceId: Number(activeWorkspace.id),
-      categories: categories || "Genel",
+      categories: selectedCategories.length > 0 ? selectedCategories : ["Genel"],
       difficulty,
       interviewType: interviewType,
     })
@@ -236,7 +244,7 @@ export default function MockInterviewClient() {
             <CardContent className="space-y-6">
               <div className="space-y-2">
                 <Label>{t("Interview Type")}</Label>
-                <Select value={interviewType} onValueChange={setInterviewType}>
+                <Select value={interviewType} onValueChange={handleInterviewTypeChange}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -268,10 +276,53 @@ export default function MockInterviewClient() {
                 </div>
               )}
 
+              {interviewType === "technical" && (
               <div className="space-y-2">
-                <Label>{t("Categories / Topics")}</Label>
-                <Textarea value={categories} onChange={e => setCategories(e.target.value)} placeholder={t("e.g. React, Node.js, System Design...")} />
+                <div className="flex items-center justify-between">
+                  <Label>{t("Categories / Topics")}</Label>
+                  <span className="text-xs text-muted-foreground font-medium">{selectedCategories.length} / 5</span>
+                </div>
+                {activeWorkspace?.categories && activeWorkspace.categories.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {activeWorkspace.categories.map((cat) => {
+                      const isSelected = selectedCategories.includes(cat)
+                      const isDisabled = !isSelected && selectedCategories.length >= 5
+                      return (
+                        <button
+                          key={cat}
+                          type="button"
+                          disabled={isDisabled}
+                          onClick={() => {
+                            if (isSelected) {
+                              setSelectedCategories((prev) => prev.filter((c) => c !== cat))
+                            } else if (selectedCategories.length < 5) {
+                              setSelectedCategories((prev) => [...prev, cat])
+                            }
+                          }}
+                          className={`flex items-center gap-1.5 px-4 py-2 rounded-xl border-2 text-sm font-semibold transition-all ${
+                            isSelected
+                              ? "bg-primary/10 border-primary/30 text-primary"
+                              : isDisabled
+                              ? "bg-muted/30 border-transparent text-muted-foreground/50 cursor-not-allowed"
+                              : "bg-muted/50 border-transparent text-foreground hover:border-primary/20 hover:bg-primary/5 cursor-pointer"
+                          }`}
+                        >
+                          {isSelected && <Check className="h-3.5 w-3.5" />}
+                          {cat}
+                        </button>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-6 bg-muted/20 rounded-xl border-2 border-dashed border-border">
+                    <Tag className="h-6 w-6 mx-auto mb-2 text-muted-foreground/40" />
+                    <p className="text-sm text-muted-foreground">
+                      {t("No categories found. Create a workspace with a job description first.")}
+                    </p>
+                  </div>
+                )}
               </div>
+              )}
 
               <Button onClick={startInterview} size="lg" className="w-full gap-2">
                 <Phone className="h-5 w-5" />

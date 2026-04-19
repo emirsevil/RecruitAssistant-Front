@@ -11,6 +11,7 @@ export interface Workspace {
   createdAt: string
   jobName?: string
   jobDescription?: string
+  categories: string[]
 }
 
 export interface CreateWorkspaceOptions {
@@ -31,7 +32,7 @@ interface WorkspaceContextType {
   activeWorkspace: Workspace | null
   isHydrated: boolean
   setActiveWorkspace: (workspace: Workspace) => void
-  createWorkspace: (name: string, emoji?: string, options?: { jobName?: string; jobDescription?: string }) => Promise<Workspace>
+  createWorkspace: (name: string, emoji?: string, options?: { jobName?: string; jobDescription?: string }) => Promise<{ workspace: Workspace; suggestedCategories: string[] }>
   renameWorkspace: (id: string, name: string) => Promise<void>
   updateWorkspace: (id: string, updates: WorkspaceDetailsUpdate) => Promise<void>
   deleteWorkspace: (id: string) => Promise<void>
@@ -79,6 +80,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       createdAt: apiWs.created_at,
       jobName: apiWs.job_name,
       jobDescription: apiWs.job_description,
+      categories: (apiWs.categories || []).map((c: any) => typeof c === 'string' ? c : c.name),
     }
   }, [])
 
@@ -138,7 +140,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     name: string,
     emoji?: string,
     options?: { jobName?: string; jobDescription?: string }
-  ): Promise<Workspace> => {
+  ): Promise<{ workspace: Workspace; suggestedCategories: string[] }> => {
     if (!user) throw new Error("Authentication required")
     
     const wsEmoji = emoji ?? getEmojiForIndex(workspaces.length)
@@ -162,10 +164,11 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     
     const data = await response.json()
     const newWorkspace = mapApiToWorkspace(data)
+    const suggestedCategories: string[] = data.suggested_categories || []
     
     setWorkspaces((prev) => [...prev, newWorkspace])
     setActiveWorkspaceState(newWorkspace)
-    return newWorkspace
+    return { workspace: newWorkspace, suggestedCategories }
   }, [workspaces.length, mapApiToWorkspace, user])
 
   const renameWorkspace = useCallback(async (id: string, name: string) => {

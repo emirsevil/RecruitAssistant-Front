@@ -53,7 +53,6 @@ export default function QuizzesPage() {
     fetchUserScores,
     submitQuiz,
     checkCanStart,
-    extractSkills,
     generateTargetedQuizzes
   } = useQuizzes()
 
@@ -100,11 +99,12 @@ export default function QuizzesPage() {
   })
 
   // -- Discovery Flow Handlers --
-  const handleStartDiscovery = async () => {
-    if (!workspaceId) return
+  const handleStartDiscovery = () => {
+    if (!activeWorkspace) return
     setDiscoveryOpen(true)
-    const skills = await extractSkills(workspaceId)
-    setExtractedSkills(skills)
+    // Load categories directly from workspace — no LLM call needed
+    const workspaceCategories = activeWorkspace.categories || []
+    setExtractedSkills(workspaceCategories)
   }
 
   const toggleSkill = (skill: string) => {

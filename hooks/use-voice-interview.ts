@@ -97,7 +97,7 @@ interface UseVoiceInterviewReturn {
   // Actions
   startSession: (config: {
     workspaceId: number
-    categories: string
+    categories: string[]
     difficulty: string
     interviewType: string
   }) => void
@@ -356,14 +356,31 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
             // Don't transition immediately — audio may still be playing.
             // Mark that all chunks have been received.
             allChunksReceivedRef.current = true
-            // If playback already finished (or no audio was queued), transition now
-            if (!isPlayingRef.current && scheduledSourcesRef.current.length === 0) {
-              setSessionState("listening")
-              allChunksReceivedRef.current = false
+
+            if (data.wrap_up) {
+              // Goodbye speech — wait for playback to finish, then tell backend to evaluate
+              const triggerEvaluation = () => {
+                if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+                  wsRef.current.send(JSON.stringify({ type: "start_evaluation" }))
+                }
+              }
+              if (!isPlayingRef.current && scheduledSourcesRef.current.length === 0) {
+                triggerEvaluation()
+                allChunksReceivedRef.current = false
+              } else {
+                onPlaybackFinishedRef.current = () => {
+                  triggerEvaluation()
+                }
+              }
             } else {
-              // Otherwise, defer transition until the last source finishes
-              onPlaybackFinishedRef.current = () => {
+              // Normal question — transition to listening after playback
+              if (!isPlayingRef.current && scheduledSourcesRef.current.length === 0) {
                 setSessionState("listening")
+                allChunksReceivedRef.current = false
+              } else {
+                onPlaybackFinishedRef.current = () => {
+                  setSessionState("listening")
+                }
               }
             }
             break
@@ -413,7 +430,7 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
   const startSession = useCallback(
     async (config: {
       workspaceId: number
-      categories: string
+      categories: string[]
       difficulty: string
       interviewType: string
     }) => {

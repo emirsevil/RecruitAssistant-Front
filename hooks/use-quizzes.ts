@@ -147,24 +147,7 @@ export function useQuizzes() {
     }
   }
 
-  const extractSkills = async (workspaceId: string | number) => {
-    setIsLoading(true)
-    setError(null)
-    try {
-      const res = await fetch(`http://localhost:8000/workspaces/${workspaceId}/skills/extract`, {
-        method: "POST",
-        credentials: "include",
-      })
-      if (!res.ok) throw new Error("Failed to extract skills")
-      const data = await res.json()
-      return data as string[]
-    } catch (e: any) {
-      setError(e.message)
-      return []
-    } finally {
-      setIsLoading(false)
-    }
-  }
+
 
   const generateTargetedQuizzes = async (workspaceId: string | number, selections: SkillSelection[], language: string = "tr") => {
     setIsGenerating(true)
@@ -200,7 +183,6 @@ export function useQuizzes() {
     fetchUserScores,
     submitQuiz,
     checkCanStart,
-    extractSkills,
     generateTargetedQuizzes,
   }
 }
