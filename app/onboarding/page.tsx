@@ -1,87 +1,92 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { PageContainer } from "@/components/page-container"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Progress } from "@/components/ui/progress"
-import { ChevronRight, ChevronLeft, GraduationCap, Briefcase } from "lucide-react"
-import { WorkspaceForm } from "@/components/workspace-form"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { ArrowRight, ChevronLeft, Sparkles, Upload, GraduationCap } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { useWorkspace } from "@/lib/workspace-context"
 import { useLanguage } from "@/lib/language-context"
 import { toast } from "sonner"
+import { cn } from "@/lib/utils"
 
 export default function OnboardingPage() {
   const [step, setStep] = useState(1)
   const [isUpdating, setIsUpdating] = useState(false)
   const { user, updateProfile } = useAuth()
   const { createWorkspace, workspaces } = useWorkspace()
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const router = useRouter()
 
   const [formData, setFormData] = useState({
     university: "",
     graduationYear: new Date().getFullYear().toString(),
     workspaceName: "",
-    selectedEmoji: "💼",
+    company: "",
     jobName: "",
     jobDescription: "",
   })
 
-  // If user already has workspaces, redirect away
   useEffect(() => {
-    if (workspaces.length > 0) {
-      router.push("/dashboard")
-    }
+    if (workspaces.length > 0) router.push("/dashboard")
   }, [workspaces, router])
 
-  const totalSteps = 2
-  const progress = (step / totalSteps) * 100
+  const totalSteps = 3
+  const stepLabel = (n: number) =>
+    language === "tr" ? `Adım ${n} / ${totalSteps}` : `Step ${n} of ${totalSteps}`
 
-  const handleNext = async () => {
+  // Naive skill extraction from JD: take Capitalized tokens
+  const extractedSkills = formData.jobDescription
+    ? Array.from(
+        new Set(
+          formData.jobDescription
+            .split(/[^A-Za-z+#.]+/)
+            .filter((w) => w.length > 1 && /^[A-Z]/.test(w))
+            .slice(0, 7)
+        )
+      )
+    : []
+
+  const goNext = async () => {
     if (step === 1) {
-      if (!formData.university || !formData.graduationYear) {
+      if (!formData.university) {
         toast.error(t("Please fill in all education details"))
         return
       }
-      
       setIsUpdating(true)
       try {
-        const educationString = `${formData.university}, ${formData.graduationYear}`
-        await updateProfile({ education: educationString })
+        await updateProfile({
+          education: `${formData.university}, ${formData.graduationYear}`,
+        })
         setStep(2)
-      } catch (error) {
+      } catch {
         toast.error(t("Failed to update profile"))
       } finally {
         setIsUpdating(false)
       }
+      return
     }
-  }
-
-  const handleComplete = async () => {
     if (step === 2) {
-      if (!formData.workspaceName.trim()) {
-        toast.error(t("Please enter a workspace name"))
+      if (!formData.company.trim() || !formData.jobName.trim()) {
+        toast.error(t("Please fill in all education details"))
         return
       }
-
+      setStep(3)
+      return
+    }
+    if (step === 3) {
       setIsUpdating(true)
       try {
-        await createWorkspace(
-          formData.workspaceName.trim(),
-          formData.selectedEmoji,
-          {
-            jobName: formData.jobName.trim() || undefined,
-            jobDescription: formData.jobDescription.trim() || undefined,
-          }
-        )
-        // Redirection will be handled by the guard or manually
+        const wsName = formData.workspaceName.trim() || formData.company.trim()
+        await createWorkspace(wsName, "💼", {
+          jobName: formData.jobName.trim() || undefined,
+          jobDescription: formData.jobDescription.trim() || undefined,
+        })
         router.push("/dashboard")
-      } catch (error) {
+      } catch {
         toast.error(t("Failed to create workspace"))
       } finally {
         setIsUpdating(false)
@@ -89,140 +94,254 @@ export default function OnboardingPage() {
     }
   }
 
+  const goBack = () => {
+    if (step > 1) setStep((s) => s - 1)
+  }
+
   return (
-    <PageContainer>
-      <div className="flex min-h-[calc(100vh-8rem)] items-center justify-center py-8">
-        <div className="w-full max-w-2xl space-y-8">
-          <div className="text-center space-y-2">
-            <h1 className="text-3xl font-bold tracking-tight">
-              {t("Welcome to RecruitAssistant, {{name}}!").replace("{{name}}", user?.full_name || "")}
-            </h1>
-            <p className="text-muted-foreground">
-              {t("Let's set up your profile and your first workspace.")}
-            </p>
+    <div className="flex min-h-screen w-full items-center justify-center bg-background px-6 py-10">
+      <div className="w-full max-w-[760px]">
+        {/* Logo */}
+        <Link href="/" className="mb-8 inline-flex items-center gap-2.5">
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary font-serif text-sm font-semibold text-primary-foreground">
+            R
+          </span>
+          <span className="font-serif text-[17px] tracking-tight">
+            Recruit<span className="italic">Assistant</span>
+          </span>
+        </Link>
+
+        {/* Eyebrow */}
+        <p className="mb-3.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-clay">
+          {stepLabel(step)}
+        </p>
+
+        {/* Headline */}
+        <h1 className="serif-headline text-[44px] font-normal leading-[1.1] tracking-tight">
+          {step === 1 && (
+            <>
+              {language === "tr" ? "Tanışalım" : "Let's get to know you"}
+              {user?.full_name ? (
+                <>, <em className="italic">{user.full_name.split(" ")[0]}</em></>
+              ) : null}
+              .
+            </>
+          )}
+          {step === 2 && (language === "tr" ? "Hedef rolünü anlat." : "Tell us your target role.")}
+          {step === 3 &&
+            (language === "tr" ? "Son rötuşları yapalım." : "Let's add a few finishing touches.")}
+        </h1>
+        <p className="mt-3 max-w-[560px] text-[15px] leading-relaxed text-muted-foreground">
+          {language === "tr"
+            ? "Şirket ve iş tanımına göre senin için kişiselleştirilmiş mülakatlar, testler ve CV önerileri hazırlıyoruz."
+            : "We use this to personalize your mock interviews, quizzes, and CV suggestions for the job you're aiming at."}
+        </p>
+
+        {/* Progress bars */}
+        <div className="mt-7 mb-7 flex gap-2">
+          {Array.from({ length: totalSteps }).map((_, i) => (
+            <div
+              key={i}
+              className={cn(
+                "h-[3px] flex-1 rounded-full",
+                i < step ? "bg-sage" : "bg-secondary"
+              )}
+            />
+          ))}
+        </div>
+
+        {/* Step card */}
+        <div className="rounded-2xl border border-border bg-card p-7">
+          {step === 1 && (
+            <div className="space-y-5">
+              <div className="mb-1 flex items-center gap-2 whitespace-nowrap">
+                <GraduationCap className="h-4 w-4 flex-shrink-0 text-sage" />
+                <span className="text-[12px] font-semibold">
+                  {language === "tr" ? "Eğitim bilgisi" : "Education"}
+                </span>
+              </div>
+              <Field
+                label={language === "tr" ? "Üniversite" : "University"}
+                value={formData.university}
+                onChange={(v) => setFormData({ ...formData, university: v })}
+                placeholder={
+                  language === "tr"
+                    ? "ör. Bilkent Üniversitesi"
+                    : "e.g. Bilkent University"
+                }
+              />
+              <Field
+                label={language === "tr" ? "Mezuniyet yılı" : "Graduation year"}
+                value={formData.graduationYear}
+                onChange={(v) => setFormData({ ...formData, graduationYear: v })}
+                placeholder="2026"
+              />
+            </div>
+          )}
+
+          {step === 2 && (
+            <div className="space-y-5">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <Field
+                  label={language === "tr" ? "Şirket" : "Company"}
+                  value={formData.company}
+                  onChange={(v) => setFormData({ ...formData, company: v })}
+                  placeholder={language === "tr" ? "ör. Trendyol" : "e.g. Trendyol"}
+                />
+                <Field
+                  label={language === "tr" ? "Pozisyon" : "Role"}
+                  value={formData.jobName}
+                  onChange={(v) => setFormData({ ...formData, jobName: v })}
+                  placeholder={
+                    language === "tr"
+                      ? "ör. Junior Backend Engineer"
+                      : "e.g. Junior Backend Engineer"
+                  }
+                />
+              </div>
+
+              <div>
+                <p className="mb-2 text-[12px] font-semibold">
+                  {language === "tr" ? "İş tanımı" : "Job description"}
+                </p>
+                <Textarea
+                  value={formData.jobDescription}
+                  onChange={(e) =>
+                    setFormData({ ...formData, jobDescription: e.target.value })
+                  }
+                  placeholder={
+                    language === "tr"
+                      ? "İş ilanını buraya yapıştırın. Anahtar yetenekleri çıkarıp ona göre hazırlık planı oluşturacağız."
+                      : "Paste the job description here. We'll extract the key skills and prepare your plan accordingly."
+                  }
+                  className="min-h-[140px] resize-none rounded-lg border-border bg-background text-[13px] leading-relaxed"
+                />
+              </div>
+
+              {extractedSkills.length > 0 && (
+                <div>
+                  <div className="mb-2 flex items-center gap-2 whitespace-nowrap">
+                    <Sparkles className="h-3.5 w-3.5 flex-shrink-0 text-clay" />
+                    <span className="text-[12px] font-semibold">
+                      {language === "tr" ? "Çıkarılan yetenekler" : "Extracted skills"}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {extractedSkills.map((s) => (
+                      <span
+                        key={s}
+                        className="whitespace-nowrap rounded-full bg-sage-soft px-2.5 py-1 text-[12px] font-medium text-sage"
+                      >
+                        {s}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="space-y-5">
+              <Field
+                label={language === "tr" ? "Çalışma alanı adı" : "Workspace name"}
+                value={formData.workspaceName}
+                onChange={(v) => setFormData({ ...formData, workspaceName: v })}
+                placeholder={
+                  formData.company
+                    ? `${formData.company} · ${formData.jobName || ""}`
+                    : language === "tr"
+                      ? "ör. Trendyol — Backend"
+                      : "e.g. Trendyol — Backend"
+                }
+              />
+
+              <div className="rounded-xl border border-dashed border-strong bg-secondary/40 p-4">
+                <div className="flex items-center gap-3.5">
+                  <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-card text-clay">
+                    <Upload className="h-5 w-5" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[13px] font-semibold">
+                      {language === "tr" ? "CV ekle (opsiyonel)" : "Add your CV (optional)"}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {language === "tr"
+                        ? "PDF veya DOCX yükleyin — geri bildirim ve CV stüdyosu için kullanılır."
+                        : "Upload a PDF or DOCX — we'll use it for feedback and CV studio."}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    className="whitespace-nowrap rounded-lg border border-strong bg-card px-3.5 py-2 text-[12px] font-semibold transition-colors hover:bg-secondary"
+                  >
+                    {language === "tr" ? "CV yükle" : "Upload CV"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="mt-7 flex items-center justify-between">
+            {step > 1 ? (
+              <Button
+                variant="ghost"
+                onClick={goBack}
+                disabled={isUpdating}
+                className="text-muted-foreground"
+              >
+                <ChevronLeft className="mr-1.5 h-4 w-4" />
+                {t("Back")}
+              </Button>
+            ) : (
+              <span />
+            )}
+
+            <Button
+              onClick={goNext}
+              disabled={isUpdating}
+              className="rounded-lg bg-primary px-5 text-primary-foreground hover:bg-primary/90"
+            >
+              {isUpdating
+                ? language === "tr"
+                  ? "Kaydediliyor..."
+                  : "Saving..."
+                : step < 3
+                  ? language === "tr"
+                    ? "Devam"
+                    : "Continue"
+                  : language === "tr"
+                    ? "Bitir ve Keşfet"
+                    : "Finalize and Explore"}
+              <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+            </Button>
           </div>
-
-          <Card className="border-none shadow-xl bg-card/50 backdrop-blur-sm">
-            <CardHeader>
-              <div className="space-y-4">
-                <Progress value={progress} className="h-2" />
-                <div className="flex justify-between text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  <span className={step === 1 ? "text-primary" : ""}>{t("1. Education")}</span>
-                  <span className={step === 2 ? "text-primary" : ""}>{t("2. Workspace")}</span>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-6">
-              {step === 1 && (
-                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                      <GraduationCap className="h-6 w-6" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-xl">{t("Where did you study?")}</CardTitle>
-                      <CardDescription>{t("We use this to personalize your interview experience.")}</CardDescription>
-                    </div>
-                  </div>
-
-                  <div className="grid gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="university">{t("University")}</Label>
-                      <Input
-                        id="university"
-                        placeholder="e.g. Middle East Technical University"
-                        className="h-12 rounded-xl"
-                        value={formData.university}
-                        onChange={(e) => setFormData({ ...formData, university: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="graduationYear">{t("Graduation Year")}</Label>
-                      <Input
-                        id="graduationYear"
-                        type="number"
-                        placeholder="2024"
-                        className="h-12 rounded-xl"
-                        value={formData.graduationYear}
-                        onChange={(e) => setFormData({ ...formData, graduationYear: e.target.value })}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {step === 2 && (
-                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                      <Briefcase className="h-6 w-6" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-xl">{t("Configure your workspace")}</CardTitle>
-                      <CardDescription>{t("What job are you preparing for right now?")}</CardDescription>
-                    </div>
-                  </div>
-
-                  <WorkspaceForm
-                    idPrefix="onboarding"
-                    value={{
-                      workspaceName: formData.workspaceName,
-                      selectedEmoji: formData.selectedEmoji,
-                      jobName: formData.jobName,
-                      jobDescription: formData.jobDescription,
-                    }}
-                    onChange={(v) =>
-                      setFormData({
-                        ...formData,
-                        workspaceName: v.workspaceName,
-                        selectedEmoji: v.selectedEmoji,
-                        jobName: v.jobName,
-                        jobDescription: v.jobDescription,
-                      })
-                    }
-                  />
-                </div>
-              )}
-
-              <div className="mt-8 flex justify-between gap-4">
-                {step === 2 && (
-                  <Button 
-                    variant="ghost" 
-                    onClick={() => setStep(1)}
-                    disabled={isUpdating}
-                    className="rounded-xl h-12"
-                  >
-                    <ChevronLeft className="mr-2 h-4 w-4" />
-                    {t("Back")}
-                  </Button>
-                )}
-                
-                <div className="flex-1" />
-
-                {step === 1 ? (
-                  <Button 
-                    className="rounded-xl h-12 px-8 font-bold shadow-lg shadow-primary/20"
-                    onClick={handleNext}
-                    disabled={isUpdating}
-                  >
-                    {isUpdating ? t("Saving...") : t("Next")}
-                    <ChevronRight className="ml-2 h-4 w-4" />
-                  </Button>
-                ) : (
-                  <Button 
-                    className="rounded-xl h-12 px-8 font-bold shadow-lg shadow-primary/20"
-                    onClick={handleComplete}
-                    disabled={isUpdating || !formData.workspaceName.trim()}
-                  >
-                    {isUpdating ? t("Creating...") : t("Finalize and Explore")}
-                    <ChevronRight className="ml-2 h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </div>
-    </PageContainer>
+    </div>
+  )
+}
+
+function Field({
+  label,
+  value,
+  onChange,
+  placeholder,
+}: {
+  label: string
+  value: string
+  onChange: (v: string) => void
+  placeholder?: string
+}) {
+  return (
+    <div>
+      <p className="mb-1.5 text-[12px] font-semibold">{label}</p>
+      <Input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="h-11 rounded-lg border-border bg-background text-[14px]"
+      />
+    </div>
   )
 }

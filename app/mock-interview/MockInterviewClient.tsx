@@ -17,6 +17,10 @@ import { useLanguage } from "@/lib/language-context"
 import { useVoiceInterview } from "@/hooks/use-voice-interview"
 import { useToast } from "@/hooks/use-toast"
 import { useWorkspace } from "@/lib/workspace-context"
+import { useMicLevel } from "@/hooks/use-mic-level"
+import { RingProgress } from "@/components/calm/ring-progress"
+
+const WAVE_BARS = 20
 
 type InterviewState = "setup" | "active" | "evaluating" | "completed"
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
@@ -63,6 +67,9 @@ export default function MockInterviewClient() {
 
   // Voice interview hook (sole pipeline)
   const voice = useVoiceInterview()
+
+  // Live mic amplitude → wave bars only animate when the user actually speaks
+  const micLevels = useMicLevel(voice.micActive, WAVE_BARS)
 
   // Back-button guard: check if returning to a completed interview
   const [alreadyCompleted, setAlreadyCompleted] = useState(false)
@@ -191,40 +198,43 @@ export default function MockInterviewClient() {
 
   if (alreadyCompleted) {
     return (
-      <PageContainer>
-        <div className="mx-auto max-w-2xl flex flex-col items-center justify-center min-h-[60vh] gap-6">
-          <div className="h-16 w-16 bg-green-500/10 rounded-full flex items-center justify-center">
-            <CheckCircle2 className="h-8 w-8 text-green-500" />
+      <div className="flex min-h-[70vh] items-center justify-center px-7 py-7 md:px-9">
+        <div className="flex max-w-md flex-col items-center gap-5 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-sage-soft">
+            <CheckCircle2 className="h-7 w-7 text-sage" />
           </div>
-          <div className="text-center">
-            <h2 className="text-2xl font-bold mb-2">{t("Interview Already Completed")}</h2>
-            <p className="text-muted-foreground">{t("This interview has already been completed and evaluated.")}</p>
+          <div>
+            <h2 className="serif-headline text-[28px] font-normal leading-tight">
+              {t("Interview Already Completed")}
+            </h2>
+            <p className="mt-2 text-[14px] text-muted-foreground">
+              {t("This interview has already been completed and evaluated.")}
+            </p>
           </div>
-          <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="flex flex-col gap-2.5 sm:flex-row">
             {completedInterviewId && (
               <Link href="/interview-history">
-                <Button size="lg" className="gap-2">
-                  <BarChart3 className="h-5 w-5" />
+                <Button className="gap-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90">
+                  <BarChart3 className="h-4 w-4" />
                   {t("View Results")}
                 </Button>
               </Link>
             )}
             <Button
-              size="lg"
               variant="outline"
-              className="gap-2"
+              className="gap-2 rounded-lg border-border"
               onClick={() => {
                 setAlreadyCompleted(false)
                 setCompletedInterviewId(null)
                 router.replace("/mock-interview")
               }}
             >
-              <PlayCircle className="h-5 w-5" />
+              <PlayCircle className="h-4 w-4" />
               {t("Start New Interview")}
             </Button>
           </div>
         </div>
-      </PageContainer>
+      </div>
     )
   }
 
@@ -232,106 +242,115 @@ export default function MockInterviewClient() {
 
   if (state === "setup") {
     return (
-      <PageContainer>
-        <PageHeader title={t("Mock Interview")} description={t("Practice your interview skills with AI-powered feedback")} />
-
-        <div className="mx-auto max-w-2xl">
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("Interview Setup")}</CardTitle>
-              <CardDescription>{t("Configure your practice session")}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label>{t("Interview Type")}</Label>
-                <Select value={interviewType} onValueChange={handleInterviewTypeChange}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="hr">{t("HR / Behavioral")}</SelectItem>
-                    <SelectItem value="technical">{t("Technical")}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>{t("Difficulty Level")}</Label>
-                <Select value={difficulty} onValueChange={setDifficulty}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="intern">{t("Intern")}</SelectItem>
-                    <SelectItem value="junior">{t("Junior / New Grad")}</SelectItem>
-                    <SelectItem value="mid">{t("Mid-Level")}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {activeWorkspace && (
-                <div className="rounded-lg bg-primary/5 p-4 border border-primary/20">
-                  <p className="text-sm font-medium text-primary mb-1">{t("Active Workspace")}</p>
-                  <p className="text-lg font-bold">{activeWorkspace.name}</p>
-                </div>
-              )}
-
-              {interviewType === "technical" && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label>{t("Categories / Topics")}</Label>
-                  <span className="text-xs text-muted-foreground font-medium">{selectedCategories.length} / 5</span>
-                </div>
-                {activeWorkspace?.categories && activeWorkspace.categories.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {activeWorkspace.categories.map((cat) => {
-                      const isSelected = selectedCategories.includes(cat)
-                      const isDisabled = !isSelected && selectedCategories.length >= 5
-                      return (
-                        <button
-                          key={cat}
-                          type="button"
-                          disabled={isDisabled}
-                          onClick={() => {
-                            if (isSelected) {
-                              setSelectedCategories((prev) => prev.filter((c) => c !== cat))
-                            } else if (selectedCategories.length < 5) {
-                              setSelectedCategories((prev) => [...prev, cat])
-                            }
-                          }}
-                          className={`flex items-center gap-1.5 px-4 py-2 rounded-xl border-2 text-sm font-semibold transition-all ${
-                            isSelected
-                              ? "bg-primary/10 border-primary/30 text-primary"
-                              : isDisabled
-                              ? "bg-muted/30 border-transparent text-muted-foreground/50 cursor-not-allowed"
-                              : "bg-muted/50 border-transparent text-foreground hover:border-primary/20 hover:bg-primary/5 cursor-pointer"
-                          }`}
-                        >
-                          {isSelected && <Check className="h-3.5 w-3.5" />}
-                          {cat}
-                        </button>
-                      )
-                    })}
-                  </div>
-                ) : (
-                  <div className="text-center py-6 bg-muted/20 rounded-xl border-2 border-dashed border-border">
-                    <Tag className="h-6 w-6 mx-auto mb-2 text-muted-foreground/40" />
-                    <p className="text-sm text-muted-foreground">
-                      {t("No categories found. Create a workspace with a job description first.")}
-                    </p>
-                  </div>
-                )}
-              </div>
-              )}
-
-              <Button onClick={startInterview} size="lg" className="w-full gap-2">
-                <Phone className="h-5 w-5" />
-                {t("Start Interview")}
-              </Button>
-            </CardContent>
-          </Card>
+      <div className="px-7 py-7 md:px-9">
+        <div className="mb-6">
+          <p className="eyebrow mb-1.5 text-clay">{t("Mock Interview")}</p>
+          <h1 className="serif-headline text-[32px] font-normal leading-tight tracking-tight">
+            {t("Configure your practice session")}
+          </h1>
+          <p className="mt-1.5 text-[14px] text-muted-foreground">
+            {t("Practice your interview skills with AI-powered feedback")}
+          </p>
         </div>
-      </PageContainer>
+
+        <div className="max-w-2xl rounded-2xl border border-border bg-card p-7">
+          <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <p className="mb-1.5 text-[12px] font-semibold">{t("Interview Type")}</p>
+              <Select value={interviewType} onValueChange={handleInterviewTypeChange}>
+                <SelectTrigger className="h-11 rounded-lg border-border bg-background">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="hr">{t("HR / Behavioral")}</SelectItem>
+                  <SelectItem value="technical">{t("Technical")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <p className="mb-1.5 text-[12px] font-semibold">{t("Difficulty Level")}</p>
+              <Select value={difficulty} onValueChange={setDifficulty}>
+                <SelectTrigger className="h-11 rounded-lg border-border bg-background">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="intern">{t("Intern")}</SelectItem>
+                  <SelectItem value="junior">{t("Junior / New Grad")}</SelectItem>
+                  <SelectItem value="mid">{t("Mid-Level")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {activeWorkspace && (
+            <div className="mb-5 rounded-lg border border-border bg-sage-soft px-4 py-3">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-subtle">
+                {t("Active Workspace")}
+              </p>
+              <p className="mt-0.5 font-serif text-[18px] tracking-tight">{activeWorkspace.name}</p>
+            </div>
+          )}
+
+          {interviewType === "technical" && (
+            <div className="mb-5">
+              <div className="mb-2 flex items-center justify-between">
+                <p className="text-[12px] font-semibold">{t("Categories / Topics")}</p>
+                <span className="text-[11px] text-muted-foreground tabular-nums">
+                  {selectedCategories.length} / 5
+                </span>
+              </div>
+              {activeWorkspace?.categories && activeWorkspace.categories.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {activeWorkspace.categories.map((cat) => {
+                    const isSelected = selectedCategories.includes(cat)
+                    const isDisabled = !isSelected && selectedCategories.length >= 5
+                    return (
+                      <button
+                        key={cat}
+                        type="button"
+                        disabled={isDisabled}
+                        onClick={() => {
+                          if (isSelected) {
+                            setSelectedCategories((prev) => prev.filter((c) => c !== cat))
+                          } else if (selectedCategories.length < 5) {
+                            setSelectedCategories((prev) => [...prev, cat])
+                          }
+                        }}
+                        className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 text-[12px] font-medium transition-colors ${
+                          isSelected
+                            ? "border-transparent bg-sage-soft text-sage"
+                            : isDisabled
+                              ? "cursor-not-allowed border-border bg-secondary/40 text-subtle"
+                              : "border-border bg-card text-foreground hover:border-primary/40"
+                        }`}
+                      >
+                        {isSelected && <Check className="h-3 w-3" />}
+                        {cat}
+                      </button>
+                    )
+                  })}
+                </div>
+              ) : (
+                <div className="rounded-xl border border-dashed border-strong bg-secondary/40 py-6 text-center">
+                  <Tag className="mx-auto mb-2 h-5 w-5 text-subtle" />
+                  <p className="text-[12px] text-muted-foreground">
+                    {t("No categories found. Create a workspace with a job description first.")}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          <Button
+            onClick={startInterview}
+            size="lg"
+            className="w-full gap-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            <Phone className="h-4 w-4" />
+            {t("Start Interview")}
+          </Button>
+        </div>
+      </div>
     )
   }
 
@@ -341,196 +360,242 @@ export default function MockInterviewClient() {
     const activeQuestions = voice.questions
     const activeQIndex = voice.currentQuestionIndex
     const activeQuestion = activeQuestions[activeQIndex]
+    const isConnected = voice.connectionStatus === "connected"
 
     return (
-      <div className="flex min-h-screen flex-col bg-background">
-        <main className="flex-1 p-6 md:p-8">
-          <div className="mx-auto max-w-6xl space-y-6">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Badge variant="outline" className="gap-1.5">
-                  <span className={`h-2 w-2 rounded-full ${
-                    voice.connectionStatus === "connected" ? "bg-green-500" : 
-                    voice.connectionStatus === "connecting" ? "bg-yellow-500 animate-pulse" : 
-                    "bg-red-500"
-                  }`} />
-                  {voice.connectionStatus === "connected" ? t("Connected") :
-                   voice.connectionStatus === "connecting" ? t("Connecting...") :
-                   t("Disconnected")}
-                </Badge>
-                <Badge variant="outline">{t("Interview Session")}</Badge>
+      <div className="px-7 py-7 md:px-9">
+        {/* Header */}
+        <div className="mb-5 flex items-end justify-between gap-3">
+          <div>
+            <div className="mb-1.5 flex items-center gap-2">
+              <span
+                className={`h-2 w-2 rounded-full ${
+                  isConnected ? "bg-sage" : voice.connectionStatus === "connecting" ? "bg-clay animate-pulse" : "bg-destructive"
+                }`}
+              />
+              <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                {isConnected ? `Live · ${activeQuestion?.topic || ""}` : t("Connecting...")}
+              </span>
+            </div>
+            <h1 className="serif-headline text-[26px] font-normal leading-tight">
+              {t("Question")} {activeQIndex + 1}
+              <span className="text-subtle"> / {activeQuestions.length || "—"}</span>
+            </h1>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => {
+                setUserAnswer("")
+                voice.passQuestion()
+              }}
+              disabled={voice.sessionState !== "listening"}
+            >
+              <SkipForward className="h-3.5 w-3.5" />
+              {t("Pass")}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 border-destructive/40 text-destructive hover:bg-destructive/5"
+              onClick={voice.endSession}
+            >
+              <PhoneOff className="h-3.5 w-3.5" />
+              {t("End")}
+            </Button>
+          </div>
+        </div>
+
+        {/* Progress dots */}
+        {activeQuestions.length > 0 && (
+          <div className="mb-6 flex gap-1.5">
+            {activeQuestions.map((_, i) => (
+              <div
+                key={i}
+                className={`h-1 flex-1 rounded-full ${
+                  i < activeQIndex ? "bg-sage" : i === activeQIndex ? "bg-clay" : "bg-secondary"
+                }`}
+              />
+            ))}
+          </div>
+        )}
+
+        <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
+          {/* Stage */}
+          <div className="rounded-2xl border border-border bg-card p-7">
+            {/* Interviewer header */}
+            <div className="mb-5 flex items-center gap-3.5">
+              <div className="relative flex-shrink-0">
+                <div className="h-16 w-16 overflow-hidden rounded-full border-2 border-sage bg-clay-soft">
+                  <img
+                    src="/avatar/interviewer.png"
+                    alt={t("AI interviewer")}
+                    className="h-full w-full object-cover object-top"
+                  />
+                </div>
+                <span className="absolute -right-0.5 -bottom-0.5 h-4 w-4 rounded-full border-[3px] border-card bg-sage" />
               </div>
-              <Button variant="destructive" size="sm" className="gap-1.5" onClick={voice.endSession}>
-                <PhoneOff className="h-4 w-4" />
-                {t("End Interview")}
-              </Button>
+              <div>
+                <p className="font-serif text-[18px] tracking-tight">{t("AI Interviewer")}</p>
+                <p className="text-[12px] text-muted-foreground">
+                  {voice.isAiSpeaking ? t("AI is speaking...") : voice.sessionState === "processing" ? t("Processing your answer...") : t("Senior Recruiter")}
+                </p>
+              </div>
             </div>
 
-            {activeQuestions.length > 0 && (
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>{t("Question")} {activeQIndex + 1} / {activeQuestions.length}</span>
-                  <span>{activeQuestion?.topic || ""}</span>
-                </div>
-                <Progress value={progress} className="h-2" />
+            {/* Question card */}
+            {activeQuestion && (
+              <div className="mb-4 rounded-xl border border-border bg-background p-5">
+                <p className="eyebrow mb-2.5 text-clay">{activeQuestion.topic}</p>
+                <p className="font-serif text-[22px] font-normal leading-snug tracking-tight">
+                  &ldquo;{activeQuestion.question}&rdquo;
+                </p>
               </div>
             )}
 
-            <div className="grid gap-6 lg:grid-cols-5">
-              <div className="lg:col-span-3 space-y-6">
-                {activeQuestion && (
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <Badge variant="secondary" className="w-fit text-xs">{activeQuestion.topic}</Badge>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-lg font-medium leading-relaxed">{activeQuestion.question}</p>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {(voice.isAiSpeaking || voice.sessionState === "processing" || voice.sessionState === "idle") && (
-                  <Card className="overflow-hidden">
-                    <CardContent className="p-4 sm:p-6">
-                      <div className="flex flex-col items-center justify-center gap-6">
-                        {voice.isAiSpeaking && (
-                          <div className="w-full text-center space-y-4">
-                            <InterviewerAvatarDisplay isSpeaking />
-                            <p className="text-sm font-medium text-muted-foreground">{t("AI is speaking...")}</p>
-                            <Button variant="outline" size="sm" onClick={voice.interrupt} className="gap-1.5">
-                              <Mic className="h-4 w-4" />
-                              {t("Interrupt & Speak")}
-                            </Button>
-                          </div>
-                        )}
-                        {voice.sessionState === "processing" && (
-                          <div className="text-center space-y-4">
-                            <InterviewerAvatarDisplay />
-                            <p className="flex items-center justify-center gap-2 text-sm font-medium text-muted-foreground">
-                              <Loader2 className="h-4 w-4 animate-spin text-yellow-500" />
-                              {t("Processing your answer...")}
-                            </p>
-                          </div>
-                        )}
-                        {voice.sessionState === "idle" && (
-                          <div className="text-center space-y-4">
-                            <InterviewerAvatarDisplay />
-                            <p className="flex items-center justify-center gap-2 text-sm font-medium text-muted-foreground">
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                              {t("Preparing interview...")}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {voice.isListening && (
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-base flex items-center gap-2">
-                        {t("Your Answer")}
-                        {voice.isTranscribing && (
-                          <Badge variant="outline" className="gap-1 text-xs">
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                            {t("Transcribing...")}
-                          </Badge>
-                        )}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        <div className="relative">
-                          <Textarea
-                            placeholder={t("Record with the microphone or type your answer here...")}
-                            className="min-h-[120px] resize-none pr-12 text-base"
-                            value={userAnswer}
-                            onChange={(e) => setUserAnswer(e.target.value)}
-                            disabled={voice.isTranscribing}
-                          />
-                          {voice.micActive && (
-                            <div className="absolute top-2 right-2">
-                              <Badge variant="destructive" className="gap-1 text-xs animate-pulse">
-                                {t("Recording")}
-                              </Badge>
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="flex items-center justify-between">
-                          <Button 
-                            size="sm" 
-                            variant={voice.micActive ? "destructive" : "outline"}
-                            className="gap-1.5"
-                            onClick={handleMicToggle}
-                            disabled={voice.isTranscribing}
-                          >
-                            {voice.micActive ? <><MicOff className="h-4 w-4" />{t("Stop")}</> : <><Mic className="h-4 w-4" />{t("Record")}</>}
-                          </Button>
-
-                          <Button size="sm" className="gap-1.5" onClick={handleSubmit} disabled={!userAnswer.trim() || voice.micActive || voice.isTranscribing}>
-                            <Send className="h-4 w-4" />
-                            {t("Submit")}
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                    <CardFooter className="flex justify-center gap-3 border-t bg-muted/20 p-4">
-                      <Button variant="ghost" size="sm" className="text-muted-foreground gap-1" onClick={() => { setUserAnswer(""); voice.passQuestion(); }} disabled={voice.sessionState !== "listening"}>
-                        <SkipForward className="h-4 w-4" />
-                        {t("Pass")}
-                      </Button>
-                      <Button variant="ghost" size="sm" className="text-red-500 gap-1" onClick={voice.endSession}>
-                        <PhoneOff className="h-4 w-4" />
-                        {t("End")}
-                      </Button>
-                    </CardFooter>
-                  </Card>
+            {/* AI speaking / processing indicator */}
+            {(voice.isAiSpeaking || voice.sessionState === "processing" || voice.sessionState === "idle") && (
+              <div className="mb-4 flex items-center justify-between rounded-xl border border-border bg-secondary/40 p-4">
+                <div className="flex items-center gap-2.5">
+                  {voice.sessionState === "processing" || voice.sessionState === "idle" ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-clay" />
+                  ) : (
+                    <Volume2 className="h-4 w-4 animate-pulse text-sage" />
+                  )}
+                  <span className="text-[13px] font-medium">
+                    {voice.isAiSpeaking
+                      ? t("AI is speaking...")
+                      : voice.sessionState === "processing"
+                        ? t("Processing your answer...")
+                        : t("Preparing interview...")}
+                  </span>
+                </div>
+                {voice.isAiSpeaking && (
+                  <Button variant="outline" size="sm" onClick={voice.interrupt} className="gap-1.5">
+                    <Mic className="h-3.5 w-3.5" />
+                    {t("Interrupt & Speak")}
+                  </Button>
                 )}
               </div>
+            )}
 
-              <div className="lg:col-span-2">
-                <Card className="h-full flex flex-col">
-                  <CardHeader><CardTitle className="text-base">{t("Conversation")}</CardTitle></CardHeader>
-                  <CardContent className="flex-1 p-0 overflow-hidden">
-                    <div ref={conversationScrollRef} className="max-h-[60vh] overflow-y-auto space-y-3 px-6 pb-6">
-                      {voice.conversationLog.map((entry, idx) => (
-                        <div
-                          key={idx}
-                          className={`flex gap-2 ${
-                            entry.role === "interviewer" ? "" : "flex-row-reverse"
-                          }`}
-                        >
-                          {entry.role === "interviewer" && (
-                            <img
-                              src="/avatar/interviewer.png"
-                              alt={t("AI interviewer")}
-                              className="mt-1 h-8 w-8 shrink-0 rounded-md border object-cover object-top"
-                            />
-                          )}
-                          <div
-                            className={`rounded-lg px-3 py-2 text-sm max-w-[85%] ${
-                              entry.role === "interviewer"
-                                ? "bg-primary/10 text-foreground"
-                                : "bg-muted text-foreground"
-                            }`}
-                          >
-                            <p className="text-xs font-medium mb-1 opacity-60">
-                              {entry.role === "interviewer" ? t("AI Interviewer") : "👤 Sen"}
-                            </p>
-                            <p className="leading-relaxed">{entry.text}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
+            {/* Answer area */}
+            {voice.isListening && (
+              <div className="rounded-xl border border-border bg-secondary/40 p-4">
+                <p className="eyebrow mb-3">
+                  {t("Your Answer")}
+                  {voice.isTranscribing && (
+                    <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-card px-2 py-0.5 text-[10px]">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      {t("Transcribing...")}
+                    </span>
+                  )}
+                </p>
+                <Textarea
+                  placeholder={t("Record with the microphone or type your answer here...")}
+                  className="min-h-[110px] resize-none rounded-lg border-border bg-card text-[14px] leading-relaxed"
+                  value={userAnswer}
+                  onChange={(e) => setUserAnswer(e.target.value)}
+                  disabled={voice.isTranscribing}
+                />
+
+                {/* Wave bars — driven by live mic amplitude; only move when the user actually speaks */}
+                <div
+                  className="mt-3 flex h-[30px] items-end justify-start gap-[3px]"
+                  aria-hidden="true"
+                >
+                  {micLevels.map((lv, i) => {
+                    // Map amplitude (0..1) to a visible bar height (4..30 px).
+                    const h = 4 + lv * 26
+                    return (
+                      <span
+                        key={i}
+                        className="block w-[3px] rounded-full bg-sage transition-[height,opacity] duration-100 ease-out"
+                        style={{
+                          height: `${h}px`,
+                          opacity: voice.micActive ? Math.max(0.45, 0.45 + lv * 0.55) : 0.25,
+                        }}
+                      />
+                    )
+                  })}
+                </div>
+
+                <div className="mt-3 flex items-center justify-between">
+                  <Button
+                    size="sm"
+                    onClick={handleMicToggle}
+                    disabled={voice.isTranscribing}
+                    className={
+                      voice.micActive
+                        ? "rounded-full gap-2 bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        : "rounded-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+                    }
+                  >
+                    {voice.micActive ? (
+                      <>
+                        <span className="h-2 w-2 rounded-sm bg-white" />
+                        {t("Stop")}
+                      </>
+                    ) : (
+                      <>
+                        <Mic className="h-3.5 w-3.5" />
+                        {t("Record")}
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5"
+                    onClick={handleSubmit}
+                    disabled={!userAnswer.trim() || voice.micActive || voice.isTranscribing}
+                  >
+                    <Send className="h-3.5 w-3.5" />
+                    {t("Submit")}
+                  </Button>
+                </div>
               </div>
+            )}
+          </div>
+
+          {/* Transcript */}
+          <div className="flex flex-col rounded-2xl border border-border bg-card p-6">
+            <h2 className="mb-3.5 font-serif text-[17px] tracking-tight">
+              {t("Conversation")}
+            </h2>
+            <div
+              ref={conversationScrollRef}
+              className="flex max-h-[58vh] flex-col gap-2.5 overflow-y-auto pr-1"
+            >
+              {voice.conversationLog.length === 0 && (
+                <p className="py-6 text-center text-[12px] text-muted-foreground">
+                  {t("Connecting...")}
+                </p>
+              )}
+              {voice.conversationLog.map((entry, idx) => (
+                <div
+                  key={idx}
+                  className={`rounded-lg border-l-2 p-3 text-[13px] leading-relaxed ${
+                    entry.role === "interviewer"
+                      ? "border-sage bg-sage-soft"
+                      : "border-clay bg-secondary"
+                  }`}
+                >
+                  <p
+                    className={`eyebrow mb-1 ${
+                      entry.role === "interviewer" ? "text-sage" : "text-clay"
+                    }`}
+                  >
+                    {entry.role === "interviewer" ? t("AI Interviewer") : t("You")}
+                  </p>
+                  <p className="text-foreground">{entry.text}</p>
+                </div>
+              ))}
             </div>
           </div>
-        </main>
+        </div>
       </div>
     )
   }
@@ -539,16 +604,22 @@ export default function MockInterviewClient() {
 
   if (state === "evaluating") {
     return (
-      <PageContainer>
-        <div className="mx-auto max-w-2xl flex flex-col items-center justify-center min-h-[60vh] gap-6">
-          <BarChart3 className="h-12 w-12 text-primary animate-pulse" />
-          <div className="text-center">
-            <h2 className="text-2xl font-bold mb-2">{t("Evaluating Your Answers...")}</h2>
-            <p className="text-muted-foreground">{t("Reviewing your performance")}</p>
+      <div className="flex min-h-[70vh] items-center justify-center px-7 py-7 md:px-9">
+        <div className="flex max-w-md flex-col items-center gap-5 text-center">
+          <Loader2 className="h-10 w-10 animate-spin text-sage" />
+          <div>
+            <h2 className="serif-headline text-[28px] font-normal leading-tight">
+              {t("Evaluating Your Answers...")}
+            </h2>
+            <p className="mt-2 text-[14px] text-muted-foreground">
+              {t("Reviewing your performance")}
+            </p>
           </div>
-          <Progress value={66} className="w-64 h-2" />
+          <div className="h-1 w-64 overflow-hidden rounded-full bg-secondary">
+            <div className="h-full w-2/3 animate-pulse rounded-full bg-sage" />
+          </div>
         </div>
-      </PageContainer>
+      </div>
     )
   }
 
@@ -560,43 +631,94 @@ export default function MockInterviewClient() {
   const overallFeedback = finalEvaluation?.overall_feedback || ""
 
   return (
-    <PageContainer>
-      <div className="mx-auto max-w-4xl space-y-6">
-        <Card className="border-2 border-primary/20 bg-primary/5 p-8 text-center">
-          <div className="mb-2 text-sm font-medium text-muted-foreground">{t("Overall Score")}</div>
-          <div className="mb-4 text-6xl font-bold text-primary">{overallScore}%</div>
-          <p className="text-sm text-muted-foreground">{overallFeedback || t("Review your feedback below.")}</p>
-        </Card>
+    <div className="px-7 py-7 md:px-9">
+      <div className="mb-5">
+        <p className="eyebrow text-clay">
+          {activeWorkspace?.name || ""}{activeWorkspace?.jobName ? ` · ${activeWorkspace.jobName}` : ""}
+        </p>
+        <h1 className="serif-headline mt-1 text-[32px] font-normal leading-tight tracking-tight">
+          {t("Interview Feedback")}
+        </h1>
+      </div>
 
-        <Card>
-          <CardHeader><CardTitle>{t("Detailed Feedback")}</CardTitle></CardHeader>
-          <CardContent className="space-y-4">
-            {results.map((result, idx) => (
-              <div key={idx} className="rounded-lg border p-4 space-y-2">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <Badge variant="outline" className="mb-2">{t(result.topic)}</Badge>
-                    <p className="font-medium">{t(result.question)}</p>
-                  </div>
-                  <div className="text-2xl font-bold text-primary">{result.score}%</div>
-                </div>
-                <p className="text-sm text-muted-foreground">{result.feedback}</p>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+      <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="flex items-center gap-5 rounded-2xl border border-border bg-card p-6">
+          <RingProgress value={overallScore} size={92} />
+          <div>
+            <p className="eyebrow">{t("Overall Score")}</p>
+            <p className="serif-headline mt-1 text-[40px] leading-none tabular-nums">
+              {overallScore}<span className="text-[18px] text-subtle">%</span>
+            </p>
+            <p className="mt-1.5 text-[11px] font-semibold text-sage">
+              ↑ {t("above your average")}
+            </p>
+          </div>
+        </div>
 
-        <div className="flex flex-col gap-3 sm:flex-row pb-20">
-          <Button size="lg" className="flex-1 gap-2" onClick={() => { voice.disconnect(); setState("setup"); }}>
-            <PlayCircle className="h-5 w-5" />
-            {t("Start Another Interview")}
-          </Button>
-          <Link href="/dashboard" className="flex-1">
-            <Button size="lg" variant="outline" className="w-full">{t("Return to Dashboard")}</Button>
-          </Link>
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <div className="mb-3 flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 text-sage" />
+            <span className="font-serif text-[17px] tracking-tight">{t("Strengths")}</span>
+          </div>
+          <p className="text-[13px] leading-relaxed text-muted-foreground">
+            {overallFeedback || t("Review your feedback below.")}
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <div className="mb-3 flex items-center gap-2">
+            <PlayCircle className="h-4 w-4 text-clay" />
+            <span className="font-serif text-[17px] tracking-tight">{t("Next steps")}</span>
+          </div>
+          <div className="flex flex-col gap-2">
+            <Button
+              size="sm"
+              className="justify-start gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+              onClick={() => { voice.disconnect(); setState("setup"); }}
+            >
+              <PlayCircle className="h-3.5 w-3.5" />
+              {t("Start Another Interview")}
+            </Button>
+            <Link href="/dashboard">
+              <Button size="sm" variant="outline" className="w-full justify-start gap-2 border-border">
+                {t("Return to Dashboard")}
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
-    </PageContainer>
+
+      <div className="rounded-2xl border border-border bg-card p-6">
+        <h2 className="mb-3.5 font-serif text-[17px] font-medium tracking-tight">
+          {t("Detailed Feedback")}
+        </h2>
+        <div className="flex flex-col gap-2">
+          {results.length === 0 && (
+            <p className="py-4 text-center text-sm text-muted-foreground">
+              {t("Review your feedback below.")}
+            </p>
+          )}
+          {results.map((result, idx) => (
+            <div
+              key={idx}
+              className="grid grid-cols-[100px_1fr_80px_60px] items-center gap-3.5 rounded-lg border border-border bg-background p-3.5"
+            >
+              <p className="eyebrow text-clay">{t(result.topic)}</p>
+              <p className="text-[13px]">{t(result.question)}</p>
+              <div className="h-1 overflow-hidden rounded-full bg-secondary">
+                <div
+                  className={`h-full rounded-full ${result.score < 75 ? "bg-clay" : "bg-sage"}`}
+                  style={{ width: `${result.score}%` }}
+                />
+              </div>
+              <span className="text-right font-serif text-[14px] tabular-nums">
+                {result.score}%
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   )
 }
 
