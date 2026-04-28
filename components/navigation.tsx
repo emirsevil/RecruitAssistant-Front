@@ -11,6 +11,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import {
   LayoutDashboard,
   MessageSquare,
   FileQuestion,
@@ -26,9 +31,10 @@ import {
   Moon,
   Sun,
   ChevronsUpDown,
+  Plus,
 } from "lucide-react"
 import { useLanguage } from "@/lib/language-context"
-import { useWorkspace } from "@/lib/workspace-context"
+import { useWorkspace, type Workspace } from "@/lib/workspace-context"
 import { useAuth } from "@/lib/auth-context"
 import { cn } from "@/lib/utils"
 import { useEffect, useState } from "react"
@@ -47,7 +53,13 @@ export function Navigation() {
   const pathname = usePathname()
   const { t, language, setLanguage } = useLanguage()
   const { user, logout } = useAuth()
-  const { activeWorkspace } = useWorkspace()
+  const { activeWorkspace, workspaces, setActiveWorkspace } = useWorkspace()
+  const [workspaceMenuOpen, setWorkspaceMenuOpen] = useState(false)
+
+  const handleWorkspaceSelect = (workspace: Workspace) => {
+    setActiveWorkspace(workspace)
+    setWorkspaceMenuOpen(false)
+  }
 
   const [isDark, setIsDark] = useState(false)
   useEffect(() => {
@@ -107,21 +119,86 @@ export function Navigation() {
         </span>
       </Link>
 
-      {/* Workspace card */}
-      {activeWorkspace && (
-        <div className="mb-3.5 rounded-xl border border-border bg-card px-3 py-2.5">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-subtle">
-            {language === "tr" ? "Aktif çalışma alanı" : "Active workspace"}
-          </p>
-          <p className="mt-0.5 truncate text-[13px] font-semibold leading-tight">
-            {activeWorkspace.name}
-          </p>
-          {activeWorkspace.jobName && (
-            <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
-              {activeWorkspace.jobName}
-            </p>
-          )}
-        </div>
+      {/* Workspace switcher */}
+      {activeWorkspace ? (
+        <Popover open={workspaceMenuOpen} onOpenChange={setWorkspaceMenuOpen}>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              className="mb-3.5 flex w-full items-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-left transition-colors hover:bg-secondary/50"
+            >
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-subtle">
+                  {language === "tr" ? "Aktif çalışma alanı" : "Active workspace"}
+                </p>
+                <p className="mt-0.5 truncate text-[13px] font-semibold leading-tight">
+                  {activeWorkspace.name}
+                </p>
+                {activeWorkspace.jobName && (
+                  <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
+                    {activeWorkspace.jobName}
+                  </p>
+                )}
+              </div>
+              <ChevronsUpDown className="h-3.5 w-3.5 flex-shrink-0 text-subtle" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent align="start" side="right" sideOffset={8} className="w-64 p-0">
+            <div className="border-b border-border px-3 py-2">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                {language === "tr" ? "Çalışma alanları" : "Workspaces"}
+              </p>
+            </div>
+            <div className="max-h-[280px] overflow-y-auto p-1.5">
+              {workspaces.map((ws) => (
+                <button
+                  key={ws.id}
+                  type="button"
+                  onClick={() => handleWorkspaceSelect(ws)}
+                  className={cn(
+                    "flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-[13px] transition-colors",
+                    ws.id === activeWorkspace.id
+                      ? "bg-accent text-accent-foreground"
+                      : "hover:bg-accent/50"
+                  )}
+                >
+                  <div
+                    className={cn(
+                      "flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md text-sm text-white shadow-sm",
+                      ws.color
+                    )}
+                  >
+                    {ws.emoji}
+                  </div>
+                  <span className="flex-1 truncate font-medium">{ws.name}</span>
+                  {ws.id === activeWorkspace.id && (
+                    <Check className="h-4 w-4 flex-shrink-0 text-primary" />
+                  )}
+                </button>
+              ))}
+            </div>
+            <div className="border-t border-border p-1.5">
+              <Link
+                href="/workspace/new"
+                onClick={() => setWorkspaceMenuOpen(false)}
+                className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground"
+              >
+                <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md border border-dashed border-border">
+                  <Plus className="h-4 w-4" />
+                </div>
+                {t("createWorkspace")}
+              </Link>
+            </div>
+          </PopoverContent>
+        </Popover>
+      ) : (
+        <Link
+          href="/workspace/new"
+          className="mb-3.5 flex items-center gap-2 rounded-xl border border-dashed border-border bg-card px-3 py-2.5 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-secondary/50 hover:text-foreground"
+        >
+          <Plus className="h-4 w-4" />
+          {t("createWorkspace")}
+        </Link>
       )}
 
       {/* Nav items */}

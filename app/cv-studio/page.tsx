@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useRef, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -20,6 +20,18 @@ import {
 } from "lucide-react"
 import { useLanguage } from "@/lib/language-context"
 import { useWorkspace } from "@/lib/workspace-context"
+import { SKILLS } from "@/lib/data/skills"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
+} from "@/components/ui/command"
+import { Check } from "lucide-react"
 
 import Editor from "@monaco-editor/react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -114,6 +126,8 @@ export default function CVStudioPage() {
   })
 
   const [isParsing, setIsParsing] = useState(false)
+  const [uploadedFileName, setUploadedFileName] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [isGenerating, setIsGenerating] = useState(false)
   const [isGeneratingCoverLetter, setIsGeneratingCoverLetter] = useState(false)
@@ -153,11 +167,18 @@ export default function CVStudioPage() {
   const removeProject = (i: number) =>
     setCvData({ ...cvData, projects: cvData.projects.filter((_, idx) => idx !== i) })
 
-  const addSkill = () => {
-    const skill = prompt("Enter a new skill:")
-    if (skill && skill.trim()) {
-      setCvData({ ...cvData, skills: [...cvData.skills, skill.trim()] })
-    }
+  const toggleSkill = (skill: string) => {
+    const trimmed = skill.trim()
+    if (!trimmed) return
+    setCvData((prev) => {
+      const exists = prev.skills.some((s) => s.toLowerCase() === trimmed.toLowerCase())
+      return {
+        ...prev,
+        skills: exists
+          ? prev.skills.filter((s) => s.toLowerCase() !== trimmed.toLowerCase())
+          : [...prev.skills, trimmed],
+      }
+    })
   }
   const removeSkill = (i: number) =>
     setCvData({ ...cvData, skills: cvData.skills.filter((_, idx) => idx !== i) })
@@ -306,12 +327,19 @@ export default function CVStudioPage() {
         projects: parsed.projects?.length ? parsed.projects : prev.projects,
         skills: parsed.skills?.length ? parsed.skills : prev.skills,
       }))
+      setUploadedFileName(file.name)
     } catch (e: any) {
       setGenerationError(e.message || "An error occurred while parsing the resume")
     } finally {
       setIsParsing(false)
-      e.target.value = ""
+      // Clear the native input so re-selecting the same file fires onChange again
+      if (fileInputRef.current) fileInputRef.current.value = ""
     }
+  }
+
+  const handleRemoveUploadedFile = () => {
+    setUploadedFileName(null)
+    if (fileInputRef.current) fileInputRef.current.value = ""
   }
 
   const generateCV = async () => {
@@ -471,21 +499,44 @@ export default function CVStudioPage() {
             iconBg="sage"
             icon={<Upload className="h-5 w-5" />}
           >
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <Input
-                type="file"
-                accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                onChange={handleResumeUpload}
-                disabled={isParsing}
-                className="h-11 cursor-pointer rounded-lg border border-border bg-background px-3 text-sm file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-secondary file:px-3 file:text-xs file:font-medium file:text-foreground hover:bg-secondary/40"
-              />
-              {isParsing && (
-                <div className="flex items-center gap-2 whitespace-nowrap text-sm text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  {t("Parsing...")}
+            {uploadedFileName ? (
+              <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-sage-soft/40 px-3.5 py-2.5">
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <FileText className="h-5 w-5 flex-shrink-0 text-sage" />
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">{uploadedFileName}</p>
+                    <p className="text-[11px] text-muted-foreground">{t("Uploaded")}</p>
+                  </div>
                 </div>
-              )}
-            </div>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={handleRemoveUploadedFile}
+                  disabled={isParsing}
+                  aria-label={t("Remove file")}
+                  className="h-8 w-8 flex-shrink-0 rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <Input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  onChange={handleResumeUpload}
+                  disabled={isParsing}
+                  className="h-11 cursor-pointer rounded-lg border border-border bg-background px-3 text-sm file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-secondary file:px-3 file:text-xs file:font-medium file:text-foreground hover:bg-secondary/40"
+                />
+                {isParsing && (
+                  <div className="flex items-center gap-2 whitespace-nowrap text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    {t("Parsing...")}
+                  </div>
+                )}
+              </div>
+            )}
           </Section>
 
           {/* Personal Information */}
@@ -729,22 +780,12 @@ export default function CVStudioPage() {
 
           {/* Skills */}
           <Section title={t("Skills")}>
-            <div className="flex flex-wrap gap-2">
-              {cvData.skills.map((skill, idx) => (
-                <Badge
-                  key={idx}
-                  variant="outline"
-                  className="gap-1.5 rounded-full border-border bg-sage-soft px-3 py-1.5 text-[12px] font-medium text-sage hover:bg-sage hover:text-white"
-                >
-                  {skill}
-                  <Trash2
-                    className="ml-0.5 h-3 w-3 cursor-pointer opacity-70 hover:opacity-100"
-                    onClick={() => removeSkill(idx)}
-                  />
-                </Badge>
-              ))}
-              <AddButton onClick={addSkill} label={t("Add skill")} small />
-            </div>
+            <SkillsMultiSelect
+              selected={cvData.skills}
+              onToggle={toggleSkill}
+              onRemove={removeSkill}
+              t={t}
+            />
           </Section>
         </div>
 
@@ -1139,5 +1180,100 @@ function RemoveButton({ onClick }: { onClick: () => void }) {
     >
       <Trash2 className="h-3.5 w-3.5" />
     </Button>
+  )
+}
+
+function SkillsMultiSelect({
+  selected,
+  onToggle,
+  onRemove,
+  t,
+}: {
+  selected: string[]
+  onToggle: (skill: string) => void
+  onRemove: (index: number) => void
+  t: (key: string) => string
+}) {
+  const [open, setOpen] = useState(false)
+  const selectedLower = new Set(selected.map((s) => s.toLowerCase()))
+
+  // Group skills by category, preserving order from skills.ts
+  const groupedSkills = SKILLS.reduce<Record<string, string[]>>((acc, s) => {
+    if (!acc[s.category]) acc[s.category] = []
+    acc[s.category].push(s.name)
+    return acc
+  }, {})
+
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap gap-2">
+        {selected.map((skill, idx) => (
+          <Badge
+            key={`${skill}-${idx}`}
+            variant="outline"
+            className="gap-1.5 rounded-full border-border bg-sage-soft px-3 py-1.5 text-[12px] font-medium text-sage hover:bg-sage hover:text-white"
+          >
+            {skill}
+            <Trash2
+              className="ml-0.5 h-3 w-3 cursor-pointer opacity-70 hover:opacity-100"
+              onClick={() => onRemove(idx)}
+            />
+          </Badge>
+        ))}
+        {selected.length === 0 && (
+          <p className="text-[12px] text-muted-foreground">
+            {t("No skills selected yet.")}
+          </p>
+        )}
+      </div>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="gap-1.5 rounded-lg border-dashed text-muted-foreground hover:bg-secondary hover:text-foreground"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            {t("Add skill")}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent align="start" className="w-[320px] p-0">
+          <Command>
+            <CommandInput placeholder={t("Search skills...")} className="h-10 text-[13px]" />
+            <CommandList className="max-h-[300px]">
+              <CommandEmpty className="py-6 text-center text-[12px] text-muted-foreground">
+                {t("No matching skills.")}
+              </CommandEmpty>
+              {Object.entries(groupedSkills).map(([category, items], gi) => (
+                <div key={category}>
+                  {gi > 0 && <CommandSeparator />}
+                  <CommandGroup heading={category}>
+                    {items.map((name) => {
+                      const isSelected = selectedLower.has(name.toLowerCase())
+                      return (
+                        <CommandItem
+                          key={name}
+                          value={name}
+                          onSelect={() => onToggle(name)}
+                          className="cursor-pointer text-[13px]"
+                        >
+                          <Check
+                            className={`mr-2 h-3.5 w-3.5 ${
+                              isSelected ? "opacity-100 text-sage" : "opacity-0"
+                            }`}
+                          />
+                          <span className="truncate">{name}</span>
+                        </CommandItem>
+                      )
+                    })}
+                  </CommandGroup>
+                </div>
+              ))}
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+    </div>
   )
 }

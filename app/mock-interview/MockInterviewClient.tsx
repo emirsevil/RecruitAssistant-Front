@@ -62,13 +62,10 @@ export default function MockInterviewClient() {
   const { activeWorkspace } = useWorkspace()
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
 
-  // Default to all workspace categories so technical interviews automatically
-  // cover every topic extracted from the JD. User can still toggle subsets.
+  // Reset selection when switching interview type or workspace so the user starts
+  // with a blank slate and explicitly opts in to the categories they want.
   useEffect(() => {
-    if (interviewType !== "technical") return
-    const cats = activeWorkspace?.categories ?? []
-    if (cats.length === 0) return
-    setSelectedCategories((prev) => (prev.length === 0 ? cats.slice(0, 5) : prev))
+    setSelectedCategories([])
   }, [activeWorkspace?.id, interviewType])
   const { toast } = useToast()
   const searchParams = useSearchParams()
@@ -83,6 +80,15 @@ export default function MockInterviewClient() {
   // Back-button guard: check if returning to a completed interview
   const [alreadyCompleted, setAlreadyCompleted] = useState(false)
   const [completedInterviewId, setCompletedInterviewId] = useState<number | null>(null)
+
+  // In-progress session guard: if a previous interview was abandoned (refresh,
+  // tab close, etc.), prompt the user to discard it before starting a new one.
+  const [inProgressInterview, setInProgressInterview] = useState<{
+    id: number
+    interview_type: string
+    created_at: string
+  } | null>(null)
+  const [isDiscarding, setIsDiscarding] = useState(false)
 
   useEffect(() => {
     const existingId = searchParams.get("id")
@@ -103,6 +109,59 @@ export default function MockInterviewClient() {
         .catch(() => {})
     }
   }, [searchParams])
+
+  // Probe for any in-progress interview in the active workspace whenever the
+  // user lands on the setup screen (i.e. before they have started a new session).
+  useEffect(() => {
+    if (state !== "setup") return
+    if (!activeWorkspace) return
+    if (searchParams.get("id")) return // skip if we're inspecting a specific id
+
+    const url = `${API_BASE_URL}/interviews/?workspace_id=${activeWorkspace.id}&status=in_progress`
+    fetch(url, { credentials: "include" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((rows) => {
+        if (Array.isArray(rows) && rows.length > 0) {
+          const latest = rows[0]
+          setInProgressInterview({
+            id: latest.id,
+            interview_type: latest.interview_type,
+            created_at: latest.created_at,
+          })
+        } else {
+          setInProgressInterview(null)
+        }
+      })
+      .catch(() => {})
+  }, [state, activeWorkspace?.id, searchParams])
+
+  const discardInProgress = async () => {
+    if (!inProgressInterview) return
+    setIsDiscarding(true)
+    try {
+      await fetch(`${API_BASE_URL}/interviews/${inProgressInterview.id}/discard`, {
+        method: "POST",
+        credentials: "include",
+      })
+      setInProgressInterview(null)
+    } catch (err) {
+      console.error("Failed to discard interview:", err)
+      toast({
+        title: t("Error"),
+        description: t("Failed to discard the existing interview."),
+        variant: "destructive",
+      })
+    } finally {
+      setIsDiscarding(false)
+    }
+  }
+
+  const resumeInProgress = () => {
+    if (!inProgressInterview) return
+    // True voice-session resume isn't possible (the WebSocket state is gone),
+    // so route the user to interview history where any captured Q&A is visible.
+    router.push(`/interview-history`)
+  }
 
   const conversationScrollRef = useRef<HTMLDivElement>(null)
 
@@ -189,10 +248,10 @@ export default function MockInterviewClient() {
   // Handle mic toggle
   const handleMicToggle = async () => {
     if (voice.micActive) {
-      voice.toggleMic()
+      await voice.toggleMic()
       await voice.transcribeRecording()
     } else {
-      voice.toggleMic()
+      await voice.toggleMic()
     }
   }
 
@@ -247,12 +306,56 @@ export default function MockInterviewClient() {
     )
   }
 
+  // ─── In-progress Session Guard ────────────────────────────────
+
+  if (inProgressInterview && state === "setup") {
+    return (
+      <div className="mx-auto flex min-h-[70vh] w-full max-w-xl items-center justify-center px-7 py-7 md:px-9">
+        <div className="w-full rounded-2xl border border-border bg-card p-7 text-center">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-clay-soft">
+            <PlayCircle className="h-6 w-6 text-clay" />
+          </div>
+          <h2 className="serif-headline text-[24px] font-normal leading-tight">
+            {t("You have an ongoing interview")}
+          </h2>
+          <p className="mt-2 text-[13px] text-muted-foreground">
+            {t("A previous interview session is still marked as in progress. Resume to view what was captured, or discard it to start a new one.")}
+          </p>
+          <div className="mt-6 flex flex-col gap-2.5 sm:flex-row sm:justify-center">
+            <Button
+              variant="outline"
+              className="gap-2 rounded-lg border-border"
+              onClick={resumeInProgress}
+              disabled={isDiscarding}
+            >
+              <PlayCircle className="h-4 w-4" />
+              {t("Resume Interview")}
+            </Button>
+            <Button
+              variant="outline"
+              className="gap-2 rounded-lg border-destructive/40 text-destructive hover:bg-red-600 hover:text-white hover:border-red-600"
+              onClick={discardInProgress}
+              disabled={isDiscarding}
+            >
+              {isDiscarding ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <SkipForward className="h-4 w-4" />
+              )}
+              {t("Discard Interview")}
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   // ─── Setup Screen ──────────────────────────────────────────────
 
   if (state === "setup") {
     return (
-      <div className="px-7 py-7 md:px-9">
-        <div className="mb-6">
+      <div className="mx-auto w-full max-w-3xl px-7 py-7 md:px-9">
+        <div className="mb-6 text-center">
           <p className="eyebrow mb-1.5 text-clay">{t("Mock Interview")}</p>
           <h1 className="serif-headline text-[32px] font-normal leading-tight tracking-tight">
             {t("Configure your practice session")}
@@ -262,7 +365,7 @@ export default function MockInterviewClient() {
           </p>
         </div>
 
-        <div className="max-w-2xl rounded-2xl border border-border bg-card p-7">
+        <div className="mx-auto w-full max-w-2xl rounded-2xl border border-border bg-card p-7">
           <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <p className="mb-1.5 text-[12px] font-semibold">{t("Interview Type")}</p>
@@ -372,7 +475,7 @@ export default function MockInterviewClient() {
     const isConnected = voice.connectionStatus === "connected"
 
     return (
-      <div className="px-7 py-7 md:px-9">
+      <div className="mx-auto w-full max-w-6xl px-7 py-7 md:px-9">
         {/* Header */}
         <div className="mb-5 flex items-end justify-between gap-3">
           <div>
@@ -395,20 +498,7 @@ export default function MockInterviewClient() {
             <Button
               variant="outline"
               size="sm"
-              className="gap-1.5"
-              onClick={() => {
-                setUserAnswer("")
-                voice.passQuestion()
-              }}
-              disabled={voice.sessionState !== "listening"}
-            >
-              <SkipForward className="h-3.5 w-3.5" />
-              {t("Pass")}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5 border-destructive/40 text-destructive hover:bg-destructive/5"
+              className="gap-1.5 border-destructive/40 text-destructive hover:bg-red-600 hover:text-white hover:border-red-600"
               onClick={voice.endSession}
             >
               <PhoneOff className="h-3.5 w-3.5" />
@@ -531,7 +621,7 @@ export default function MockInterviewClient() {
                   })}
                 </div>
 
-                <div className="mt-3 flex items-center justify-between">
+                <div className="mt-3 flex items-center justify-between gap-2">
                   <Button
                     size="sm"
                     onClick={handleMicToggle}
@@ -554,16 +644,30 @@ export default function MockInterviewClient() {
                       </>
                     )}
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-1.5"
-                    onClick={handleSubmit}
-                    disabled={!userAnswer.trim() || voice.micActive || voice.isTranscribing}
-                  >
-                    <Send className="h-3.5 w-3.5" />
-                    {t("Submit")}
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="gap-1.5 text-muted-foreground hover:text-foreground"
+                      onClick={() => {
+                        setUserAnswer("")
+                        voice.passQuestion()
+                      }}
+                      disabled={voice.sessionState !== "listening" || voice.isTranscribing}
+                    >
+                      <SkipForward className="h-3.5 w-3.5" />
+                      {t("Pass")}
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
+                      onClick={handleSubmit}
+                      disabled={!userAnswer.trim() || voice.micActive || voice.isTranscribing}
+                    >
+                      <Send className="h-3.5 w-3.5" />
+                      {t("Submit")}
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}
@@ -640,7 +744,7 @@ export default function MockInterviewClient() {
   const overallFeedback = finalEvaluation?.overall_feedback || ""
 
   return (
-    <div className="px-7 py-7 md:px-9">
+    <div className="mx-auto w-full max-w-6xl px-7 py-7 md:px-9">
       <div className="mb-5">
         <p className="eyebrow text-clay">
           {activeWorkspace?.name || ""}{activeWorkspace?.jobName ? ` · ${activeWorkspace.jobName}` : ""}
