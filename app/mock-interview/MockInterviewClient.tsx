@@ -18,7 +18,17 @@ import { useVoiceInterview } from "@/hooks/use-voice-interview"
 import { useToast } from "@/hooks/use-toast"
 import { useWorkspace } from "@/lib/workspace-context"
 import { useMicLevel } from "@/hooks/use-mic-level"
+import { useInterviewLock } from "@/lib/interview-lock-context"
+import { useNavigationGuard } from "@/hooks/use-navigation-guard"
 import { RingProgress } from "@/components/calm/ring-progress"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 const WAVE_BARS = 20
 
@@ -70,6 +80,13 @@ export default function MockInterviewClient() {
   const { toast } = useToast()
   const searchParams = useSearchParams()
   const router = useRouter()
+  const { setLocked } = useInterviewLock()
+
+  // Confirmation modal for navigation-away attempts
+  const [navConfirm, setNavConfirm] = useState<{
+    target: string
+    resolve: (allow: boolean) => void
+  } | null>(null)
 
   // Voice interview hook (sole pipeline)
   const voice = useVoiceInterview()
@@ -158,9 +175,9 @@ export default function MockInterviewClient() {
 
   const resumeInProgress = () => {
     if (!inProgressInterview) return
-    // True voice-session resume isn't possible (the WebSocket state is gone),
-    // so route the user to interview history where any captured Q&A is visible.
-    router.push(`/interview-history`)
+    setInProgressInterview(null)
+    setState("active")
+    voice.resumeSession({ interviewId: inProgressInterview.id })
   }
 
   const conversationScrollRef = useRef<HTMLDivElement>(null)
@@ -178,6 +195,52 @@ export default function MockInterviewClient() {
       router.replace(`/mock-interview?id=${voice.interviewId}`, { scroll: false })
     }
   }, [voice.interviewId, state, router])
+
+  // Engage the global lock (sidebar dim + nav guard) only while actively in an interview.
+  useEffect(() => {
+    setLocked(state === "active")
+    return () => setLocked(false)
+  }, [state, setLocked])
+
+  // Navigation guard: any attempt to leave the page while the interview is
+  // running pops a confirmation modal. Confirm → discard the interview record
+  // and allow navigation. Cancel → stay on the interview.
+  useNavigationGuard({
+    enabled: state === "active",
+    requestExit: (target) =>
+      new Promise<boolean>((resolve) => {
+        setNavConfirm({ target, resolve })
+      }),
+  })
+
+  const handleConfirmLeave = async () => {
+    if (!navConfirm) return
+    const id = voice.interviewId
+    try {
+      // Permanently discard the in-progress session
+      if (id) {
+        await fetch(`${API_BASE_URL}/interviews/${id}/discard`, {
+          method: "POST",
+          credentials: "include",
+        })
+      }
+      voice.disconnect()
+    } catch (err) {
+      console.error("Discard on leave failed:", err)
+    } finally {
+      const resolve = navConfirm.resolve
+      setNavConfirm(null)
+      setLocked(false)
+      resolve(true)
+    }
+  }
+
+  const handleCancelLeave = () => {
+    if (!navConfirm) return
+    const resolve = navConfirm.resolve
+    setNavConfirm(null)
+    resolve(false)
+  }
 
   const startInterview = async () => {
     if (!activeWorkspace) {
@@ -475,6 +538,13 @@ export default function MockInterviewClient() {
     const isConnected = voice.connectionStatus === "connected"
 
     return (
+      <>
+      <LeaveInterviewDialog
+        open={!!navConfirm}
+        onConfirm={handleConfirmLeave}
+        onCancel={handleCancelLeave}
+        t={t}
+      />
       <div className="mx-auto w-full max-w-6xl px-7 py-7 md:px-9">
         {/* Header */}
         <div className="mb-5 flex items-end justify-between gap-3">
@@ -710,6 +780,7 @@ export default function MockInterviewClient() {
           </div>
         </div>
       </div>
+      </>
     )
   }
 
@@ -909,5 +980,42 @@ function FeedbackMetric({ label, value }: { label: string; value: number }) {
         <span className="text-muted-foreground">{value}%</span>
       </div>
     </div>
+  )
+}
+
+function LeaveInterviewDialog({
+  open,
+  onConfirm,
+  onCancel,
+  t,
+}: {
+  open: boolean
+  onConfirm: () => void
+  onCancel: () => void
+  t: (key: string) => string
+}) {
+  return (
+    <Dialog open={open} onOpenChange={(o) => { if (!o) onCancel() }}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-destructive">{t("Warning")}</DialogTitle>
+          <DialogDescription className="pt-2 text-[14px] leading-relaxed">
+            {t("If you leave this page, your current interview session will be permanently deleted and your progress will not be saved.")}
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter className="gap-2 sm:gap-2">
+          <Button variant="outline" onClick={onCancel}>
+            {t("Stay on this page")}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={onConfirm}
+            className="border-destructive/40 text-destructive hover:bg-red-600 hover:text-white hover:border-red-600"
+          >
+            {t("Leave & Discard")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }

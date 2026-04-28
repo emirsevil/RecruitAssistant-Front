@@ -36,6 +36,7 @@ import {
 import { useLanguage } from "@/lib/language-context"
 import { useWorkspace, type Workspace } from "@/lib/workspace-context"
 import { useAuth } from "@/lib/auth-context"
+import { useInterviewLock } from "@/lib/interview-lock-context"
 import { cn } from "@/lib/utils"
 import { useEffect, useState } from "react"
 
@@ -54,6 +55,7 @@ export function Navigation() {
   const { t, language, setLanguage } = useLanguage()
   const { user, logout } = useAuth()
   const { activeWorkspace, workspaces, setActiveWorkspace } = useWorkspace()
+  const { isLocked: isInterviewActive } = useInterviewLock()
   const [workspaceMenuOpen, setWorkspaceMenuOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
 
@@ -110,7 +112,12 @@ export function Navigation() {
 
   return (
     <aside
-      className="hidden lg:flex sticky top-0 h-screen w-[232px] flex-shrink-0 flex-col gap-1 border-r border-border bg-sidebar px-3.5 py-5"
+      aria-disabled={isInterviewActive}
+      tabIndex={isInterviewActive ? -1 : undefined}
+      className={cn(
+        "hidden lg:flex sticky top-0 h-screen w-[232px] flex-shrink-0 flex-col gap-1 border-r border-border bg-sidebar px-3.5 py-5 transition-opacity duration-300",
+        isInterviewActive && "pointer-events-none select-none opacity-30 grayscale"
+      )}
     >
       {/* Logo */}
       <Link href="/dashboard" className="mb-4 flex items-center gap-2.5 px-2 py-1.5">

@@ -8,6 +8,7 @@ import { ScheduleProvider } from "@/lib/schedule-context"
 import { LanguageProvider } from "@/lib/language-context"
 import { WorkspaceProvider } from "@/lib/workspace-context"
 import { AuthProvider } from "@/lib/auth-context"
+import { InterviewLockProvider } from "@/lib/interview-lock-context"
 import { Navigation } from "@/components/navigation"
 
 import { OnboardingGuard } from "@/components/onboarding-guard"
@@ -62,13 +63,15 @@ export default function RootLayout({
               <Suspense fallback={null}>
                 <OnboardingGuard>
                   <ScheduleProvider>
-                    <div className="flex min-h-screen">
-                      <Navigation />
-                      <main className="min-w-0 flex-1">
-                        <Suspense fallback={null}>{children}</Suspense>
-                      </main>
-                    </div>
-                    <Analytics />
+                    <InterviewLockProvider>
+                      <div className="flex min-h-screen">
+                        <Navigation />
+                        <main className="min-w-0 flex-1">
+                          <Suspense fallback={null}>{children}</Suspense>
+                        </main>
+                      </div>
+                      <Analytics />
+                    </InterviewLockProvider>
                   </ScheduleProvider>
                 </OnboardingGuard>
               </Suspense>

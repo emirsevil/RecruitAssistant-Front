@@ -102,6 +102,7 @@ interface UseVoiceInterviewReturn {
     difficulty: string
     interviewType: string
   }) => void
+  resumeSession: (config: { interviewId: number }) => void
   toggleMic: () => Promise<void>
   submitAnswer: () => void
   transcribeRecording: () => Promise<string>
@@ -351,7 +352,18 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
           case "session_started":
             setQuestions(data.questions || [])
             setInterviewId(data.interview_id || null)
-            setCurrentQuestionIndex(0)
+            setCurrentQuestionIndex(data.current_question_index ?? 0)
+            // Restore conversation log on resume so the user sees prior Q&A
+            if (data.resumed && Array.isArray(data.conversation_history)) {
+              const restored: ConversationEntry[] = data.conversation_history
+                .filter((e: any) => e && (e.role === "interviewer" || e.role === "candidate") && e.text)
+                .map((e: any) => ({
+                  role: e.role,
+                  text: e.text,
+                  timestamp: Date.now(),
+                }))
+              setConversationLog(restored)
+            }
             shouldPlayAudioRef.current = true
             setSessionState("ai_speaking")
             break
@@ -522,6 +534,65 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
 
       ws.onclose = () => {
         console.log("[WS] Closed")
+        setConnectionStatus("disconnected")
+        stopMicCapture()
+      }
+    },
+    [startMicCapture, stopMicCapture, handleWsMessage, initPlaybackContext]
+  )
+
+  const resumeSession = useCallback(
+    async (config: { interviewId: number }) => {
+      setError(null)
+      setConnectionStatus("connecting")
+      setSessionState("idle")
+      setConversationLog([])
+      setQuestions([])
+      setCurrentQuestionIndex(0)
+      setEvaluation(null)
+      isWrappingUpRef.current = false
+      setIsWrappingUp(false)
+
+      let ticket = ""
+      try {
+        const ticketRes = await fetch("http://localhost:8000/auth/ws-ticket", {
+          method: "POST",
+          credentials: "include",
+        })
+        if (ticketRes.ok) {
+          const ticketData = await ticketRes.json()
+          ticket = ticketData.ticket
+        }
+      } catch (err) {
+        console.error("Failed to fetch WS ticket:", err)
+      }
+
+      const wsUrl = `ws://localhost:8000/ws/voice-interview${ticket ? `?ticket=${ticket}` : ""}`
+      const ws = new WebSocket(wsUrl)
+      wsRef.current = ws
+      ws.binaryType = "arraybuffer"
+
+      ws.onopen = async () => {
+        setConnectionStatus("connected")
+        await startMicCapture()
+        initPlaybackContext()
+        ws.send(
+          JSON.stringify({
+            type: "resume_session",
+            interview_id: config.interviewId,
+          })
+        )
+      }
+
+      ws.onmessage = handleWsMessage
+
+      ws.onerror = (err) => {
+        console.error("[WS] Error:", err)
+        setError("WebSocket bağlantı hatası")
+        setConnectionStatus("disconnected")
+      }
+
+      ws.onclose = () => {
         setConnectionStatus("disconnected")
         stopMicCapture()
       }
@@ -800,6 +871,7 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
     pendingTranscript,
     isTranscribing,
     startSession,
+    resumeSession,
     toggleMic,
     submitAnswer,
     transcribeRecording,
