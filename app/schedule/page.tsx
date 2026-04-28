@@ -126,8 +126,8 @@ function getTimeRangeLayout(startMinutes: number, endMinutes: number): CSSProper
 export default function SchedulePage() {
     const { t, language } = useLanguage()
     const { events, addEvent, removeEvent, fetchEvents, getEventsForRange, isLoading, error } = useSchedule()
-    const [currentDate, setCurrentDate] = useState(new Date())
-    const [now, setNow] = useState(new Date())
+    const [currentDate, setCurrentDate] = useState(() => new Date())
+    const [now, setNow] = useState(() => new Date())
     const gridScrollRef = useRef<HTMLDivElement | null>(null)
 
     const dateLocale = language === "tr" ? tr : enUS

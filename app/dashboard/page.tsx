@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { format } from "date-fns"
 import { enUS, tr } from "date-fns/locale"
@@ -37,24 +37,28 @@ export default function DashboardPage() {
 
   const firstName = (user?.full_name || user?.email || "").split(" ")[0] || ""
 
-  const greeting = (() => {
+  // Defer date-dependent values to avoid SSR/client hydration mismatch
+  const [greeting, setGreeting] = useState("")
+  const [today, setToday] = useState("")
+  const [todayIdx, setTodayIdx] = useState(-1)
+
+  useEffect(() => {
     const h = new Date().getHours()
     if (language === "tr") {
-      if (h < 12) return "Günaydın"
-      if (h < 18) return "İyi günler"
-      return "İyi akşamlar"
+      setGreeting(h < 12 ? "Günaydın" : h < 18 ? "İyi günler" : "İyi akşamlar")
+    } else {
+      setGreeting(h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening")
     }
-    if (h < 12) return "Good morning"
-    if (h < 18) return "Good afternoon"
-    return "Good evening"
-  })()
-
-  const today = new Date().toLocaleDateString(language === "tr" ? "tr-TR" : "en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  })
+    setToday(
+      new Date().toLocaleDateString(language === "tr" ? "tr-TR" : "en-US", {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      })
+    )
+    setTodayIdx((new Date().getDay() + 6) % 7)
+  }, [language])
 
   const readiness = data
     ? Math.round((data.stats.avg_hr_score + data.stats.avg_technical_score + data.stats.cv_ats_score) / 3) || 0
@@ -76,8 +80,6 @@ export default function DashboardPage() {
 
   const upcoming = data?.upcoming_events?.slice(0, 3) ?? []
 
-  // Days of the week (Mon = 0)
-  const todayIdx = (new Date().getDay() + 6) % 7
   const dayLetters =
     language === "tr" ? ["P", "S", "Ç", "P", "C", "C", "P"] : ["M", "T", "W", "T", "F", "S", "S"]
 
@@ -86,8 +88,8 @@ export default function DashboardPage() {
       {/* Hero header */}
       <div className="mb-6 flex items-end justify-between gap-4">
         <div>
-          <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">{today}</p>
-          <h1 className="serif-headline mt-1.5 text-[32px] font-normal leading-tight tracking-tight">
+          <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground" suppressHydrationWarning>{today}</p>
+          <h1 className="serif-headline mt-1.5 text-[32px] font-normal leading-tight tracking-tight" suppressHydrationWarning>
             {greeting}
             {firstName && (
               <>
@@ -273,7 +275,7 @@ export default function DashboardPage() {
             <div className="grid grid-cols-7 gap-1.5">
               {dayLetters.map((d, i) => {
                 const filled = i < todayIdx
-                const today = i === todayIdx
+                const isToday = i === todayIdx
                 return (
                   <div key={i} className="flex flex-col items-center gap-1.5">
                     <span className="text-[10px] text-subtle">{d}</span>
@@ -281,8 +283,8 @@ export default function DashboardPage() {
                       className={cn(
                         "flex h-8 w-8 items-center justify-center rounded-lg text-[11px] font-semibold",
                         filled && "bg-sage text-white",
-                        today && "border-2 border-clay",
-                        !filled && !today && "bg-secondary text-subtle"
+                        isToday && "border-2 border-clay",
+                        !filled && !isToday && "bg-secondary text-subtle"
                       )}
                     >
                       {filled && <Check className="h-3.5 w-3.5" />}
