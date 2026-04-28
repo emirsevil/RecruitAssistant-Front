@@ -61,6 +61,15 @@ export default function MockInterviewClient() {
 
   const { activeWorkspace } = useWorkspace()
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
+
+  // Default to all workspace categories so technical interviews automatically
+  // cover every topic extracted from the JD. User can still toggle subsets.
+  useEffect(() => {
+    if (interviewType !== "technical") return
+    const cats = activeWorkspace?.categories ?? []
+    if (cats.length === 0) return
+    setSelectedCategories((prev) => (prev.length === 0 ? cats.slice(0, 5) : prev))
+  }, [activeWorkspace?.id, interviewType])
   const { toast } = useToast()
   const searchParams = useSearchParams()
   const router = useRouter()

@@ -1,5 +1,6 @@
 import type React from "react"
 import type { Metadata } from "next"
+import { Suspense } from "react"
 import { Inter, Fraunces } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
@@ -58,15 +59,19 @@ export default function RootLayout({
         <LanguageProvider>
           <AuthProvider>
             <WorkspaceProvider>
-              <OnboardingGuard>
-                <ScheduleProvider>
-                  <div className="flex min-h-screen">
-                    <Navigation />
-                    <main className="min-w-0 flex-1">{children}</main>
-                  </div>
-                  <Analytics />
-                </ScheduleProvider>
-              </OnboardingGuard>
+              <Suspense fallback={null}>
+                <OnboardingGuard>
+                  <ScheduleProvider>
+                    <div className="flex min-h-screen">
+                      <Navigation />
+                      <main className="min-w-0 flex-1">
+                        <Suspense fallback={null}>{children}</Suspense>
+                      </main>
+                    </div>
+                    <Analytics />
+                  </ScheduleProvider>
+                </OnboardingGuard>
+              </Suspense>
             </WorkspaceProvider>
           </AuthProvider>
         </LanguageProvider>

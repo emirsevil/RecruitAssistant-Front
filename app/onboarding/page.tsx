@@ -12,6 +12,15 @@ import { useWorkspace } from "@/lib/workspace-context"
 import { useLanguage } from "@/lib/language-context"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+import { SearchableSelect, type SelectOption } from "@/components/ui/searchable-select"
+import { COMPANIES } from "@/lib/data/companies"
+
+// Static at module load — the dataset doesn't change between renders.
+const COMPANY_OPTIONS: SelectOption[] = COMPANIES.map((c) => ({
+  value: c.name,
+  label: c.name,
+  group: c.category,
+}))
 
 export default function OnboardingPage() {
   const [step, setStep] = useState(1)
@@ -182,12 +191,29 @@ export default function OnboardingPage() {
           {step === 2 && (
             <div className="space-y-5">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <Field
-                  label={language === "tr" ? "Şirket" : "Company"}
-                  value={formData.company}
-                  onChange={(v) => setFormData({ ...formData, company: v })}
-                  placeholder={language === "tr" ? "ör. Trendyol" : "e.g. Trendyol"}
-                />
+                <div>
+                  <p className="mb-1.5 text-[12px] font-semibold">
+                    {language === "tr" ? "Şirket" : "Company"}
+                  </p>
+                  <SearchableSelect
+                    options={COMPANY_OPTIONS}
+                    value={formData.company}
+                    onChange={(v) => setFormData({ ...formData, company: v })}
+                    onSelectOther={(typed) =>
+                      setFormData({ ...formData, company: typed })
+                    }
+                    placeholder={
+                      language === "tr" ? "Şirket seçin..." : "Select a company..."
+                    }
+                    searchPlaceholder={
+                      language === "tr" ? "Şirket ara..." : "Search company..."
+                    }
+                    emptyText={
+                      language === "tr" ? "Sonuç yok." : "No matches."
+                    }
+                    otherLabel={language === "tr" ? "Diğer" : "Other"}
+                  />
+                </div>
                 <Field
                   label={language === "tr" ? "Pozisyon" : "Role"}
                   value={formData.jobName}
