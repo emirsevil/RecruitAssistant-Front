@@ -55,6 +55,9 @@ export function Navigation() {
   const { user, logout } = useAuth()
   const { activeWorkspace, workspaces, setActiveWorkspace } = useWorkspace()
   const [workspaceMenuOpen, setWorkspaceMenuOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => { setMounted(true) }, [])
 
   const handleWorkspaceSelect = (workspace: Workspace) => {
     setActiveWorkspace(workspace)
@@ -234,7 +237,7 @@ export function Navigation() {
           onClick={toggleDark}
           className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground"
         >
-          {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          {mounted && (isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />)}
         </button>
         <DropdownMenu>
           <DropdownMenuTrigger
@@ -263,21 +266,21 @@ export function Navigation() {
       {/* User chip */}
       <DropdownMenu>
         <DropdownMenuTrigger className="flex items-center gap-2.5 rounded-xl border border-border bg-card px-2.5 py-2 text-left transition-colors hover:bg-secondary/50">
-          <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-clay-soft text-[11px] font-semibold text-clay">
-            {initials}
+          <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-clay-soft text-[11px] font-semibold text-clay" suppressHydrationWarning>
+            {mounted ? initials : ""}
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block truncate text-[12px] font-semibold leading-tight">
-              {user?.full_name || t("welcome")}
+            <span className="block truncate text-[12px] font-semibold leading-tight" suppressHydrationWarning>
+              {mounted ? (user?.full_name || t("welcome")) : "\u00A0"}
             </span>
-            <span className="block truncate text-[10px] text-subtle">{user?.email || ""}</span>
+            <span className="block truncate text-[10px] text-subtle" suppressHydrationWarning>{mounted ? (user?.email || "") : "\u00A0"}</span>
           </span>
           <ChevronsUpDown className="h-3.5 w-3.5 flex-shrink-0 text-subtle" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" side="top" className="w-56">
           <DropdownMenuLabel>
-            <p className="text-sm font-medium">{user?.full_name || t("welcome")}</p>
-            <p className="text-xs text-muted-foreground">{user?.email || ""}</p>
+            <p className="text-sm font-medium" suppressHydrationWarning>{mounted ? (user?.full_name || t("welcome")) : "\u00A0"}</p>
+            <p className="text-xs text-muted-foreground" suppressHydrationWarning>{mounted ? (user?.email || "") : "\u00A0"}</p>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem asChild>
