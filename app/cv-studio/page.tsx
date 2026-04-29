@@ -51,77 +51,33 @@ export default function CVStudioPage() {
   const { t } = useLanguage()
   const { activeWorkspace } = useWorkspace()
   const [language, setLanguage] = useState("en")
-  const [cvData, setCvData] = useState({
-    name: "Deniz Ozturk",
-    email: "deniz.ozturk@example.com",
-    phone: "+90 555 123 45 67",
-    location: "Istanbul, Turkey",
+type CVData = {
+  name: string
+  email: string
+  phone: string
+  location: string
+  linkedin: string
+  github: string
+  summary: string
+  education: { degree: string; school: string; gpa: string; startDate: string; endDate: string }[]
+  experience: { role: string; company: string; bullets: string[]; startDate: string; endDate: string }[]
+  projects: { title: string; techStack: string; date: string; description: string }[]
+  skills: string[]
+  specialInstructions: string
+}
+
+  const [cvData, setCvData] = useState<CVData>({
+    name: "",
+    email: "",
+    phone: "",
+    location: "",
     linkedin: "",
     github: "",
-    summary:
-      "Senior Full Stack Developer with 5+ years of experience in building scalable web applications. Passionate about clean code, performance optimization, and AI integration. Proven track record of leading teams and delivering high-impact projects.",
-    education: [
-      {
-        degree: "B.S. Computer Engineering",
-        school: "Technical University of Istanbul",
-        gpa: "3.8/4.0",
-        startDate: "2015",
-        endDate: "2019",
-      },
-    ],
-    experience: [
-      {
-        role: "Senior Frontend Developer",
-        company: "TechFlow Solutions",
-        bullets: [
-          "Led migration of legacy codebase to Next.js 14, improving performance by 40%.",
-          "Implemented CI/CD pipelines reducing deployment time by 15 minutes.",
-          "Mentored 3 junior developers and established code review standards.",
-        ],
-        startDate: "Jan 2022",
-        endDate: "Present",
-      },
-      {
-        role: "Software Engineer",
-        company: "DataCorp",
-        bullets: [
-          "Developed RESTful APIs serving 1M+ daily requests using Node.js.",
-          "Collaborated with UX team to redesign the customer portal, increasing conversion by 20%.",
-          "Optimized database queries, reducing response times by 30%.",
-        ],
-        startDate: "Jun 2019",
-        endDate: "Dec 2021",
-      },
-    ],
-    projects: [
-      {
-        title: "AI Resume Builder",
-        techStack: "React, OpenAI API, Node.js",
-        date: "2024",
-        description:
-          "Built an AI-powered resume generator helping 500+ users optimize their CVs with ATS-friendly formats.",
-      },
-      {
-        title: "Crypto Portfolio Tracker",
-        techStack: "Vue.js, Firebase, CoinGecko API",
-        date: "2023",
-        description:
-          "Real-time cryptocurrency tracking application with price alerts and portfolio analysis tools.",
-      },
-    ],
-    skills: [
-      "JavaScript",
-      "TypeScript",
-      "React",
-      "Next.js",
-      "Node.js",
-      "PostgreSQL",
-      "AWS",
-      "Docker",
-      "Tailwind CSS",
-      "GraphQL",
-    ],
-    targetJob: "",
+    summary: "",
+    education: [],
+    experience: [],
+    projects: [],
+    skills: [],
     specialInstructions: "",
   })
 
@@ -251,9 +207,7 @@ export default function CVStudioPage() {
   })
 
   const buildTargetJobContext = () => {
-    const manual = cvData.targetJob.trim()
-    const ws = activeWorkspace?.jobDescription?.trim()
-    const jd = manual || ws || ""
+    const jd = activeWorkspace?.jobDescription?.trim() || ""
     const parts: string[] = []
     if (activeWorkspace?.name?.trim()) parts.push(`Company: ${activeWorkspace.name.trim()}`)
     if (activeWorkspace?.jobName?.trim()) parts.push(`Role: ${activeWorkspace.jobName.trim()}`)
@@ -493,52 +447,6 @@ export default function CVStudioPage() {
       <div className="grid gap-6 lg:grid-cols-12 lg:items-start">
         {/* Input Form (col 8) */}
         <div className="space-y-5 lg:col-span-8">
-          {/* Upload Resume */}
-          <Section
-            title={t("Upload Resume")}
-            iconBg="sage"
-            icon={<Upload className="h-5 w-5" />}
-          >
-            {uploadedFileName ? (
-              <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-sage-soft/40 px-3.5 py-2.5">
-                <div className="flex min-w-0 items-center gap-2.5">
-                  <FileText className="h-5 w-5 flex-shrink-0 text-sage" />
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">{uploadedFileName}</p>
-                    <p className="text-[11px] text-muted-foreground">{t("Uploaded")}</p>
-                  </div>
-                </div>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={handleRemoveUploadedFile}
-                  disabled={isParsing}
-                  aria-label={t("Remove file")}
-                  className="h-8 w-8 flex-shrink-0 rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                <Input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                  onChange={handleResumeUpload}
-                  disabled={isParsing}
-                  className="h-11 cursor-pointer rounded-lg border border-border bg-background px-3 text-sm file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-secondary file:px-3 file:text-xs file:font-medium file:text-foreground hover:bg-secondary/40"
-                />
-                {isParsing && (
-                  <div className="flex items-center gap-2 whitespace-nowrap text-sm text-muted-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    {t("Parsing...")}
-                  </div>
-                )}
-              </div>
-            )}
-          </Section>
-
           {/* Personal Information */}
           <Section title={t("Personal Information")}>
             <div className="space-y-2">
@@ -778,6 +686,56 @@ export default function CVStudioPage() {
             ))}
           </Section>
 
+        </div>
+
+        {/* Right rail (col 4) — JD + actions */}
+        <div className="space-y-5 lg:sticky lg:top-6 lg:col-span-4">
+          {/* Upload Resume */}
+          <Section
+            title={t("Upload Resume")}
+            iconBg="sage"
+            icon={<Upload className="h-5 w-5" />}
+          >
+            {uploadedFileName ? (
+              <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-sage-soft/40 px-3.5 py-2.5">
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <FileText className="h-5 w-5 flex-shrink-0 text-sage" />
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">{uploadedFileName}</p>
+                    <p className="text-[11px] text-muted-foreground">{t("Uploaded")}</p>
+                  </div>
+                </div>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={handleRemoveUploadedFile}
+                  disabled={isParsing}
+                  aria-label={t("Remove file")}
+                  className="h-8 w-8 flex-shrink-0 rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <Input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  onChange={handleResumeUpload}
+                  disabled={isParsing}
+                  className="h-11 cursor-pointer rounded-lg border border-border bg-background px-3 text-sm file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-secondary file:px-3 file:text-xs file:font-medium file:text-foreground hover:bg-secondary/40"
+                />
+                {isParsing && (
+                  <div className="flex items-center gap-2 whitespace-nowrap text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    {t("Parsing...")}
+                  </div>
+                )}
+              </div>
+            )}
+          </Section>
+
           {/* Skills */}
           <Section title={t("Skills")}>
             <SkillsMultiSelect
@@ -787,29 +745,19 @@ export default function CVStudioPage() {
               t={t}
             />
           </Section>
-        </div>
 
-        {/* Right rail (col 4) — JD + actions */}
-        <div className="space-y-5 lg:sticky lg:top-6 lg:col-span-4">
-          <Section title={t("Target Job Description")}>
+          {/* Special Instructions */}
+          <Section title={t("Special Instructions")}>
             <Textarea
-              value={cvData.targetJob}
-              onChange={(e) => setCvData({ ...cvData, targetJob: e.target.value })}
-              className="min-h-[240px] resize-none rounded-lg border-border bg-background px-3.5 py-2.5 text-[13px] leading-relaxed"
-              placeholder={t("Paste the full job description here...")}
+              value={cvData.specialInstructions}
+              onChange={(e) =>
+                setCvData({ ...cvData, specialInstructions: e.target.value })
+              }
+              className="min-h-[120px] resize-none rounded-lg border-border bg-background px-3.5 py-2.5 text-[13px] leading-relaxed"
+              placeholder={t(
+                "e.g., 'Make it more professional', 'Focus on my leadership skills', 'Keep it under one page'"
+              )}
             />
-            <Field label={t("Special Instructions (Optional)")}>
-              <Textarea
-                value={cvData.specialInstructions}
-                onChange={(e) =>
-                  setCvData({ ...cvData, specialInstructions: e.target.value })
-                }
-                className="min-h-[120px] resize-none rounded-lg border-border bg-background px-3.5 py-2.5 text-[13px] leading-relaxed"
-                placeholder={t(
-                  "e.g., 'Make it more professional', 'Focus on my leadership skills', 'Keep it under one page'"
-                )}
-              />
-            </Field>
           </Section>
 
           {generationError && (
