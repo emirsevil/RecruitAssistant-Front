@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import {
   ArrowLeft,
   ArrowRight,
@@ -26,6 +26,16 @@ import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { SearchableSelect, type SelectOption } from "@/components/ui/searchable-select"
 import { SKILLS } from "@/lib/data/skills"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 // Static at module load — the skills list doesn't change between renders.
 const SKILL_OPTIONS: SelectOption[] = SKILLS.map((s) => ({
@@ -89,6 +99,22 @@ export default function QuizzesPage() {
   const [currentQuestion, setCurrentQuestion] = useState(0)
   const [selectedAnswers, setSelectedAnswers] = useState<number[]>([])
   const [currentAnswer, setCurrentAnswer] = useState<number | null>(null)
+  const [showExitConfirm, setShowExitConfirm] = useState(false)
+
+  // Warn on browser back / refresh / close while taking a quiz
+  useEffect(() => {
+    if (quizState !== "taking") return
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+    }
+    window.addEventListener("beforeunload", handler)
+    return () => window.removeEventListener("beforeunload", handler)
+  }, [quizState])
+
+  const confirmExitQuiz = useCallback(() => {
+    setShowExitConfirm(false)
+    setQuizState("browse")
+  }, [])
 
   useEffect(() => {
     if (!workspaceId) return
@@ -235,7 +261,7 @@ export default function QuizzesPage() {
           <div className="mb-5 flex items-center justify-between">
             <button
               type="button"
-              onClick={() => setQuizState("browse")}
+              onClick={() => setShowExitConfirm(true)}
               className="inline-flex items-center gap-1.5 text-[12px] font-medium text-muted-foreground hover:text-foreground"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
@@ -245,6 +271,33 @@ export default function QuizzesPage() {
               {activeQuizGroup.title}
             </span>
           </div>
+
+          {/* Exit confirmation dialog */}
+          <AlertDialog open={showExitConfirm} onOpenChange={setShowExitConfirm}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>
+                  {language === "tr" ? "Quizden çıkmak istediğinize emin misiniz?" : "Leave this quiz?"}
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  {language === "tr"
+                    ? "Devam eden quiziniz var. Çıkarsanız ilerlemeniz kaydedilmeyecek."
+                    : "You have an ongoing quiz. Your progress will not be saved if you leave."}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>
+                  {language === "tr" ? "Quize devam et" : "Continue quiz"}
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={confirmExitQuiz}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {language === "tr" ? "Çık" : "Leave"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
 
           <div className="mb-5">
             <p className="eyebrow">{activeQuizGroup.title}</p>
