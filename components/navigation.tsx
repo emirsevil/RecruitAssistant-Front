@@ -16,6 +16,17 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import {
   LayoutDashboard,
   MessageSquare,
   FileQuestion,
@@ -32,11 +43,14 @@ import {
   Sun,
   ChevronsUpDown,
   Plus,
+  Pencil,
+  Trash2,
 } from "lucide-react"
 import { useLanguage } from "@/lib/language-context"
 import { useWorkspace, type Workspace } from "@/lib/workspace-context"
 import { useAuth } from "@/lib/auth-context"
 import { cn } from "@/lib/utils"
+import { useToast } from "@/hooks/use-toast"
 import { useEffect, useState } from "react"
 
 const navItems = [
@@ -53,14 +67,75 @@ export function Navigation() {
   const pathname = usePathname()
   const { t, language, setLanguage } = useLanguage()
   const { user, logout } = useAuth()
-  const { activeWorkspace, workspaces, setActiveWorkspace } = useWorkspace()
+  const { activeWorkspace, workspaces, setActiveWorkspace, deleteWorkspace, renameWorkspace } = useWorkspace()
   const [workspaceMenuOpen, setWorkspaceMenuOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const { toast } = useToast()
+
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [editingWorkspace, setEditingWorkspace] = useState<Workspace | null>(null)
+  const [newName, setNewName] = useState("")
 
   useEffect(() => { setMounted(true) }, [])
 
   const handleWorkspaceSelect = (workspace: Workspace) => {
     setActiveWorkspace(workspace)
+    setWorkspaceMenuOpen(false)
+  }
+
+  const handleDelete = async () => {
+    if (editingWorkspace) {
+      try {
+        await deleteWorkspace(editingWorkspace.id)
+        setEditingWorkspace(null)
+        setDeleteDialogOpen(false)
+        toast({
+          title: language === "tr" ? "Başarılı" : "Success",
+          description: language === "tr" ? "Çalışma alanı silindi." : "Workspace deleted.",
+        })
+      } catch (error) {
+        toast({
+          variant: "destructive",
+          title: language === "tr" ? "Hata" : "Error",
+          description: language === "tr" ? "Çalışma alanı silinirken bir hata oluştu." : "Failed to delete workspace.",
+        })
+      }
+    }
+  }
+
+  const handleRename = async () => {
+    if (editingWorkspace && newName.trim()) {
+      try {
+        await renameWorkspace(editingWorkspace.id, newName.trim())
+        setEditingWorkspace(null)
+        setEditDialogOpen(false)
+        toast({
+          title: language === "tr" ? "Başarılı" : "Success",
+          description: language === "tr" ? "Çalışma alanı güncellendi." : "Workspace updated.",
+        })
+      } catch (error) {
+        toast({
+          variant: "destructive",
+          title: language === "tr" ? "Hata" : "Error",
+          description: language === "tr" ? "Çalışma alanı güncellenirken bir hata oluştu." : "Failed to update workspace.",
+        })
+      }
+    }
+  }
+
+  const openDeleteDialog = (e: React.MouseEvent, workspace: Workspace) => {
+    e.stopPropagation()
+    setEditingWorkspace(workspace)
+    setDeleteDialogOpen(true)
+    setWorkspaceMenuOpen(false)
+  }
+
+  const openEditDialog = (e: React.MouseEvent, workspace: Workspace) => {
+    e.stopPropagation()
+    setEditingWorkspace(workspace)
+    setNewName(workspace.name)
+    setEditDialogOpen(true)
     setWorkspaceMenuOpen(false)
   }
 
@@ -154,12 +229,11 @@ export function Navigation() {
             </div>
             <div className="max-h-[280px] overflow-y-auto p-1.5">
               {workspaces.map((ws) => (
-                <button
+                <div
                   key={ws.id}
-                  type="button"
                   onClick={() => handleWorkspaceSelect(ws)}
                   className={cn(
-                    "flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-[13px] transition-colors",
+                    "group flex w-full cursor-pointer items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-[13px] transition-colors",
                     ws.id === activeWorkspace.id
                       ? "bg-accent text-accent-foreground"
                       : "hover:bg-accent/50"
@@ -177,7 +251,28 @@ export function Navigation() {
                   {ws.id === activeWorkspace.id && (
                     <Check className="h-4 w-4 flex-shrink-0 text-primary" />
                   )}
-                </button>
+
+                  <div className="hidden group-hover:flex items-center gap-0.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={(e) => openEditDialog(e, ws)}
+                      className="p-1 rounded hover:bg-background/80 text-muted-foreground hover:text-foreground transition-colors"
+                      title={t("editWorkspaceTitle")}
+                    >
+                      <Pencil className="h-3 w-3" />
+                    </button>
+                    {workspaces.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={(e) => openDeleteDialog(e, ws)}
+                        aria-label={t("deleteWorkspace")}
+                        className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    )}
+                  </div>
+                </div>
               ))}
             </div>
             <div className="border-t border-border p-1.5">
@@ -305,6 +400,63 @@ export function Navigation() {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("deleteWorkspace")}</DialogTitle>
+            <DialogDescription>
+              {language === "tr"
+                ? `"${editingWorkspace?.name}" çalışma alanını silmek istediğinize emin misiniz? Bu işlem geri alınamaz ve tüm verileriniz silinir.`
+                : `Are you sure you want to delete the workspace "${editingWorkspace?.name}"? This action cannot be undone and all associated data will be removed.`}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              {t("cancel")}
+            </Button>
+            <Button variant="destructive" onClick={handleDelete}>
+              {t("delete")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("editWorkspaceTitle")}</DialogTitle>
+            <DialogDescription>
+              {language === "tr" ? "Çalışma alanı adını değiştirin." : "Rename your workspace."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Label htmlFor="workspace-name" className="sr-only">
+              {language === "tr" ? "Çalışma Alanı Adı" : "Workspace Name"}
+            </Label>
+            <Input
+              id="workspace-name"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              placeholder={language === "tr" ? "Çalışma Alanı Adı" : "Workspace Name"}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault()
+                  handleRename()
+                }
+              }}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              {t("cancel")}
+            </Button>
+            <Button onClick={handleRename} disabled={!newName.trim()}>
+              {t("Save")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </aside>
   )
 }

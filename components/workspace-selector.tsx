@@ -18,6 +18,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {
   ChevronsUpDown,
   Plus,
@@ -26,6 +28,7 @@ import {
   Trash2,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useToast } from "@/hooks/use-toast"
 
 export function WorkspaceSelector() {
   const {
@@ -33,23 +36,59 @@ export function WorkspaceSelector() {
     activeWorkspace,
     setActiveWorkspace,
     deleteWorkspace,
+    renameWorkspace,
   } = useWorkspace()
   const { t } = useLanguage()
+  const { toast } = useToast()
 
   const [open, setOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [editingWorkspace, setEditingWorkspace] = useState<Workspace | null>(null)
+  const [newName, setNewName] = useState("")
 
   const handleSelect = (workspace: Workspace) => {
     setActiveWorkspace(workspace)
     setOpen(false)
   }
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (editingWorkspace) {
-      deleteWorkspace(editingWorkspace.id)
-      setEditingWorkspace(null)
-      setDeleteDialogOpen(false)
+      try {
+        await deleteWorkspace(editingWorkspace.id)
+        setEditingWorkspace(null)
+        setDeleteDialogOpen(false)
+        toast({
+          title: "Başarılı",
+          description: "Çalışma alanı silindi.",
+        })
+      } catch (error) {
+        toast({
+          variant: "destructive",
+          title: "Hata",
+          description: "Çalışma alanı silinirken bir hata oluştu.",
+        })
+      }
+    }
+  }
+
+  const handleRename = async () => {
+    if (editingWorkspace && newName.trim()) {
+      try {
+        await renameWorkspace(editingWorkspace.id, newName.trim())
+        setEditingWorkspace(null)
+        setEditDialogOpen(false)
+        toast({
+          title: "Başarılı",
+          description: "Çalışma alanı güncellendi.",
+        })
+      } catch (error) {
+        toast({
+          variant: "destructive",
+          title: "Hata",
+          description: "Çalışma alanı güncellenirken bir hata oluştu.",
+        })
+      }
     }
   }
 
@@ -57,6 +96,14 @@ export function WorkspaceSelector() {
     e.stopPropagation()
     setEditingWorkspace(workspace)
     setDeleteDialogOpen(true)
+    setOpen(false)
+  }
+
+  const openEditDialog = (e: React.MouseEvent, workspace: Workspace) => {
+    e.stopPropagation()
+    setEditingWorkspace(workspace)
+    setNewName(workspace.name)
+    setEditDialogOpen(true)
     setOpen(false)
   }
 
@@ -137,14 +184,14 @@ export function WorkspaceSelector() {
                 )}
 
                 <div className="hidden group-hover:flex items-center gap-0.5 shrink-0">
-                  <Link
-                    href={`/workspace/${workspace.id}/edit`}
-                    onClick={(e) => e.stopPropagation()}
+                  <button
+                    type="button"
+                    onClick={(e) => openEditDialog(e, workspace)}
                     className="p-1 rounded hover:bg-background/80 text-muted-foreground hover:text-foreground transition-colors"
                     title={t("editWorkspaceTitle")}
                   >
                     <Pencil className="h-3 w-3" />
-                  </Link>
+                  </button>
                   {workspaces.length > 1 && (
                     <button
                       type="button"
@@ -196,6 +243,42 @@ export function WorkspaceSelector() {
             </Button>
             <Button variant="destructive" onClick={handleDelete}>
               {t("delete")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("editWorkspaceTitle")}</DialogTitle>
+            <DialogDescription>
+              Çalışma alanı adını değiştirin.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Label htmlFor="workspace-name" className="sr-only">
+              Çalışma Alanı Adı
+            </Label>
+            <Input
+              id="workspace-name"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              placeholder="Çalışma Alanı Adı"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault()
+                  handleRename()
+                }
+              }}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              {t("cancel")}
+            </Button>
+            <Button onClick={handleRename} disabled={!newName.trim()}>
+              {t("save")}
             </Button>
           </DialogFooter>
         </DialogContent>
