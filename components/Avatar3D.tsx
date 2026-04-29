@@ -8,6 +8,17 @@ import * as THREE from "three"
 // ─── Constants ────────────────────────────────────────────────────
 
 const AVATAR_URL = "/avatar.glb"
+const AVATAR_APPEARANCE: {
+  hiddenMeshes: readonly string[]
+  hairMeshNames: readonly string[]
+  headTextureMeshNames: readonly string[]
+  hairColor: string
+} = {
+  hiddenMeshes: ["Wolf3D_Facewear", "Wolf3D_Glasses"],
+  hairMeshNames: ["Wolf3D_Hair"],
+  headTextureMeshNames: ["Wolf3D_Head"],
+  hairColor: "#111111",
+}
 
 // RPM viseme morph targets (Ready Player Me standard)
 const VISEME_TARGETS = {
@@ -54,9 +65,234 @@ interface AvatarModelProps {
   isSpeaking: boolean
 }
 
+function hasTextureMap(
+  material: THREE.Material
+): material is THREE.Material & { map: THREE.Texture } {
+  return "map" in material && material.map instanceof THREE.Texture
+}
+
+function cloneAndTintMaterial(
+  material: THREE.Material,
+  hairColor: string
+): THREE.Material {
+  const clonedMaterial = material.clone()
+
+  if ("color" in clonedMaterial && clonedMaterial.color instanceof THREE.Color) {
+    clonedMaterial.color.set(hairColor)
+  }
+
+  clonedMaterial.needsUpdate = true
+  clonedMaterial.userData = {
+    ...clonedMaterial.userData,
+    avatarAppearancePatched: true,
+  }
+
+  return clonedMaterial
+}
+
+function createRecoloredHeadTexture(
+  texture: THREE.Texture,
+  hairColor: string
+): THREE.Texture | null {
+  if (typeof document === "undefined") {
+    return null
+  }
+
+  const image = (
+    texture.source?.data ?? texture.image
+  ) as (CanvasImageSource & { width: number; height: number }) | undefined
+
+  if (!image || typeof image.width !== "number" || typeof image.height !== "number") {
+    return null
+  }
+
+  const canvas = document.createElement("canvas")
+  canvas.width = image.width
+  canvas.height = image.height
+
+  const context = canvas.getContext("2d", { willReadFrequently: true })
+  if (!context) {
+    return null
+  }
+
+  context.drawImage(image, 0, 0, image.width, image.height)
+
+  const imageData = context.getImageData(0, 0, canvas.width, canvas.height)
+  const pixels = imageData.data
+  const replacement = new THREE.Color(hairColor)
+  const replacementRgb = {
+    r: Math.round(replacement.r * 255),
+    g: Math.round(replacement.g * 255),
+    b: Math.round(replacement.b * 255),
+  }
+  const scalpCutoffY = canvas.height * 0.35
+  const leftBrowRegion = {
+    minX: canvas.width * 0.37,
+    maxX: canvas.width * 0.49,
+    minY: canvas.height * 0.25,
+    maxY: canvas.height * 0.31,
+  }
+  const rightBrowRegion = {
+    minX: canvas.width * 0.53,
+    maxX: canvas.width * 0.66,
+    minY: canvas.height * 0.25,
+    maxY: canvas.height * 0.31,
+  }
+
+  for (let i = 0; i < pixels.length; i += 4) {
+    const pixelIndex = i / 4
+    const x = pixelIndex % canvas.width
+    const y = Math.floor(pixelIndex / canvas.width)
+    const r = pixels[i]
+    const g = pixels[i + 1]
+    const b = pixels[i + 2]
+    const a = pixels[i + 3]
+
+    const isHotPink =
+      a > 0 &&
+      r > 170 &&
+      g < 120 &&
+      b > 90 &&
+      r - g > 70 &&
+      r - b > 20
+
+    const isInBrowRegion =
+      ((x >= leftBrowRegion.minX &&
+        x <= leftBrowRegion.maxX &&
+        y >= leftBrowRegion.minY &&
+        y <= leftBrowRegion.maxY) ||
+        (x >= rightBrowRegion.minX &&
+          x <= rightBrowRegion.maxX &&
+          y >= rightBrowRegion.minY &&
+          y <= rightBrowRegion.maxY))
+
+    const isBrowTone =
+      a > 0 &&
+      r > 165 &&
+      g < 100 &&
+      b > 85 &&
+      b < 120 &&
+      r - g > 55
+
+    const shouldRecolor =
+      (isHotPink && y < scalpCutoffY) ||
+      (isInBrowRegion && isBrowTone)
+
+    if (!shouldRecolor) {
+      continue
+    }
+
+    const brightness = (r + g + b) / (255 * 3)
+    const shade = THREE.MathUtils.clamp(0.75 + brightness * 0.5, 0.75, 1.1)
+
+    pixels[i] = Math.round(replacementRgb.r * shade)
+    pixels[i + 1] = Math.round(replacementRgb.g * shade)
+    pixels[i + 2] = Math.round(replacementRgb.b * shade)
+  }
+
+  context.putImageData(imageData, 0, 0)
+
+  const recoloredTexture = new THREE.CanvasTexture(canvas)
+  recoloredTexture.name = `${texture.name || "head"}-avatar-appearance`
+  recoloredTexture.colorSpace = texture.colorSpace
+  recoloredTexture.flipY = texture.flipY
+  recoloredTexture.wrapS = texture.wrapS
+  recoloredTexture.wrapT = texture.wrapT
+  recoloredTexture.magFilter = texture.magFilter
+  recoloredTexture.minFilter = texture.minFilter
+  recoloredTexture.anisotropy = texture.anisotropy
+  recoloredTexture.generateMipmaps = texture.generateMipmaps
+  recoloredTexture.rotation = texture.rotation
+  recoloredTexture.center.copy(texture.center)
+  recoloredTexture.offset.copy(texture.offset)
+  recoloredTexture.repeat.copy(texture.repeat)
+  recoloredTexture.needsUpdate = true
+  recoloredTexture.userData = {
+    ...texture.userData,
+    avatarAppearancePatched: true,
+  }
+
+  return recoloredTexture
+}
+
+function cloneAndRetextureHeadMaterial(
+  material: THREE.Material,
+  hairColor: string
+): THREE.Material {
+  const clonedMaterial = material.clone()
+
+  if (!hasTextureMap(clonedMaterial)) {
+    return clonedMaterial
+  }
+
+  const recoloredTexture = createRecoloredHeadTexture(clonedMaterial.map, hairColor)
+  if (recoloredTexture) {
+    clonedMaterial.map = recoloredTexture
+  }
+
+  clonedMaterial.needsUpdate = true
+  clonedMaterial.userData = {
+    ...clonedMaterial.userData,
+    avatarAppearancePatched: true,
+  }
+
+  return clonedMaterial
+}
+
 function AvatarModel({ analyserNode, isSpeaking }: AvatarModelProps) {
   const { scene } = useGLTF(AVATAR_URL)
   const groupRef = useRef<THREE.Group>(null)
+
+  useEffect(() => {
+    scene.traverse((child) => {
+      if (!(child instanceof THREE.Mesh || child instanceof THREE.SkinnedMesh)) {
+        return
+      }
+
+      if (AVATAR_APPEARANCE.hiddenMeshes.includes(child.name)) {
+        child.visible = false
+      }
+
+      if (
+        !AVATAR_APPEARANCE.hairMeshNames.includes(child.name) ||
+        child.userData.avatarAppearancePatched
+      ) {
+        if (
+          !AVATAR_APPEARANCE.headTextureMeshNames.includes(child.name) ||
+          child.userData.avatarAppearancePatched
+        ) {
+          return
+        }
+
+        if (Array.isArray(child.material)) {
+          child.material = child.material.map((material) =>
+            cloneAndRetextureHeadMaterial(material, AVATAR_APPEARANCE.hairColor)
+          )
+        } else if (child.material) {
+          child.material = cloneAndRetextureHeadMaterial(
+            child.material,
+            AVATAR_APPEARANCE.hairColor
+          )
+        }
+
+        child.userData.avatarAppearancePatched = true
+        return
+      }
+
+      if (Array.isArray(child.material)) {
+        child.material = child.material.map((material) =>
+          cloneAndTintMaterial(material, AVATAR_APPEARANCE.hairColor)
+        )
+      } else if (child.material) {
+        child.material = cloneAndTintMaterial(
+          child.material,
+          AVATAR_APPEARANCE.hairColor
+        )
+      }
+
+      child.userData.avatarAppearancePatched = true
+    })
+  }, [scene])
 
   // Find ALL meshes with morph targets (RPM splits head, teeth, etc.)
   const morphMeshes = useMemo(() => {
