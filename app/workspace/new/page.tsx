@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useMemo } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { PageContainer } from "@/components/page-container"
@@ -29,6 +29,7 @@ import {
 import { useWorkspace } from "@/lib/workspace-context"
 import { useLanguage } from "@/lib/language-context"
 import { toast } from "sonner"
+import { SKILLS } from "@/lib/data/skills"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
 
@@ -47,10 +48,20 @@ export default function NewWorkspacePage() {
   const [suggestedCategories, setSuggestedCategories] = useState<string[]>([])
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [searchQuery, setSearchQuery] = useState("")
-  const [searchResults, setSearchResults] = useState<string[]>([])
-  const [isSearching, setIsSearching] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
-  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Search results derived from the curated SKILLS dataset (same list quizzes use)
+  const searchResults = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase()
+    if (!q) return [] as { name: string; category: string }[]
+    return SKILLS
+      .filter(
+        (s) =>
+          s.name.toLowerCase().includes(q) &&
+          !selectedCategories.includes(s.name)
+      )
+      .slice(0, 20)
+  }, [searchQuery, selectedCategories])
 
   // Step 1: Create workspace
   const handleCreateWorkspace = async () => {
@@ -79,41 +90,6 @@ export default function NewWorkspacePage() {
     }
   }
 
-  // Search categories from DB
-  useEffect(() => {
-    if (!searchQuery.trim()) {
-      setSearchResults([])
-      return
-    }
-
-    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
-
-    searchTimeoutRef.current = setTimeout(async () => {
-      setIsSearching(true)
-      try {
-        const res = await fetch(
-          `${API_BASE_URL}/workspaces/categories/search?q=${encodeURIComponent(searchQuery)}`,
-          { credentials: "include" }
-        )
-        if (res.ok) {
-          const data = await res.json()
-          // Filter out already selected
-          setSearchResults(
-            data.filter((c: string) => !selectedCategories.includes(c))
-          )
-        }
-      } catch {
-        // ignore
-      } finally {
-        setIsSearching(false)
-      }
-    }, 300)
-
-    return () => {
-      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
-    }
-  }, [searchQuery, selectedCategories])
-
   const addCategory = (cat: string) => {
     const trimmed = cat.trim()
     if (!trimmed) return
@@ -124,7 +100,6 @@ export default function NewWorkspacePage() {
     }
     setSelectedCategories((prev) => [...prev, trimmed])
     setSearchQuery("")
-    setSearchResults([])
   }
 
   const removeCategory = (cat: string) => {
@@ -314,26 +289,61 @@ export default function NewWorkspacePage() {
                   onKeyDown={handleSearchKeyDown}
                   className="pl-10 h-12 rounded-2xl border-2 bg-muted/30"
                 />
-                {isSearching && (
-                  <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
-                )}
               </div>
 
-              {/* Search Dropdown */}
+              {/* Search Dropdown — results from the curated skills dataset */}
               {searchResults.length > 0 && (
-                <div className="mt-2 bg-background border-2 border-border rounded-xl shadow-lg overflow-hidden">
-                  {searchResults.map((cat) => (
+                <div className="mt-2 bg-background border-2 border-border rounded-xl shadow-lg overflow-hidden max-h-[260px] overflow-y-auto">
+                  {searchResults.map((skill) => (
                     <button
-                      key={cat}
-                      onClick={() => addCategory(cat)}
-                      className="flex items-center gap-2 w-full px-4 py-3 text-sm font-medium hover:bg-muted/50 transition-colors text-left"
+                      key={skill.name}
+                      onClick={() => addCategory(skill.name)}
+                      className="flex items-center justify-between gap-2 w-full px-4 py-3 text-sm font-medium hover:bg-muted/50 transition-colors text-left"
                     >
-                      <Plus className="h-4 w-4 text-primary" />
-                      {cat}
+                      <span className="flex items-center gap-2">
+                        <Plus className="h-4 w-4 text-primary flex-shrink-0" />
+                        {skill.name}
+                      </span>
+                      <span className="text-[11px] text-muted-foreground/60 flex-shrink-0">
+                        {skill.category}
+                      </span>
                     </button>
                   ))}
+                  {/* Option to add custom category not in the list */}
+                  {searchQuery.trim() &&
+                    !SKILLS.some(
+                      (s) => s.name.toLowerCase() === searchQuery.trim().toLowerCase()
+                    ) &&
+                    !selectedCategories.includes(searchQuery.trim()) && (
+                      <button
+                        onClick={() => addCategory(searchQuery)}
+                        className="flex items-center gap-2 w-full px-4 py-3 text-sm font-medium hover:bg-primary/5 transition-colors text-left border-t border-border"
+                      >
+                        <Plus className="h-4 w-4 text-primary flex-shrink-0" />
+                        <span>
+                          {t("Add")} <strong>"{searchQuery.trim()}"</strong>
+                        </span>
+                      </button>
+                    )}
                 </div>
               )}
+
+              {/* Show "Add custom" when query doesn't match any skill */}
+              {searchQuery.trim() &&
+                searchResults.length === 0 &&
+                !selectedCategories.includes(searchQuery.trim()) && (
+                  <div className="mt-2 bg-background border-2 border-border rounded-xl shadow-lg overflow-hidden">
+                    <button
+                      onClick={() => addCategory(searchQuery)}
+                      className="flex items-center gap-2 w-full px-4 py-3 text-sm font-medium hover:bg-primary/5 transition-colors text-left"
+                    >
+                      <Plus className="h-4 w-4 text-primary" />
+                      <span>
+                        {t("Add")} <strong>"{searchQuery.trim()}"</strong>
+                      </span>
+                    </button>
+                  </div>
+                )}
             </div>
 
             {/* Confirm Button */}

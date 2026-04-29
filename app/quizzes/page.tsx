@@ -9,7 +9,6 @@ import {
   Check,
   CheckCircle2,
   ChevronLeft,
-  Clock,
   Flag,
   Loader2,
   PlayCircle,
@@ -40,6 +39,18 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
 const DIFFICULTIES = ["Easy", "Medium", "Hard"] as const
 type Difficulty = (typeof DIFFICULTIES)[number]
 
+/** Returns the Tailwind classes for a difficulty pill in its selected state. */
+const diffPillSelected = (d: Difficulty) => {
+  switch (d) {
+    case "Easy":
+      return "border-transparent bg-sage-soft text-sage"
+    case "Medium":
+      return "border-transparent bg-clay-soft text-clay"
+    case "Hard":
+      return "border-transparent bg-hard-soft text-hard"
+  }
+}
+
 export default function QuizzesPage() {
   const { t, language } = useLanguage()
   const { activeWorkspace } = useWorkspace()
@@ -62,15 +73,15 @@ export default function QuizzesPage() {
   const [categories, setCategories] = useState<string[]>([])
   const [isExtractingCategories, setIsExtractingCategories] = useState(false)
 
-  // Per-category UI state
-  const [diffByCategory, setDiffByCategory] = useState<Record<string, Difficulty>>({})
+  // Per-category UI state — multi-select difficulties
+  const [diffsByCategory, setDiffsByCategory] = useState<Record<string, Set<Difficulty>>>({})
   const [generatingFor, setGeneratingFor] = useState<string | null>(null)
   const [quizFilterDifficulty, setQuizFilterDifficulty] = useState<"All" | Difficulty>("All")
 
   // Custom-topic picker (lets the user generate a quiz for any skill from
   // our curated list, even if it wasn't extracted from the JD).
   const [customTopic, setCustomTopic] = useState<string>("")
-  const [customDifficulty, setCustomDifficulty] = useState<Difficulty>("Medium")
+  const [customDifficulties, setCustomDifficulties] = useState<Set<Difficulty>>(new Set())
 
   // Quiz-taking state
   const [quizState, setQuizState] = useState<"browse" | "taking" | "results">("browse")
@@ -133,26 +144,33 @@ export default function QuizzesPage() {
     return quizGroups.filter((g) => g.difficulty === quizFilterDifficulty)
   }, [quizGroups, quizFilterDifficulty])
 
-  const getDiff = (cat: string): Difficulty => diffByCategory[cat] || "Medium"
-  const setDiff = (cat: string, d: Difficulty) =>
-    setDiffByCategory((prev) => ({ ...prev, [cat]: d }))
+  const getDiffs = (cat: string): Set<Difficulty> => diffsByCategory[cat] ?? new Set()
+  const toggleDiff = (cat: string, d: Difficulty) =>
+    setDiffsByCategory((prev) => {
+      const current = new Set(prev[cat] ?? [])
+      if (current.has(d)) current.delete(d)
+      else current.add(d)
+      return { ...prev, [cat]: current }
+    })
 
-  const handleGenerate = async (cat: string, override?: Difficulty) => {
+  const handleGenerate = async (cat: string, overrideDiffs?: Set<Difficulty>) => {
     if (!workspaceId) return
-    const difficulty = override ?? getDiff(cat)
+    const diffs = overrideDiffs ?? getDiffs(cat)
+    if (diffs.size === 0) return
     setGeneratingFor(cat)
     try {
-      const selections: SkillSelection[] = [{ title: cat, difficulties: [difficulty] }]
+      const selections: SkillSelection[] = [{ title: cat, difficulties: Array.from(diffs) }]
       const result = await generateTargetedQuizzes(
         workspaceId,
         selections,
         language === "tr" ? "tr" : "en"
       )
       if (result) {
+        const label = Array.from(diffs).join(", ")
         toast.success(
           language === "tr"
-            ? `${cat} için ${difficulty} test hazırlandı`
-            : `${cat} ${difficulty} quiz ready`
+            ? `${cat} için ${label} test hazırlandı`
+            : `${cat} ${label} quiz ready`
         )
       }
     } finally {
@@ -210,10 +228,6 @@ export default function QuizzesPage() {
   if (quizState === "taking" && activeQuizGroup) {
     const question = activeQuizGroup.questions[currentQuestion]
     const optionLetters = ["a", "b", "c", "d", "e"]
-    const totalSeconds = activeQuizGroup.questions.length * 30
-    const minLeft = Math.floor(totalSeconds / 60)
-    const secLeft = totalSeconds % 60
-    const timeLeft = `${minLeft.toString().padStart(2, "0")}:${secLeft.toString().padStart(2, "0")}`
 
     return (
       <div className="px-7 py-7 md:px-9">
@@ -232,18 +246,12 @@ export default function QuizzesPage() {
             </span>
           </div>
 
-          <div className="mb-5 flex items-end justify-between">
-            <div>
-              <p className="eyebrow">{activeQuizGroup.title}</p>
-              <h1 className="serif-headline mt-1 text-[28px] font-normal leading-tight tracking-tight">
-                {language === "tr" ? "Soru" : "Question"} {currentQuestion + 1}
-                <span className="text-subtle"> / {activeQuizGroup.questions.length}</span>
-              </h1>
-            </div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-clay-soft px-3.5 py-2 text-[13px] font-semibold text-clay tabular-nums">
-              <Clock className="h-3.5 w-3.5" />
-              {timeLeft}
-            </div>
+          <div className="mb-5">
+            <p className="eyebrow">{activeQuizGroup.title}</p>
+            <h1 className="serif-headline mt-1 text-[28px] font-normal leading-tight tracking-tight">
+              {language === "tr" ? "Soru" : "Question"} {currentQuestion + 1}
+              <span className="text-subtle"> / {activeQuizGroup.questions.length}</span>
+            </h1>
           </div>
 
           <div className="mb-7 flex gap-1">
@@ -388,10 +396,9 @@ export default function QuizzesPage() {
                         result.is_correct ? "bg-sage-soft text-sage" : "bg-clay-soft text-clay"
                       )}
                     >
-                      {result.is_correct ? "+" : "0"}
                       {result.is_correct
-                        ? Math.round(100 / submitResult.total_questions)
-                        : 0}{" "}
+                        ? `+${Math.round(100 / submitResult.total_questions)}`
+                        : "0"}{" "}
                       {language === "tr" ? "puan" : "pts"}
                     </span>
                   </div>
@@ -489,7 +496,7 @@ export default function QuizzesPage() {
             )}
             <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
               {categories.map((cat) => {
-                const diff = getDiff(cat)
+                const diffs = getDiffs(cat)
                 const generating = generatingFor === cat
                 const generatedCount = quizGroups.filter(
                   (g) => g.title.toLowerCase() === cat.toLowerCase()
@@ -517,11 +524,11 @@ export default function QuizzesPage() {
                         <button
                           key={d}
                           type="button"
-                          onClick={() => setDiff(cat, d)}
+                          onClick={() => toggleDiff(cat, d)}
                           className={cn(
                             "flex-1 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors",
-                            diff === d
-                              ? "border-transparent bg-clay-soft text-clay"
+                            diffs.has(d)
+                              ? diffPillSelected(d)
                               : "border-border bg-card text-muted-foreground hover:border-primary/40"
                           )}
                         >
@@ -531,7 +538,7 @@ export default function QuizzesPage() {
                     </div>
                     <Button
                       onClick={() => handleGenerate(cat)}
-                      disabled={generating || isGenerating}
+                      disabled={generating || isGenerating || diffs.size === 0}
                       className="w-full gap-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
                     >
                       {generating ? (
@@ -583,11 +590,18 @@ export default function QuizzesPage() {
                     <button
                       key={d}
                       type="button"
-                      onClick={() => setCustomDifficulty(d)}
+                      onClick={() => {
+                        setCustomDifficulties((prev) => {
+                          const next = new Set(prev)
+                          if (next.has(d)) next.delete(d)
+                          else next.add(d)
+                          return next
+                        })
+                      }}
                       className={cn(
                         "flex-1 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors",
-                        customDifficulty === d
-                          ? "border-transparent bg-clay-soft text-clay"
+                        customDifficulties.has(d)
+                          ? diffPillSelected(d)
                           : "border-border bg-card text-muted-foreground hover:border-primary/40"
                       )}
                     >
@@ -597,10 +611,10 @@ export default function QuizzesPage() {
                 </div>
                 <Button
                   onClick={() => {
-                    if (!customTopic) return
-                    handleGenerate(customTopic, customDifficulty)
+                    if (!customTopic || customDifficulties.size === 0) return
+                    handleGenerate(customTopic, customDifficulties)
                   }}
-                  disabled={!customTopic || generatingFor !== null || isGenerating}
+                  disabled={!customTopic || customDifficulties.size === 0 || generatingFor !== null || isGenerating}
                   className="w-full gap-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
                 >
                   {generatingFor === customTopic ? (

@@ -74,6 +74,8 @@
   --plum: #7E5B8E;
   --plum-bg: #EFE6F2;
   --gold: #B89530;
+  --hard: #B84A4A;
+  --hard-bg: #F5DFDF;
   --ink-serif: #1A1815;
   --text-subtle: #9A9385;
   --border-strong: #D9D2C2;
@@ -132,6 +134,8 @@
   --plum: #B79AC0;
   --plum-bg: rgba(183, 154, 192, 0.16);
   --gold: #E8C170;
+  --hard: #D87A7A;
+  --hard-bg: rgba(216, 122, 122, 0.14);
   --ink-serif: #F4EFE7;
   --text-subtle: #7A7268;
   --border-strong: #403C36;
@@ -215,6 +219,9 @@
   .bg-plum { background-color: var(--plum); }
   .bg-plum-soft { background-color: var(--plum-bg); }
   .text-subtle { color: var(--text-subtle); }
+  .text-hard { color: var(--hard); }
+  .bg-hard { background-color: var(--hard); }
+  .bg-hard-soft { background-color: var(--hard-bg); }
   .border-strong { border-color: var(--border-strong); }
   .eyebrow {
     font-size: 0.6875rem;
