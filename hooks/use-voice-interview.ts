@@ -814,9 +814,19 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
 
   const endSession = useCallback(() => {
     stopPlayback()
+    setMicActive(false)
+
+    // Optimistically jump the UI into the evaluating state so the user sees
+    // immediate feedback. The backend's "evaluation" / "session_complete"
+    // events will move us into "done" once results are ready.
+    setSessionState("evaluating")
 
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ type: "end_session" }))
+    } else {
+      // WebSocket is gone — there's no way to evaluate. Fall through to "done"
+      // so the UI doesn't hang on the evaluating spinner.
+      setSessionState("done")
     }
   }, [stopPlayback])
 
