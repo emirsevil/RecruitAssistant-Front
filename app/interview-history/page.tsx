@@ -10,10 +10,12 @@ import {
   ClipboardList,
   Clock,
   Lightbulb,
+  MessageSquare,
   Mic,
   PlayCircle,
   Target,
   Type,
+  User,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useLanguage } from "@/lib/language-context"
@@ -364,6 +366,15 @@ function InterviewDetailView({
         </div>
       )}
 
+      {/* Conversation Transcript */}
+      {detail.conversation_history && detail.conversation_history.length > 0 && (
+        <ConversationTranscript
+          history={detail.conversation_history}
+          questions={detail.questions}
+          language={language}
+        />
+      )}
+
       {/* Footer actions */}
       <div className="mt-6 flex gap-2.5">
         <Link href="/mock-interview">
@@ -378,5 +389,216 @@ function InterviewDetailView({
         </Button>
       </div>
     </div>
+  )
+}
+
+// ─── Conversation Transcript ───────────────────────────────────────
+
+type ConversationEntry = {
+  role: string
+  text: string
+  action?: string
+  type?: string
+  interrupted?: boolean
+}
+
+interface QuestionGroup {
+  questionNumber: number
+  topic: string
+  messages: ConversationEntry[]
+}
+
+function groupMessagesByQuestion(
+  history: ConversationEntry[],
+  questions: { question: string; topic: string }[]
+): QuestionGroup[] {
+  const groups: QuestionGroup[] = []
+  let currentGroup: QuestionGroup | null = null
+  let questionCounter = 0
+
+  for (const entry of history) {
+    const isNewQuestion =
+      entry.role === "interviewer" &&
+      (entry.type === "intro" ||
+        entry.action === "next_question" ||
+        entry.action === "resume")
+
+    if (isNewQuestion) {
+      questionCounter++
+      const matchedQ = questions[questionCounter - 1]
+      currentGroup = {
+        questionNumber: questionCounter,
+        topic: matchedQ?.topic || "",
+        messages: [entry],
+      }
+      groups.push(currentGroup)
+    } else if (entry.action === "wrap_up" && entry.role === "interviewer") {
+      // Wrap-up goes into its own block
+      groups.push({
+        questionNumber: 0,
+        topic: "wrap_up",
+        messages: [entry],
+      })
+    } else {
+      // Follow-up answers, follow-up questions, candidate answers
+      if (currentGroup) {
+        currentGroup.messages.push(entry)
+      } else {
+        // Shouldn't happen, but create a fallback group
+        currentGroup = {
+          questionNumber: questionCounter + 1,
+          topic: "",
+          messages: [entry],
+        }
+        groups.push(currentGroup)
+      }
+    }
+  }
+
+  return groups
+}
+
+function ConversationTranscript({
+  history,
+  questions,
+  language,
+}: {
+  history: ConversationEntry[]
+  questions: { question: string; topic: string }[]
+  language: string
+}) {
+  const groups = groupMessagesByQuestion(history, questions)
+  const [expanded, setExpanded] = useState(false)
+
+  return (
+    <section className="mt-4 rounded-2xl border border-border bg-card p-6">
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className="flex w-full items-center justify-between gap-3 text-left"
+      >
+        <div className="flex items-center gap-2.5">
+          <MessageSquare className="h-4.5 w-4.5 text-sage" />
+          <h2 className="font-serif text-[17px] font-medium tracking-tight">
+            {language === "tr" ? "Konuşma dökümü" : "Conversation Transcript"}
+          </h2>
+          <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+            {history.length} {language === "tr" ? "mesaj" : "messages"}
+          </span>
+        </div>
+        <span
+          className={cn(
+            "text-[12px] font-semibold text-muted-foreground transition-transform",
+            expanded && "rotate-180"
+          )}
+        >
+          ▼
+        </span>
+      </button>
+
+      {expanded && (
+        <div className="mt-5 flex flex-col gap-5">
+          {groups.map((group, gIdx) => (
+            <div key={gIdx}>
+              {/* Question header */}
+              {group.topic === "wrap_up" ? (
+                <div className="mb-2.5 flex items-center gap-2">
+                  <span className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-plum-soft text-[10px] font-bold text-plum">
+                    ✓
+                  </span>
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-plum">
+                    {language === "tr" ? "Kapanış" : "Wrap-up"}
+                  </span>
+                </div>
+              ) : (
+                <div className="mb-2.5 flex items-center gap-2">
+                  <span className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-sage-soft text-[10px] font-bold text-sage">
+                    {group.questionNumber}
+                  </span>
+                  {group.topic && (
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-sage">
+                      {group.topic}
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {/* Messages */}
+              <div className="flex flex-col gap-2">
+                {group.messages.map((msg, mIdx) => {
+                  const isInterviewer = msg.role === "interviewer"
+                  const isFollowUp = msg.action === "follow_up"
+
+                  return (
+                    <div
+                      key={mIdx}
+                      className={cn(
+                        "flex gap-2.5",
+                        isInterviewer ? "pr-8" : "flex-row-reverse pl-8"
+                      )}
+                    >
+                      {/* Avatar */}
+                      <div
+                        className={cn(
+                          "flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-[11px] font-semibold",
+                          isInterviewer
+                            ? "bg-sage-soft text-sage"
+                            : "bg-clay-soft text-clay"
+                        )}
+                      >
+                        {isInterviewer ? (
+                          <MessageSquare className="h-3.5 w-3.5" />
+                        ) : (
+                          <User className="h-3.5 w-3.5" />
+                        )}
+                      </div>
+
+                      {/* Bubble */}
+                      <div
+                        className={cn(
+                          "min-w-0 flex-1 rounded-xl px-3.5 py-2.5 text-[13px] leading-relaxed",
+                          isInterviewer
+                            ? "rounded-tl-sm bg-secondary/80"
+                            : "rounded-tr-sm bg-primary/[0.07]",
+                          msg.interrupted && "opacity-70"
+                        )}
+                      >
+                        <div className="mb-1 flex items-center gap-2">
+                          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                            {isInterviewer
+                              ? language === "tr"
+                                ? "Mülakatçı"
+                                : "Interviewer"
+                              : language === "tr"
+                                ? "Aday"
+                                : "Candidate"}
+                          </span>
+                          {isFollowUp && (
+                            <span className="rounded-full bg-clay-soft px-1.5 py-0.5 text-[9px] font-semibold text-clay">
+                              {language === "tr" ? "Takip sorusu" : "Follow-up"}
+                            </span>
+                          )}
+                          {msg.interrupted && (
+                            <span className="rounded-full bg-secondary px-1.5 py-0.5 text-[9px] font-semibold text-muted-foreground">
+                              {language === "tr" ? "Kesildi" : "Interrupted"}
+                            </span>
+                          )}
+                        </div>
+                        <p className="whitespace-pre-wrap">{msg.text}</p>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Separator between question groups */}
+              {gIdx < groups.length - 1 && (
+                <div className="mt-4 border-t border-border/60" />
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
   )
 }

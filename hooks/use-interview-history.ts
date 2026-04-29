@@ -38,7 +38,7 @@ export interface InterviewDetail {
   created_at: string
   company_name: string | null
   questions: InterviewDetailQA[]
-  conversation_history: Array<{ role: string; text: string }> | null
+  conversation_history: Array<{ role: string; text: string; action?: string; type?: string; interrupted?: boolean }> | null
 }
 
 // ─── List Hook ──────────────────────────────────────────────────────
