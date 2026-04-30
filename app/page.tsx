@@ -1,17 +1,36 @@
 "use client"
 
 import type React from "react"
+import { useEffect, useState } from "react"
 import { useLanguage } from "@/lib/language-context"
 import { PageContainer } from "@/components/page-container"
 import { Logo } from "@/components/logo"
 import { LanguageSwitcher } from "@/components/language-switcher"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import Link from "next/link"
-import { Zap } from "lucide-react"
+import { Monitor, Moon, Zap, Sun } from "lucide-react"
 
 export default function LandingPage() {
   const { t } = useLanguage()
+  const [theme, setTheme] = useState("light")
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+
+    const savedTheme = localStorage.getItem("ra-theme")
+    const nextTheme = savedTheme === "dark" ? "dark" : "light"
+    setTheme(nextTheme)
+    document.documentElement.classList.toggle("dark", nextTheme === "dark")
+  }, [])
+
+  const handleThemeChange = (value: string) => {
+    setTheme(value)
+    const darkMode = value === "dark"
+    document.documentElement.classList.toggle("dark", darkMode)
+    localStorage.setItem("ra-theme", darkMode ? "dark" : "light")
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -30,7 +49,29 @@ export default function LandingPage() {
               <span>RecruitAssistant</span>
             </Link>
 
-            <LanguageSwitcher />
+            <div className="flex flex-wrap items-center gap-3">
+              <Select value={theme} onValueChange={handleThemeChange}>
+                <SelectTrigger id="theme" className="w-32">
+                  <SelectValue placeholder={t("Theme")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="light">
+                    <div className="flex items-center gap-2">
+                      <Sun className="h-4 w-4" />
+                      {t("Light")}
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="dark">
+                    <div className="flex items-center gap-2">
+                      <Moon className="h-4 w-4" />
+                      {t("Dark")}
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+
+              <LanguageSwitcher />
+            </div>
           </header>
 
           <div className="grid gap-14 lg:grid-cols-[1.2fr_0.9fr] lg:items-center">
@@ -66,19 +107,19 @@ export default function LandingPage() {
 
               <div className="grid gap-4 sm:grid-cols-3">
                 <div className="rounded-[32px] border border-border bg-card p-5 shadow-sm">
-                  <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sage">AI review</p>
+                  <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sage">{t("AI review")}</p>
                   <p className="mt-3 text-sm leading-6 text-muted-foreground">
                     {t("Stay sharp with guided practice, real-time feedback, and personalized progress.")}
                   </p>
                 </div>
                 <div className="rounded-[32px] border border-border bg-card p-5 shadow-sm">
-                  <p className="text-sm font-semibold uppercase tracking-[0.2em] text-clay">CV feedback</p>
+                  <p className="text-sm font-semibold uppercase tracking-[0.2em] text-clay">{t("CV feedback")}</p>
                   <p className="mt-3 text-sm leading-6 text-muted-foreground">
                     {t("Secure your next role with smarter preparation.")}
                   </p>
                 </div>
                 <div className="rounded-[32px] border border-border bg-card p-5 shadow-sm">
-                  <p className="text-sm font-semibold uppercase tracking-[0.2em] text-plum">Progress insights</p>
+                  <p className="text-sm font-semibold uppercase tracking-[0.2em] text-plum">{t("Progress insights")}</p>
                   <p className="mt-3 text-sm leading-6 text-muted-foreground">
                     {t("Practice AI-powered mock interviews, CV feedback, and progress tracking in one place.")}
                   </p>
@@ -92,8 +133,8 @@ export default function LandingPage() {
                   <div className="space-y-6">
                     <div className="flex items-center justify-between gap-4 rounded-3xl bg-sage-soft p-4">
                       <div>
-                        <p className="text-sm uppercase tracking-[0.2em] text-sage">AI Interview</p>
-                        <p className="mt-2 text-lg font-semibold text-ink-serif">Practice with real prompts</p>
+                        <p className="text-sm uppercase tracking-[0.2em] text-sage">{t("Technical Interview")}</p>
+                        <p className="mt-2 text-lg font-semibold text-ink-serif">{t("Practice with real prompts")}</p>
                       </div>
                       <div className="rounded-2xl bg-sage p-3 text-white">
                         <Zap className="h-5 w-5" />
@@ -110,15 +151,15 @@ export default function LandingPage() {
 
                       <div className="space-y-4">
                         <div className="rounded-3xl bg-sage-soft p-4">
-                          <p className="font-semibold text-ink-serif">HR Coach</p>
+                          <p className="font-semibold text-ink-serif">{t("HR Coach")}</p>
                           <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                            Describe a challenging interview experience and get AI feedback.
+                            {t("Describe a challenging interview experience and get AI feedback.")}
                           </p>
                         </div>
                         <div className="rounded-3xl bg-sage-soft p-4">
-                          <p className="font-semibold text-ink-serif">Technical review</p>
+                          <p className="font-semibold text-ink-serif">{t("Technical review")}</p>
                           <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                            Practice answers, improve clarity, and track your strengths.
+                            {t("Practice answers, improve clarity, and track your strengths.")}
                           </p>
                         </div>
                       </div>
@@ -126,7 +167,7 @@ export default function LandingPage() {
 
                     <div className="grid gap-3 rounded-[1.75rem] border border-border bg-background p-5">
                       <div className="flex items-center justify-between text-sm text-muted-foreground">
-                        <span>Confidence</span>
+                        <span>{t("System Design")}</span>
                         <span className="font-semibold text-ink-serif">87%</span>
                       </div>
                       <div className="h-2 overflow-hidden rounded-full bg-sage-soft">

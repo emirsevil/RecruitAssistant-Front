@@ -141,11 +141,6 @@ export function Navigation() {
   }
 
   const [isDark, setIsDark] = useState(false)
-  useEffect(() => {
-    if (typeof document !== "undefined") {
-      setIsDark(document.documentElement.classList.contains("dark"))
-    }
-  }, [])
   const toggleDark = () => {
     const next = !isDark
     setIsDark(next)
@@ -154,14 +149,26 @@ export function Navigation() {
       localStorage.setItem("ra-theme", next ? "dark" : "light")
     } catch {}
   }
+
   useEffect(() => {
     try {
       const saved = localStorage.getItem("ra-theme")
       if (saved === "dark") {
         document.documentElement.classList.add("dark")
         setIsDark(true)
+        return
+      }
+      if (saved === "light") {
+        document.documentElement.classList.remove("dark")
+        setIsDark(false)
+        return
       }
     } catch {}
+
+    if (typeof document !== "undefined") {
+      const currentDark = document.documentElement.classList.contains("dark")
+      setIsDark(currentDark)
+    }
   }, [])
 
   // Hide on auth/landing/onboarding
