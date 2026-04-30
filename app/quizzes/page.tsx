@@ -310,13 +310,12 @@ export default function QuizzesPage() {
             {activeQuizGroup.questions.map((_, i) => (
               <div
                 key={i}
-                className={`h-[3px] flex-1 rounded-full ${
-                  i < currentQuestion
+                className={`h-[3px] flex-1 rounded-full ${i < currentQuestion
                     ? "bg-sage"
                     : i === currentQuestion
                       ? "bg-clay"
                       : "bg-secondary"
-                }`}
+                  }`}
               />
             ))}
           </div>
@@ -521,13 +520,12 @@ export default function QuizzesPage() {
 
       {/* Categories — generation surface */}
       <section className="mb-8">
-        <div className="mb-3.5 flex items-baseline justify-between">
+        <div className="mb-3.5 flex items-baseline">
           <h2 className="font-serif text-[19px] font-medium tracking-tight">
-            {language === "tr" ? "Konuların" : "Your topics"}
+            {language === "tr"
+              ? "Konuların (İş tanımından çıkarıldı)"
+              : "Your Topics (extracted from your job description)"}
           </h2>
-          <span className="text-[11px] text-subtle">
-            {language === "tr" ? "İş tanımından çıkarıldı" : "extracted from your JD"}
-          </span>
         </div>
 
         {isExtractingCategories ? (
