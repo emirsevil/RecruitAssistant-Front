@@ -120,8 +120,7 @@ export default function QuizzesPage() {
     if (!workspaceId) return
     fetchWorkspaceQuizzes(workspaceId)
     fetchUserScores()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [workspaceId])
+  }, [workspaceId, fetchWorkspaceQuizzes, fetchUserScores])
 
   // Hydrate categories: workspace cats first, then auto-extract if JD-only.
   useEffect(() => {

@@ -53,8 +53,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const events = ["mousemove", "keydown", "click", "scroll", "touchstart"]
     events.forEach(e => window.addEventListener(e, updateActivity, { passive: true }))
+
+    // Reset activity when the user switches back to this tab — prevents
+    // false inactivity timeouts while the user is simply reading the page.
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        updateActivity()
+      }
+    }
+    document.addEventListener("visibilitychange", handleVisibilityChange)
+
     return () => {
       events.forEach(e => window.removeEventListener(e, updateActivity))
+      document.removeEventListener("visibilitychange", handleVisibilityChange)
     }
   }, [updateActivity])
 
@@ -130,6 +141,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // 1. INACTIVITY CHECK — kick user if idle for 15+ minutes
       if (timeSinceLastActivity > INACTIVITY_LIMIT_MS) {
         console.log("[Auth] User inactive for 15+ minutes, logging out")
+        // Call the logout endpoint so the HttpOnly cookie is also cleared.
+        // Without this the cookie remains valid and a page refresh would
+        // silently restore the session (causing workspace to re-appear).
+        try {
+          await fetch(`${API_BASE_URL}/auth/logout`, {
+            method: "POST",
+            credentials: "include",
+          })
+        } catch {
+          // Best-effort — proceed with local logout even if the request fails
+        }
         setUser(null)
         router.push("/login")
         return

@@ -1,6 +1,7 @@
 "use client"
 
 import { useRef, useState } from "react"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -332,6 +333,10 @@ type CVData = {
       latex = normalizeResumeSectionDividers(latex)
       setGeneratedLatex(latex)
       await compileLatexLocally(latex, false)
+      toast.success(
+        language === "tr" ? "CV'niz hazır! 🎉" : "Your CV is ready! 🎉",
+        { description: language === "tr" ? "Aşağıdan indirebilirsiniz." : "You can download it below." }
+      )
     } catch (e: any) {
       setGenerationError(e.message || t("An error occurred while generating the CV"))
       setIsGenerated(false)
@@ -392,6 +397,10 @@ type CVData = {
         setGeneratedCoverLetterLatex(latex)
       }
       await compileLatexLocally(latex, true)
+      toast.success(
+        language === "tr" ? "Cover Letter hazır! 🎉" : "Your Cover Letter is ready! 🎉",
+        { description: language === "tr" ? "Aşağıdan indirebilirsiniz." : "You can download it below." }
+      )
     } catch (e: any) {
       setGenerationError(e.message || t("An error occurred while generating the Cover Letter"))
       setIsCoverLetterGenerated(false)

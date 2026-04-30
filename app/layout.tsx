@@ -10,6 +10,7 @@ import { WorkspaceProvider } from "@/lib/workspace-context"
 import { AuthProvider } from "@/lib/auth-context"
 import { InterviewLockProvider } from "@/lib/interview-lock-context"
 import { Navigation } from "@/components/navigation"
+import { Toaster } from "sonner"
 
 import { OnboardingGuard } from "@/components/onboarding-guard"
 
@@ -71,6 +72,7 @@ export default function RootLayout({
                         </main>
                       </div>
                       <Analytics />
+                      <Toaster position="top-right" richColors closeButton />
                     </InterviewLockProvider>
                   </ScheduleProvider>
                 </OnboardingGuard>
