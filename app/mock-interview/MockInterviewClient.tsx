@@ -4,22 +4,21 @@ import { useState, useRef, useEffect } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 
 import { PageContainer, PageHeader } from "@/components/page-container"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Progress } from "@/components/ui/progress"
-import { PlayCircle, Mic, MicOff, Send, ChevronRight, BarChart3, SkipForward, Phone, PhoneOff, Volume2, Loader2, CheckCircle2 } from "lucide-react"
+import { PlayCircle, Mic, MicOff, Send, BarChart3, SkipForward, Phone, PhoneOff, Loader2, CheckCircle2 } from "lucide-react"
 import Link from "next/link"
-import dynamic from "next/dynamic"
-
-const Avatar3D = dynamic(() => import("@/components/Avatar3D"), { ssr: false })
 import { useLanguage } from "@/lib/language-context"
 import { useVoiceInterview } from "@/hooks/use-voice-interview"
 import { useToast } from "@/hooks/use-toast"
 import { useWorkspace } from "@/lib/workspace-context"
+import { apiUrl } from "@/lib/api-config"
+import { TalkingInterviewerPanel } from "@/components/TalkingInterviewerPanel"
 
 type InterviewState = "setup" | "active" | "evaluating" | "completed"
 
@@ -46,7 +45,9 @@ export default function MockInterviewClient() {
   useEffect(() => {
     const existingId = searchParams.get("id")
     if (existingId) {
-      fetch(`http://localhost:8000/interviews/${existingId}`)
+      fetch(apiUrl(`/interviews/${existingId}`), {
+        credentials: "include",
+      })
         .then((res) => {
           if (!res.ok) return null
           return res.json()
@@ -93,6 +94,7 @@ export default function MockInterviewClient() {
       categories: categories || "Genel",
       difficulty,
       interviewType: interviewType,
+      avatarProvider: voice.selectedAvatarProvider,
     })
   }
 
@@ -254,6 +256,26 @@ export default function MockInterviewClient() {
                 <Textarea value={categories} onChange={e => setCategories(e.target.value)} placeholder={t("e.g. React, Node.js, System Design...")} />
               </div>
 
+              {voice.isLiveAvatarEnabled && (
+                <div className="space-y-2">
+                  <Label>{t("Interviewer Mode")}</Label>
+                  <Select
+                    value={voice.selectedAvatarProvider}
+                    onValueChange={(value) =>
+                      voice.setSelectedAvatarProvider(value as "rpm_cartesia" | "liveavatar_full")
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="rpm_cartesia">{t("Classic 3D Avatar (stable)")}</SelectItem>
+                      <SelectItem value="liveavatar_full">{t("Photoreal LiveAvatar (beta)")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
               <Button onClick={startInterview} size="lg" className="w-full gap-2">
                 <Phone className="h-5 w-5" />
                 {t("Start Interview")}
@@ -322,56 +344,20 @@ export default function MockInterviewClient() {
             <div className="grid gap-4 lg:grid-cols-12 items-start"> {/* Keep items-start here! */}
               
               {/* ── Left Column: Avatar Video Panel ── */}
-              <div className="lg:col-span-5 lg:sticky lg:top-6">
-                
-                <Card className="overflow-hidden border-2 border-primary/10 flex flex-col">
-                  
-                  {/* Replace fixed heights with `aspect-square w-full` */}
-                  <div className="relative w-full aspect-square bg-gradient-to-b from-slate-800 via-slate-850 to-slate-900">
-                    <Avatar3D
-                      analyserNode={voice.analyserNode}
-                      isSpeaking={voice.isAiSpeaking}
-                    />
-
-                    {/* Status Overlay - Top Left */}
-                    <div className="absolute top-3 left-3 flex items-center gap-2">
-                      <div className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm bg-black/40`}>
-                        <span className={`h-2 w-2 rounded-full ${statusConfig.color} ${statusConfig.pulse ? 'animate-pulse' : ''}`} />
-                        {statusConfig.label}
-                      </div>
-                    </div>
-
-                    {/* Interrupt button overlay - when AI is speaking */}
-                    {voice.isAiSpeaking && (
-                      <div className="absolute bottom-3 left-1/2 -translate-x-1/2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={voice.interrupt}
-                          className="gap-1.5 bg-black/50 backdrop-blur-sm border-white/20 text-white hover:bg-black/70 hover:text-white"
-                        >
-                          <Mic className="h-4 w-4" />
-                          {t("Interrupt & Speak")}
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Name Badge */}
-                  <div className="px-4 py-3 bg-card border-t flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-sm">🤖</div>
-                      <div>
-                        <p className="text-sm font-medium">{t("AI Interviewer")}</p>
-                        <p className="text-xs text-muted-foreground">{statusConfig.label}</p>
-                      </div>
-                    </div>
-                    {voice.isAiSpeaking && (
-                      <Volume2 className="h-4 w-4 text-green-500 animate-pulse" />
-                    )}
-                  </div>
-                </Card>
-              </div>
+              <TalkingInterviewerPanel
+                analyserNode={voice.analyserNode}
+                isSpeaking={voice.isAiSpeaking}
+                activeAvatarProvider={voice.activeAvatarProvider}
+                liveAvatarStatus={voice.liveAvatarStatus}
+                liveAvatarVideoRef={voice.liveAvatarVideoRef}
+                statusLabel={statusConfig.label}
+                statusColor={statusConfig.color}
+                statusPulse={statusConfig.pulse}
+                onInterrupt={voice.interrupt}
+                interviewerLabel={t("AI Interviewer")}
+                showInterruptButton={voice.isAiSpeaking}
+                interruptLabel={t("Interrupt & Speak")}
+              />
 
               {/* ── Right Column: Question + Answer + Conversation ── */}
               <div className="lg:col-span-7 space-y-4">

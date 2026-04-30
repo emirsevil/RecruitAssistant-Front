@@ -1,6 +1,7 @@
-import { useState, useRef, useCallback, useEffect } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 
-// ─── Types ──────────────────────────────────────────────────────────
+import { LIVEAVATAR_ENABLED, apiUrl, wsUrl } from "@/lib/api-config"
+import { type LiveAvatarEventPayload, useLiveAvatarRoom } from "@/hooks/use-liveavatar-room"
 
 export interface MockQuestion {
   id: number
@@ -36,50 +37,23 @@ export type SessionState =
   | "processing"
   | "evaluating"
   | "done"
+export type AvatarProvider = "rpm_cartesia" | "liveavatar_full"
 
-// ─── Audio Worklet Processor (inline) ──────────────────────────────
-
-const AUDIO_WORKLET_CODE = `
-class PcmCaptureProcessor extends AudioWorkletProcessor {
-  constructor() {
-    super();
-    this._buffer = [];
-    this._bufferSize = 0;
-    // Send ~100ms of audio at a time (16000 * 0.1 = 1600 samples)
-    this._chunkSize = 1600;
-  }
-
-  process(inputs) {
-    const input = inputs[0];
-    if (!input || !input[0]) return true;
-
-    const channelData = input[0];
-
-    // Convert float32 to int16
-    for (let i = 0; i < channelData.length; i++) {
-      const s = Math.max(-1, Math.min(1, channelData[i]));
-      const val = s < 0 ? s * 0x8000 : s * 0x7FFF;
-      this._buffer.push(val);
-      this._bufferSize++;
-    }
-
-    if (this._bufferSize >= this._chunkSize) {
-      const chunk = new Int16Array(this._buffer.splice(0, this._chunkSize));
-      this._bufferSize -= this._chunkSize;
-      this.port.postMessage(chunk.buffer, [chunk.buffer]);
-    }
-
-    return true;
-  }
+interface LiveAvatarBootstrapResponse {
+  provider: AvatarProvider
+  liveavatar_session_id: string
+  livekit_url: string
+  livekit_client_token: string
+  max_session_duration: number
 }
 
-registerProcessor('pcm-capture-processor', PcmCaptureProcessor);
-`
-
-// ─── Hook ───────────────────────────────────────────────────────────
+interface StopLiveAvatarSessionRequest {
+  workspace_id: number
+  liveavatar_session_id: string
+  reason?: string
+}
 
 interface UseVoiceInterviewReturn {
-  // State
   analyserNode: AnalyserNode | null
   connectionStatus: ConnectionStatus
   sessionState: SessionState
@@ -94,14 +68,20 @@ interface UseVoiceInterviewReturn {
   error: string | null
   pendingTranscript: string
   isTranscribing: boolean
+  selectedAvatarProvider: AvatarProvider
+  activeAvatarProvider: AvatarProvider
+  setSelectedAvatarProvider: (provider: AvatarProvider) => void
+  isLiveAvatarEnabled: boolean
+  liveAvatarStatus: ReturnType<typeof useLiveAvatarRoom>["status"]
+  liveAvatarVideoRef: ReturnType<typeof useLiveAvatarRoom>["videoRef"]
 
-  // Actions
   startSession: (config: {
     workspaceId: number
     categories: string
     difficulty: string
     interviewType: string
-  }) => void
+    avatarProvider: AvatarProvider
+  }) => Promise<void>
   toggleMic: () => void
   submitAnswer: () => void
   transcribeRecording: () => Promise<string>
@@ -114,8 +94,6 @@ interface UseVoiceInterviewReturn {
 }
 
 export function useVoiceInterview(): UseVoiceInterviewReturn {
-  // ─── State ──────────────────────────────────────────────────────
-
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("disconnected")
   const [sessionState, setSessionState] = useState<SessionState>("idle")
   const [conversationLog, setConversationLog] = useState<ConversationEntry[]>([])
@@ -127,51 +105,142 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
   const [micActive, setMicActive] = useState(false)
   const [pendingTranscript, setPendingTranscript] = useState("")
   const [isTranscribing, setIsTranscribing] = useState(false)
-
-  // ─── Refs ───────────────────────────────────────────────────────
+  const [selectedAvatarProvider, setSelectedAvatarProvider] = useState<AvatarProvider>("rpm_cartesia")
+  const [activeAvatarProvider, setActiveAvatarProvider] = useState<AvatarProvider>("rpm_cartesia")
 
   const wsRef = useRef<WebSocket | null>(null)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
   const mediaStreamRef = useRef<MediaStream | null>(null)
 
-  // TTS playback — gapless scheduled audio
   const playbackContextRef = useRef<AudioContext | null>(null)
   const playbackQueueRef = useRef<ArrayBuffer[]>([])
   const isPlayingRef = useRef(false)
   const shouldPlayAudioRef = useRef(false)
-  // Tracks the exact AudioContext time at which the next chunk should start
   const nextPlayTimeRef = useRef(0)
-  // All scheduled source nodes (so we can stop them on interrupt)
   const scheduledSourcesRef = useRef<AudioBufferSourceNode[]>([])
-  // AnalyserNode for avatar lip-sync (pass-through, does not modify audio)
   const analyserRef = useRef<AnalyserNode | null>(null)
-  // Signals that the backend has finished sending all TTS chunks for the current utterance
   const allChunksReceivedRef = useRef(false)
-  // Callback to invoke when playback actually finishes (after all sources end)
   const onPlaybackFinishedRef = useRef<(() => void) | null>(null)
-  // Number of chunks to buffer before starting playback (absorbs network jitter)
   const PRE_BUFFER_COUNT = 3
   const SAMPLE_RATE = 24000
 
-  // Track state in refs for use in callbacks
   const sessionStateRef = useRef<SessionState>("idle")
-  const micActiveRef = useRef(false)
+  const activeAvatarProviderRef = useRef<AvatarProvider>("rpm_cartesia")
+  const currentUtteranceIdRef = useRef<string | null>(null)
+  const liveAvatarFailurePendingRef = useRef(false)
+  const sessionStartInFlightRef = useRef(false)
+  const pendingLiveAvatarSessionIdRef = useRef<string | null>(null)
+  const pendingLiveAvatarWorkspaceIdRef = useRef<number | null>(null)
+  const liveAvatarSessionOwnedByBackendRef = useRef(false)
 
   useEffect(() => {
     sessionStateRef.current = sessionState
   }, [sessionState])
 
-  useEffect(() => {
-    micActiveRef.current = micActive
-  }, [micActive])
+  const releaseBootstrapLiveAvatarSession = useCallback(
+    async (reason = "CLIENT_ABORTED") => {
+      if (liveAvatarSessionOwnedByBackendRef.current) {
+        pendingLiveAvatarSessionIdRef.current = null
+        pendingLiveAvatarWorkspaceIdRef.current = null
+        return
+      }
 
-  // ─── Audio Playback (TTS) — Gapless Scheduled ───────────────────
+      const sessionId = pendingLiveAvatarSessionIdRef.current
+      const workspaceId = pendingLiveAvatarWorkspaceIdRef.current
+      pendingLiveAvatarSessionIdRef.current = null
+      pendingLiveAvatarWorkspaceIdRef.current = null
+
+      if (!sessionId || !workspaceId) {
+        return
+      }
+
+      const payload: StopLiveAvatarSessionRequest = {
+        workspace_id: workspaceId,
+        liveavatar_session_id: sessionId,
+        reason,
+      }
+
+      try {
+        await fetch(apiUrl("/voice-interview/liveavatar/stop"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(payload),
+        })
+      } catch (stopError) {
+        console.error("Failed to stop bootstrap LiveAvatar session:", stopError)
+      }
+    },
+    []
+  )
+
+  const reportLiveAvatarFailure = useCallback((reason: string) => {
+    if (activeAvatarProviderRef.current !== "liveavatar_full") {
+      return
+    }
+    if (liveAvatarFailurePendingRef.current) {
+      return
+    }
+
+    liveAvatarFailurePendingRef.current = true
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(
+        JSON.stringify({
+          type: "avatar_output_error",
+          utterance_id: currentUtteranceIdRef.current,
+          reason,
+        })
+      )
+    } else {
+      setError(`${reason} Klasik avatar moduna geri dönülüyor.`)
+      setActiveAvatarProvider("rpm_cartesia")
+      activeAvatarProviderRef.current = "rpm_cartesia"
+    }
+  }, [])
+
+  const handleLiveAvatarEvent = useCallback(
+    (event: LiveAvatarEventPayload) => {
+      if (event.event_type === "avatar.speak_ended") {
+        if (
+          activeAvatarProviderRef.current === "liveavatar_full" &&
+          sessionStateRef.current === "ai_speaking" &&
+          currentUtteranceIdRef.current &&
+          wsRef.current &&
+          wsRef.current.readyState === WebSocket.OPEN
+        ) {
+          wsRef.current.send(
+            JSON.stringify({
+              type: "avatar_done_speaking",
+              utterance_id: currentUtteranceIdRef.current,
+            })
+          )
+        }
+      } else if (event.event_type === "session.stopped") {
+        reportLiveAvatarFailure("LiveAvatar oturumu beklenmedik şekilde kapandı.")
+      }
+    },
+    [reportLiveAvatarFailure]
+  )
+
+  const liveAvatar = useLiveAvatarRoom({
+    onAvatarEvent: handleLiveAvatarEvent,
+    onFatalError: reportLiveAvatarFailure,
+  })
+  const {
+    status: liveAvatarStatus,
+    videoRef: liveAvatarVideoRef,
+    connect: connectLiveAvatar,
+    disconnect: disconnectLiveAvatar,
+    speakText: speakLiveAvatarText,
+    interrupt: interruptLiveAvatar,
+    startListening: startLiveAvatarListening,
+    stopListening: stopLiveAvatarListening,
+  } = liveAvatar
 
   const initPlaybackContext = useCallback(() => {
     if (!playbackContextRef.current) {
       playbackContextRef.current = new AudioContext({ sampleRate: SAMPLE_RATE })
-      // Create a persistent AnalyserNode for avatar lip-sync
       const analyser = playbackContextRef.current.createAnalyser()
       analyser.fftSize = 256
       analyser.smoothingTimeConstant = 0.6
@@ -181,10 +250,6 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
     return playbackContextRef.current
   }, [])
 
-  /**
-   * Drain the queue: schedule as many queued chunks as possible, each at exact
-   * sample-boundary times so there are zero gaps between them.
-   */
   const drainQueue = useCallback(() => {
     const ctx = playbackContextRef.current
     if (!ctx || !shouldPlayAudioRef.current) {
@@ -194,7 +259,6 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
     while (playbackQueueRef.current.length > 0 && shouldPlayAudioRef.current) {
       const chunk = playbackQueueRef.current.shift()!
       const float32Data = new Float32Array(chunk)
-
       if (float32Data.length === 0) continue
 
       const audioBuffer = ctx.createBuffer(1, float32Data.length, SAMPLE_RATE)
@@ -202,29 +266,21 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
 
       const source = ctx.createBufferSource()
       source.buffer = audioBuffer
-      // Route through analyser for lip-sync data; analyser already connects to destination
       source.connect(analyserRef.current || ctx.destination)
 
-      // If we've fallen behind real-time, snap forward to now + small offset
       const now = ctx.currentTime
       if (nextPlayTimeRef.current < now) {
-        nextPlayTimeRef.current = now + 0.01 // 10ms safety margin
+        nextPlayTimeRef.current = now + 0.01
       }
 
       source.start(nextPlayTimeRef.current)
-      // Advance the cursor by exactly this chunk's duration (sample-accurate)
       nextPlayTimeRef.current += float32Data.length / SAMPLE_RATE
-
-      // Track for cleanup
       scheduledSourcesRef.current.push(source)
 
-      // When this source finishes, remove it from the list and check if we're done
       source.onended = () => {
         scheduledSourcesRef.current = scheduledSourcesRef.current.filter((s) => s !== source)
-        // If no more sources are scheduled and queue is empty, playback is complete
         if (scheduledSourcesRef.current.length === 0 && playbackQueueRef.current.length === 0) {
           isPlayingRef.current = false
-          // If backend already signaled "all chunks sent", fire the finished callback
           if (allChunksReceivedRef.current && onPlaybackFinishedRef.current) {
             onPlaybackFinishedRef.current()
             onPlaybackFinishedRef.current = null
@@ -242,38 +298,32 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
       playbackQueueRef.current.push(data)
 
       if (!isPlayingRef.current) {
-        // Wait for a few chunks to arrive before starting (pre-buffer)
         if (playbackQueueRef.current.length >= PRE_BUFFER_COUNT) {
           isPlayingRef.current = true
-          nextPlayTimeRef.current = 0 // will snap to ctx.currentTime in drainQueue
+          nextPlayTimeRef.current = 0
           drainQueue()
         }
       } else {
-        // Already playing — schedule this new chunk immediately
         drainQueue()
       }
     },
-    [initPlaybackContext, drainQueue]
+    [drainQueue, initPlaybackContext]
   )
 
   const stopPlayback = useCallback(() => {
     shouldPlayAudioRef.current = false
     allChunksReceivedRef.current = false
     onPlaybackFinishedRef.current = null
-    // Stop all scheduled sources
     for (const source of scheduledSourcesRef.current) {
       try {
         source.stop()
       } catch {}
     }
     scheduledSourcesRef.current = []
-    // Clear queue and reset state
     playbackQueueRef.current = []
     isPlayingRef.current = false
     nextPlayTimeRef.current = 0
   }, [])
-
-  // ─── Audio Capture (Mic → STT) ─────────────────────────────────
 
   const startMicCapture = useCallback(async () => {
     try {
@@ -292,16 +342,13 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
 
       const mediaRecorder = new MediaRecorder(stream)
       mediaRecorderRef.current = mediaRecorder
-
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
           audioChunksRef.current.push(event.data)
         }
       }
-
-      console.log("[Mic] Capture ready (MediaRecorder)")
-    } catch (err) {
-      console.error("[Mic] Failed to start capture:", err)
+    } catch (captureError) {
+      console.error("[Mic] Failed to start capture:", captureError)
       setError("Mikrofon erişimi reddedildi. Lütfen izin verin.")
     }
   }, [])
@@ -311,19 +358,184 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
       mediaRecorderRef.current.stop()
     }
     if (mediaStreamRef.current) {
-      mediaStreamRef.current.getTracks().forEach((t) => t.stop())
+      mediaStreamRef.current.getTracks().forEach((track) => track.stop())
       mediaStreamRef.current = null
     }
     mediaRecorderRef.current = null
   }, [])
 
-  // ─── WebSocket Message Handler ──────────────────────────────────
+  const closeRealtimeConnections = useCallback(
+    async ({ preserveSessionState = false, liveAvatarStopReason = "CLIENT_ABORTED" } = {}) => {
+      stopPlayback()
+      stopMicCapture()
+      currentUtteranceIdRef.current = null
+
+      const ws = wsRef.current
+      wsRef.current = null
+      if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
+        ws.close()
+      }
+
+      await disconnectLiveAvatar()
+      await releaseBootstrapLiveAvatarSession(liveAvatarStopReason)
+
+      setConnectionStatus("disconnected")
+      if (!preserveSessionState) {
+        setSessionState("idle")
+        setActiveAvatarProvider("rpm_cartesia")
+        activeAvatarProviderRef.current = "rpm_cartesia"
+      }
+    },
+    [disconnectLiveAvatar, releaseBootstrapLiveAvatarSession, stopMicCapture, stopPlayback]
+  )
+
+  const processWsJsonMessage = useCallback(
+    async (data: any) => {
+      const msgType = data.type
+
+      switch (msgType) {
+        case "session_started": {
+          const provider = (data.avatar_provider || activeAvatarProviderRef.current) as AvatarProvider
+          setQuestions(data.questions || [])
+          setInterviewId(data.interview_id || null)
+          setCurrentQuestionIndex(0)
+          setActiveAvatarProvider(provider)
+          activeAvatarProviderRef.current = provider
+          if (provider === "liveavatar_full") {
+            liveAvatarSessionOwnedByBackendRef.current = true
+            pendingLiveAvatarSessionIdRef.current = null
+            pendingLiveAvatarWorkspaceIdRef.current = null
+          }
+          shouldPlayAudioRef.current = provider === "rpm_cartesia"
+          setSessionState("ai_speaking")
+          break
+        }
+
+        case "ai_speaking": {
+          const provider = (data.avatar_provider || activeAvatarProviderRef.current) as AvatarProvider
+          const transcript = data.transcript || ""
+          currentUtteranceIdRef.current = data.utterance_id || null
+          setSessionState("ai_speaking")
+          setActiveAvatarProvider(provider)
+          activeAvatarProviderRef.current = provider
+          setConversationLog((prev) => [
+            ...prev,
+            {
+              role: "interviewer",
+              text: transcript,
+              timestamp: Date.now(),
+            },
+          ])
+          if (data.question_index !== undefined) {
+            setCurrentQuestionIndex(data.question_index)
+          }
+
+          if (provider === "rpm_cartesia") {
+            shouldPlayAudioRef.current = true
+          } else {
+            shouldPlayAudioRef.current = false
+            stopPlayback()
+            try {
+              await stopLiveAvatarListening()
+              await speakLiveAvatarText(transcript)
+            } catch (liveAvatarError) {
+              console.error("LiveAvatar speak error:", liveAvatarError)
+              reportLiveAvatarFailure("LiveAvatar yanıtı oynatılamadı.")
+            }
+          }
+          break
+        }
+
+        case "ai_done_speaking": {
+          currentUtteranceIdRef.current = null
+          if (activeAvatarProviderRef.current === "liveavatar_full") {
+            setSessionState("listening")
+            try {
+              await startLiveAvatarListening()
+            } catch (listenError) {
+              console.error("LiveAvatar listening error:", listenError)
+              reportLiveAvatarFailure("LiveAvatar dinleme durumuna geçemedi.")
+            }
+          } else if (!isPlayingRef.current && scheduledSourcesRef.current.length === 0) {
+            setSessionState("listening")
+            allChunksReceivedRef.current = false
+          } else {
+            allChunksReceivedRef.current = true
+            onPlaybackFinishedRef.current = () => {
+              setSessionState("listening")
+            }
+          }
+          break
+        }
+
+        case "avatar_provider_switched": {
+          liveAvatarFailurePendingRef.current = false
+          const provider = (data.avatar_provider || "rpm_cartesia") as AvatarProvider
+          setActiveAvatarProvider(provider)
+          activeAvatarProviderRef.current = provider
+          if (provider === "rpm_cartesia") {
+            shouldPlayAudioRef.current = true
+            await disconnectLiveAvatar()
+            liveAvatarSessionOwnedByBackendRef.current = false
+            pendingLiveAvatarSessionIdRef.current = null
+            pendingLiveAvatarWorkspaceIdRef.current = null
+            if (data.reason) {
+              setError(`LiveAvatar devre dışı kaldı: ${data.reason}`)
+            }
+          }
+          break
+        }
+
+        case "next_question":
+          if (data.question_index !== undefined) {
+            setCurrentQuestionIndex(data.question_index)
+          }
+          break
+
+        case "evaluating":
+          setSessionState("evaluating")
+          break
+
+        case "evaluation":
+          setEvaluation({
+            results: data.results || [],
+            overall_score: data.overall_score || 0,
+            overall_feedback: data.overall_feedback || "",
+          })
+          break
+
+        case "session_complete":
+          setSessionState("done")
+          sessionStartInFlightRef.current = false
+          void closeRealtimeConnections({
+            preserveSessionState: true,
+            liveAvatarStopReason: "INTERVIEW_COMPLETED",
+          })
+          break
+
+        case "error":
+          setError(data.message || "Bilinmeyen hata")
+          setSessionState("listening")
+          setMicActive(false)
+          if (!liveAvatarSessionOwnedByBackendRef.current) {
+            void closeRealtimeConnections({
+              preserveSessionState: true,
+              liveAvatarStopReason: "CLIENT_START_FAILED",
+            })
+          }
+          break
+
+        default:
+          console.log("[WS] Unknown message type:", msgType, data)
+      }
+    },
+    [closeRealtimeConnections, disconnectLiveAvatar, reportLiveAvatarFailure, speakLiveAvatarText, startLiveAvatarListening, stopLiveAvatarListening, stopPlayback]
+  )
 
   const handleWsMessage = useCallback(
     (event: MessageEvent) => {
-      // Binary message = TTS audio
       if (event.data instanceof ArrayBuffer || event.data instanceof Blob) {
-        if (!shouldPlayAudioRef.current) return;
+        if (!shouldPlayAudioRef.current || activeAvatarProviderRef.current !== "rpm_cartesia") return
         if (event.data instanceof Blob) {
           event.data.arrayBuffer().then(queueAudioChunk)
         } else {
@@ -332,93 +544,15 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
         return
       }
 
-      // JSON message
       try {
         const data = JSON.parse(event.data)
-        const msgType = data.type
-
-        switch (msgType) {
-          case "session_started":
-            setQuestions(data.questions || [])
-            setInterviewId(data.interview_id || null)
-            setCurrentQuestionIndex(0)
-            shouldPlayAudioRef.current = true
-            setSessionState("ai_speaking")
-            break
-
-          case "ai_speaking":
-            shouldPlayAudioRef.current = true
-            setSessionState("ai_speaking")
-            setConversationLog((prev) => [
-              ...prev,
-              {
-                role: "interviewer",
-                text: data.transcript || "",
-                timestamp: Date.now(),
-              },
-            ])
-            if (data.question_index !== undefined) {
-              setCurrentQuestionIndex(data.question_index)
-            }
-            break
-
-          case "ai_done_speaking":
-            // Don't transition immediately — audio may still be playing.
-            // Mark that all chunks have been received.
-            allChunksReceivedRef.current = true
-            // If playback already finished (or no audio was queued), transition now
-            if (!isPlayingRef.current && scheduledSourcesRef.current.length === 0) {
-              setSessionState("listening")
-              allChunksReceivedRef.current = false
-            } else {
-              // Otherwise, defer transition until the last source finishes
-              onPlaybackFinishedRef.current = () => {
-                setSessionState("listening")
-              }
-            }
-            break
-
-          case "next_question":
-            if (data.question_index !== undefined) {
-              setCurrentQuestionIndex(data.question_index)
-            }
-            break
-
-          case "evaluating":
-            setSessionState("evaluating")
-            break
-
-          case "evaluation":
-            setEvaluation({
-              results: data.results || [],
-              overall_score: data.overall_score || 0,
-              overall_feedback: data.overall_feedback || "",
-            })
-            break
-
-          case "session_complete":
-            setSessionState("done")
-            break
-
-          case "error":
-            setError(data.message || "Bilinmeyen hata")
-            console.error("[WS] Server error:", data.message)
-            // Always reset to listening so user isn't stuck on "processing"
-            setSessionState("listening")
-            setMicActive(false)
-            break
-
-          default:
-            console.log("[WS] Unknown message type:", msgType, data)
-        }
-      } catch (err) {
-        console.error("[WS] Failed to parse message:", err)
+        void processWsJsonMessage(data)
+      } catch (parseError) {
+        console.error("[WS] Failed to parse message:", parseError)
       }
     },
-    [queueAudioChunk]
+    [processWsJsonMessage, queueAudioChunk]
   )
-
-  // ─── Public Actions ─────────────────────────────────────────────
 
   const startSession = useCallback(
     async (config: {
@@ -426,7 +560,16 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
       categories: string
       difficulty: string
       interviewType: string
+      avatarProvider: AvatarProvider
     }) => {
+      if (sessionStartInFlightRef.current || wsRef.current) {
+        return
+      }
+
+      sessionStartInFlightRef.current = true
+      liveAvatarSessionOwnedByBackendRef.current = false
+      pendingLiveAvatarSessionIdRef.current = null
+      pendingLiveAvatarWorkspaceIdRef.current = null
       setError(null)
       setConnectionStatus("connecting")
       setSessionState("idle")
@@ -434,65 +577,125 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
       setQuestions([])
       setCurrentQuestionIndex(0)
       setEvaluation(null)
+      setInterviewId(null)
+      setPendingTranscript("")
+      currentUtteranceIdRef.current = null
+      liveAvatarFailurePendingRef.current = false
+      stopPlayback()
 
-      // Obtain a WebSocket ticket first
-    let ticket = ""
-    try {
-      const ticketRes = await fetch("http://localhost:8000/auth/ws-ticket", {
-        method: "POST",
-        credentials: "include",
-      })
-      if (ticketRes.ok) {
-        const ticketData = await ticketRes.json()
-        ticket = ticketData.ticket
-      }
-    } catch (err) {
-      console.error("Failed to fetch WS ticket:", err)
-    }
+      let effectiveProvider = config.avatarProvider
+      let liveAvatarSessionId: string | undefined
 
-    const wsUrl = `ws://localhost:8000/ws/voice-interview${ticket ? `?ticket=${ticket}` : ""}`
-    const ws = new WebSocket(wsUrl)
-      wsRef.current = ws
+      try {
+        if (effectiveProvider === "liveavatar_full" && LIVEAVATAR_ENABLED) {
+          try {
+            const bootstrapRes = await fetch(apiUrl("/voice-interview/liveavatar/bootstrap"), {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify({ workspace_id: config.workspaceId }),
+            })
 
-      ws.binaryType = "arraybuffer"
+            if (!bootstrapRes.ok) {
+              const bootstrapError = await bootstrapRes.json().catch(() => null)
+              throw new Error(bootstrapError?.detail || "LiveAvatar başlatılamadı.")
+            }
 
-      ws.onopen = async () => {
-        setConnectionStatus("connected")
-        console.log("[WS] Connected")
+            const bootstrapData = (await bootstrapRes.json()) as LiveAvatarBootstrapResponse
+            pendingLiveAvatarSessionIdRef.current = bootstrapData.liveavatar_session_id
+            pendingLiveAvatarWorkspaceIdRef.current = config.workspaceId
+            await connectLiveAvatar({
+              liveavatarSessionId: bootstrapData.liveavatar_session_id,
+              livekitUrl: bootstrapData.livekit_url,
+              livekitClientToken: bootstrapData.livekit_client_token,
+            })
+            liveAvatarSessionId = bootstrapData.liveavatar_session_id
+            setActiveAvatarProvider("liveavatar_full")
+            activeAvatarProviderRef.current = "liveavatar_full"
+          } catch (bootstrapError) {
+            console.error("LiveAvatar bootstrap error:", bootstrapError)
+            setError("LiveAvatar kullanılamadı. Klasik avatar moduna geri dönülüyor.")
+            effectiveProvider = "rpm_cartesia"
+            setActiveAvatarProvider("rpm_cartesia")
+            activeAvatarProviderRef.current = "rpm_cartesia"
+            await disconnectLiveAvatar()
+            await releaseBootstrapLiveAvatarSession("BOOTSTRAP_FAILED")
+          }
+        } else {
+          effectiveProvider = "rpm_cartesia"
+          setActiveAvatarProvider("rpm_cartesia")
+          activeAvatarProviderRef.current = "rpm_cartesia"
+          await disconnectLiveAvatar()
+        }
 
-        // Start mic capture
-        await startMicCapture()
-
-        // Initialize playback context (needs user gesture)
-        initPlaybackContext()
-
-        // Send start_session
-        ws.send(
-          JSON.stringify({
-            type: "start_session",
-            workspace_id: config.workspaceId,
-            categories: config.categories,
-            difficulty: config.difficulty,
-            interview_type: config.interviewType,
+        let ticket = ""
+        try {
+          const ticketRes = await fetch(apiUrl("/auth/ws-ticket"), {
+            method: "POST",
+            credentials: "include",
           })
-        )
-      }
+          if (ticketRes.ok) {
+            const ticketData = await ticketRes.json()
+            ticket = ticketData.ticket
+          }
+        } catch (ticketError) {
+          console.error("Failed to fetch WS ticket:", ticketError)
+        }
 
-      ws.onmessage = handleWsMessage
+        const socketUrl = wsUrl(`/ws/voice-interview${ticket ? `?ticket=${ticket}` : ""}`)
+        const ws = new WebSocket(socketUrl)
+        wsRef.current = ws
+        ws.binaryType = "arraybuffer"
 
-      ws.onerror = (err) => {
-        console.error("[WS] Error:", err)
-        setError("WebSocket bağlantı hatası")
+        ws.onopen = async () => {
+          setConnectionStatus("connected")
+          await startMicCapture()
+          initPlaybackContext()
+
+          ws.send(
+            JSON.stringify({
+              type: "start_session",
+              workspace_id: config.workspaceId,
+              categories: config.categories,
+              difficulty: config.difficulty,
+              interview_type: config.interviewType,
+              avatar_provider: effectiveProvider,
+              liveavatar_session_id: liveAvatarSessionId,
+            })
+          )
+        }
+
+        ws.onmessage = handleWsMessage
+
+        ws.onerror = (socketError) => {
+          console.error("[WS] Error:", socketError)
+          setError("WebSocket bağlantı hatası")
+          setConnectionStatus("disconnected")
+          sessionStartInFlightRef.current = false
+          if (!liveAvatarSessionOwnedByBackendRef.current) {
+            void releaseBootstrapLiveAvatarSession("WS_ERROR")
+          }
+        }
+
+        ws.onclose = () => {
+          sessionStartInFlightRef.current = false
+          setConnectionStatus("disconnected")
+          stopMicCapture()
+          void disconnectLiveAvatar()
+          if (!liveAvatarSessionOwnedByBackendRef.current) {
+            void releaseBootstrapLiveAvatarSession("WS_CLOSED")
+          }
+        }
+      } catch (sessionStartError) {
+        console.error("Failed to start interview session:", sessionStartError)
+        sessionStartInFlightRef.current = false
         setConnectionStatus("disconnected")
-      }
-
-      ws.onclose = () => {
-        console.log("[WS] Closed")
-        setConnectionStatus("disconnected")
-        stopMicCapture()
+        setError("Mülakat oturumu başlatılamadı.")
+        await disconnectLiveAvatar()
+        await releaseBootstrapLiveAvatarSession("SESSION_START_FAILED")
       }
     },
-    [startMicCapture, stopMicCapture, handleWsMessage, initPlaybackContext]
+    [connectLiveAvatar, disconnectLiveAvatar, handleWsMessage, initPlaybackContext, releaseBootstrapLiveAvatarSession, startMicCapture, stopMicCapture, stopPlayback]
   )
 
   const toggleMic = useCallback(() => {
@@ -506,10 +709,8 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
           } else if (mediaRecorderRef.current.state === "paused") {
             mediaRecorderRef.current.resume()
           }
-        } else {
-          if (mediaRecorderRef.current.state === "recording") {
-            mediaRecorderRef.current.pause()
-          }
+        } else if (mediaRecorderRef.current.state === "recording") {
+          mediaRecorderRef.current.pause()
         }
       }
       return next
@@ -536,7 +737,7 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
           const formData = new FormData()
           formData.append("file", audioBlob, "recording.webm")
 
-          const response = await fetch("http://localhost:8000/voice-interview/transcribe", {
+          const response = await fetch(apiUrl("/voice-interview/transcribe"), {
             method: "POST",
             body: formData,
             credentials: "include",
@@ -548,12 +749,11 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
 
           const data = await response.json()
           const transcriptText = data.transcript || ""
-
           setPendingTranscript(transcriptText)
           setIsTranscribing(false)
           resolve(transcriptText)
-        } catch (err) {
-          console.error("Failed to transcribe:", err)
+        } catch (transcribeError) {
+          console.error("Failed to transcribe:", transcribeError)
           setError("Ses yüklenirken / işlenirken hata oluştu.")
           setIsTranscribing(false)
           resolve("")
@@ -562,12 +762,12 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
 
       if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
         mediaRecorderRef.current.onstop = () => {
-          processAudio()
+          void processAudio()
           if (mediaRecorderRef.current) mediaRecorderRef.current.onstop = null
         }
         mediaRecorderRef.current.stop()
       } else {
-        processAudio()
+        void processAudio()
       }
     })
   }, [])
@@ -581,8 +781,6 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
 
     setSessionState("processing")
     setPendingTranscript("")
-
-    // Append to local conversation log
     setConversationLog((log) => [
       ...log,
       {
@@ -592,7 +790,6 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
       },
     ])
 
-    // Send via WebSocket
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ type: "submit_answer", transcript: trimmed }))
     }
@@ -617,7 +814,7 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
         const formData = new FormData()
         formData.append("file", audioBlob, "recording.webm")
 
-        const response = await fetch("http://localhost:8000/voice-interview/transcribe", {
+        const response = await fetch(apiUrl("/voice-interview/transcribe"), {
           method: "POST",
           body: formData,
           credentials: "include",
@@ -630,7 +827,6 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
         const data = await response.json()
         const transcriptText = data.transcript || ""
 
-        // Append to local log
         setConversationLog((log) => [
           ...log,
           {
@@ -643,8 +839,8 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
         if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
           wsRef.current.send(JSON.stringify({ type: "submit_answer", transcript: transcriptText }))
         }
-      } catch (err) {
-        console.error("Failed to transcribe:", err)
+      } catch (submitError) {
+        console.error("Failed to transcribe:", submitError)
         setError("Ses yüklenirken / işlenirken hata oluştu.")
         setSessionState("listening")
       }
@@ -652,12 +848,12 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
 
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
       mediaRecorderRef.current.onstop = () => {
-        processAudioAndSubmit()
+        void processAudioAndSubmit()
         if (mediaRecorderRef.current) mediaRecorderRef.current.onstop = null
       }
       mediaRecorderRef.current.stop()
     } else {
-      processAudioAndSubmit()
+      void processAudioAndSubmit()
     }
   }, [])
 
@@ -672,55 +868,52 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
   }, [stopPlayback])
 
   const interrupt = useCallback(() => {
-    // Stop audio playback immediately
     stopPlayback()
+    currentUtteranceIdRef.current = null
 
-    // Send interrupt to backend
+    if (activeAvatarProviderRef.current === "liveavatar_full") {
+      void (async () => {
+        try {
+          await interruptLiveAvatar()
+          await startLiveAvatarListening()
+        } catch (interruptError) {
+          console.error("LiveAvatar interrupt error:", interruptError)
+          reportLiveAvatarFailure("LiveAvatar kesilemedi.")
+        }
+      })()
+    }
+
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ type: "interrupt" }))
     }
 
     setSessionState("listening")
     setMicActive(false)
-  }, [stopPlayback])
+  }, [interruptLiveAvatar, reportLiveAvatarFailure, startLiveAvatarListening, stopPlayback])
 
   const endSession = useCallback(() => {
     stopPlayback()
-
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ type: "end_session" }))
     }
   }, [stopPlayback])
 
   const disconnect = useCallback(() => {
-    stopPlayback()
-    stopMicCapture()
-
-    if (wsRef.current) {
-      wsRef.current.close()
-      wsRef.current = null
-    }
-
-    setConnectionStatus("disconnected")
-    setSessionState("idle")
-  }, [stopPlayback, stopMicCapture])
-
-  // ─── Cleanup on unmount ─────────────────────────────────────────
+    sessionStartInFlightRef.current = false
+    liveAvatarSessionOwnedByBackendRef.current = false
+    void closeRealtimeConnections()
+  }, [closeRealtimeConnections])
 
   useEffect(() => {
     return () => {
-      stopPlayback()
-      stopMicCapture()
-      if (wsRef.current) {
-        wsRef.current.close()
-      }
+      sessionStartInFlightRef.current = false
+      liveAvatarSessionOwnedByBackendRef.current = false
+      void closeRealtimeConnections()
       if (playbackContextRef.current) {
-        playbackContextRef.current.close()
+        void playbackContextRef.current.close()
       }
     }
-  }, [stopPlayback, stopMicCapture])
-
-  // ─── Derived state ─────────────────────────────────────────────
+  }, [closeRealtimeConnections])
 
   const isAiSpeaking = sessionState === "ai_speaking"
   const isListening = sessionState === "listening"
@@ -740,6 +933,12 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
     error,
     pendingTranscript,
     isTranscribing,
+    selectedAvatarProvider,
+    activeAvatarProvider,
+    setSelectedAvatarProvider,
+    isLiveAvatarEnabled: LIVEAVATAR_ENABLED,
+    liveAvatarStatus,
+    liveAvatarVideoRef,
     startSession,
     toggleMic,
     submitAnswer,
