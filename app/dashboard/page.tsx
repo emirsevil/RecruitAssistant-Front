@@ -38,11 +38,13 @@ export default function DashboardPage() {
   const firstName = (user?.full_name || user?.email || "").split(" ")[0] || ""
 
   // Defer date-dependent values to avoid SSR/client hydration mismatch
+  const [mounted, setMounted] = useState(false)
   const [greeting, setGreeting] = useState("")
   const [today, setToday] = useState("")
   const [todayIdx, setTodayIdx] = useState(-1)
 
   useEffect(() => {
+    setMounted(true)
     const h = new Date().getHours()
     if (language === "tr") {
       setGreeting(h < 12 ? "Günaydın" : h < 18 ? "İyi günler" : "İyi akşamlar")
@@ -88,15 +90,21 @@ export default function DashboardPage() {
       {/* Hero header */}
       <div className="mb-6 flex items-end justify-between gap-4">
         <div>
-          <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground" suppressHydrationWarning>{today}</p>
-          <h1 className="serif-headline mt-1.5 text-[32px] font-normal leading-tight tracking-tight" suppressHydrationWarning>
-            {greeting}
-            {firstName && (
+          <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">{mounted ? today : ""}</p>
+          <h1 className="serif-headline mt-1.5 text-[32px] font-normal leading-tight tracking-tight">
+            {mounted ? (
               <>
-                , <em className="italic">{firstName}</em>
+                {greeting}
+                {firstName && (
+                  <>
+                    , <em className="italic">{firstName}</em>
+                  </>
+                )}
+                .
               </>
+            ) : (
+              <span className="opacity-0">.</span>
             )}
-            .
           </h1>
         </div>
         {weeklyActive > 0 && (
