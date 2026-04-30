@@ -28,6 +28,20 @@ const translations: Translations = {
         welcome: "Welcome",
         language: "Language",
         interviewHistory: "Interview History",
+        "AI-Powered Career Coaching": "AI-Powered Career Coaching",
+        "Interview confidence starts here": "Interview confidence starts here",
+        "Practice AI-powered mock interviews, CV feedback, and progress tracking in one place.":
+            "Practice AI-powered mock interviews, CV feedback, and progress tracking in one place.",
+        "Secure your next role with smarter preparation.": "Secure your next role with smarter preparation.",
+        "AI review": "AI review",
+        "CV feedback": "CV feedback",
+        "Progress insights": "Progress insights",
+        "RecruitAssistant guide": "RecruitAssistant guide",
+        "Login": "Login",
+        "New to RecruitAssistant?": "New to RecruitAssistant?",
+        "Create account": "Create account",
+        "Stay sharp with guided practice, real-time feedback, and personalized progress.":
+            "Stay sharp with guided practice, real-time feedback, and personalized progress.",
 
         // Workspaces
         workspaces: "Workspaces",
@@ -629,6 +643,27 @@ const translations: Translations = {
         welcome: "Hoşgeldiniz",
         language: "Dil",
         interviewHistory: "Mülakat Geçmişi",
+        "AI-Powered Career Coaching": "Yapay Zeka Destekli Kariyer Koçluğu",
+        "Interview confidence starts here": "Mülakat özgüveni burada başlıyor",
+        "Practice AI-powered mock interviews, CV feedback, and progress tracking in one place.": "Yapay zeka destekli deneme mülakatları, özgeçmiş geri bildirimi ve ilerleme takibini tek yerde yapın.",
+        "Secure your next role with smarter preparation.": "Daha akıllı hazırlıkla bir sonraki pozisyonunuzu güvence altına alın.",
+        "AI review": "Yapay Zeka değerlendirmesi",
+        "CV feedback": "CV geri bildirimi",
+        "Progress insights": "İlerleme içgörüleri",
+        "RecruitAssistant guide": "RecruitAssistant rehberi",
+        "New to RecruitAssistant?": "RecruitAssistant'a yeni misiniz?",
+        "Create account": "Hesap oluştur",
+        "Stay sharp with guided practice, real-time feedback, and personalized progress.": "Rehberli pratik, gerçek zamanlı geri bildirim ve kişiselleştirilmiş ilerleme ile formda kalın.",
+        "AI review": "Yapay Zeka değerlendirmesi",
+        "CV feedback": "CV geri bildirimi",
+        "Progress insights": "İlerleme içgörüleri",
+        "Live demo": "Canlı demo",
+        "AI Interview": "Yapay Zeka Mülakatı",
+        "Practice with real prompts": "Gerçek sorularla pratik yapın",
+        "HR Coach": "İK Koçu",
+        "Describe a challenging interview experience and get AI feedback.": "Zorlu bir mülakat deneyimini anlatın ve yapay zekadan geri bildirim alın.",
+        "Technical review": "Teknik değerlendirme",
+        "Practice answers, improve clarity, and track your strengths.": "Cevaplarınızı pratik yapın, netliği arttırın ve güçlü yanlarınızı takip edin.",
 
         // Workspaces
         workspaces: "Çalışma Alanları",
@@ -1230,7 +1265,7 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined)
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-    const [language, setLanguage] = useState<Language>("tr")
+    const [language, setLanguage] = useState<Language>("en")
 
     useEffect(() => {
         // Basic persistence

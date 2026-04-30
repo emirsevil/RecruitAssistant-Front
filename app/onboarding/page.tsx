@@ -10,6 +10,7 @@ import { ArrowRight, ChevronLeft, Sparkles, Upload, GraduationCap } from "lucide
 import { useAuth } from "@/lib/auth-context"
 import { useWorkspace } from "@/lib/workspace-context"
 import { useLanguage } from "@/lib/language-context"
+import { Logo } from "@/components/logo"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { SearchableSelect, type SelectOption } from "@/components/ui/searchable-select"
@@ -112,12 +113,7 @@ export default function OnboardingPage() {
       <div className="w-full max-w-[760px]">
         {/* Logo */}
         <Link href="/" className="mb-8 inline-flex items-center gap-2.5">
-          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary font-serif text-sm font-semibold text-primary-foreground">
-            R
-          </span>
-          <span className="font-serif text-[17px] tracking-tight">
-            Recruit<span className="italic">Assistant</span>
-          </span>
+          <Logo size={28} />
         </Link>
 
         {/* Eyebrow */}

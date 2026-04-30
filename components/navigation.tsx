@@ -51,6 +51,7 @@ import { useWorkspace, type Workspace } from "@/lib/workspace-context"
 import { useAuth } from "@/lib/auth-context"
 import { cn } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
+import { Logo } from "@/components/logo"
 import { useEffect, useState } from "react"
 
 const navItems = [
@@ -189,12 +190,7 @@ export function Navigation() {
     >
       {/* Logo */}
       <Link href="/dashboard" className="mb-4 flex items-center gap-2.5 px-2 py-1.5">
-        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary font-serif text-sm font-semibold text-primary-foreground">
-          R
-        </span>
-        <span className="font-serif text-[17px] tracking-tight">
-          Recruit<span className="italic">Assistant</span>
-        </span>
+        <Logo size={30} />
       </Link>
 
       {/* Workspace switcher */}
