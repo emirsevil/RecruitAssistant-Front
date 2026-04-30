@@ -1,18 +1,30 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Geist, Geist_Mono } from "next/font/google"
+import { Suspense } from "react"
+import { Inter, Fraunces } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 import { ScheduleProvider } from "@/lib/schedule-context"
 import { LanguageProvider } from "@/lib/language-context"
 import { WorkspaceProvider } from "@/lib/workspace-context"
 import { AuthProvider } from "@/lib/auth-context"
+import { InterviewLockProvider } from "@/lib/interview-lock-context"
 import { Navigation } from "@/components/navigation"
+import { Toaster } from "sonner"
 
 import { OnboardingGuard } from "@/components/onboarding-guard"
 
-const _geist = Geist({ subsets: ["latin"] })
-const _geistMono = Geist_Mono({ subsets: ["latin"] })
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  weight: ["400", "500", "600", "700"],
+})
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-fraunces",
+  weight: ["400", "500", "600"],
+  style: ["normal", "italic"],
+})
 
 export const metadata: Metadata = {
   // <CHANGE> Updated metadata for RecruitAssistant
@@ -44,18 +56,27 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${inter.variable} ${fraunces.variable}`}>
       <body className={`font-sans antialiased`} suppressHydrationWarning>
         <LanguageProvider>
           <AuthProvider>
             <WorkspaceProvider>
-              <OnboardingGuard>
-                <Navigation />
-                <ScheduleProvider>
-                  {children}
-                  <Analytics />
-                </ScheduleProvider>
-              </OnboardingGuard>
+              <Suspense fallback={null}>
+                <OnboardingGuard>
+                  <ScheduleProvider>
+                    <InterviewLockProvider>
+                      <div className="flex min-h-screen">
+                        <Navigation />
+                        <main className="min-w-0 flex-1">
+                          <Suspense fallback={null}>{children}</Suspense>
+                        </main>
+                      </div>
+                      <Analytics />
+                      <Toaster position="top-right" richColors closeButton />
+                    </InterviewLockProvider>
+                  </ScheduleProvider>
+                </OnboardingGuard>
+              </Suspense>
             </WorkspaceProvider>
           </AuthProvider>
         </LanguageProvider>

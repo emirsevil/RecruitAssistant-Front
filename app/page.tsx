@@ -1,166 +1,187 @@
 "use client"
 
 import type React from "react"
+import { useEffect, useState } from "react"
 import { useLanguage } from "@/lib/language-context"
 import { PageContainer } from "@/components/page-container"
+import { Logo } from "@/components/logo"
+import { LanguageSwitcher } from "@/components/language-switcher"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import Link from "next/link"
-import { ArrowRight, MessageSquare, FileText, Target, TrendingUp, ShieldCheck, Zap, Sparkles } from "lucide-react"
+import { Monitor, Moon, Zap, Sun } from "lucide-react"
 
 export default function LandingPage() {
   const { t } = useLanguage()
+  const [theme, setTheme] = useState("light")
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+
+    const savedTheme = localStorage.getItem("ra-theme")
+    const nextTheme = savedTheme === "dark" ? "dark" : "light"
+    setTheme(nextTheme)
+    document.documentElement.classList.toggle("dark", nextTheme === "dark")
+  }, [])
+
+  const handleThemeChange = (value: string) => {
+    setTheme(value)
+    const darkMode = value === "dark"
+    document.documentElement.classList.toggle("dark", darkMode)
+    localStorage.setItem("ra-theme", darkMode ? "dark" : "light")
+  }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-background">
-      {/* Background decoration */}
-      <div className="absolute top-0 left-1/2 -z-10 h-[1000px] w-[1000px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/5 blur-3xl" />
-      
-      <PageContainer>
-        <div className="flex flex-col items-center py-20 lg:py-32">
-          {/* Hero Section */}
-          <div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
-            <div className="flex flex-col justify-center text-center lg:text-left">
-              <div className="mb-6 inline-flex items-center self-center rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-sm font-medium text-primary lg:self-start">
-                <Sparkles className="mr-2 h-4 w-4" />
-                <span>{t("AI-Powered Career Coaching")}</span>
-              </div>
-              <h1 className="mb-6 text-5xl font-extrabold tracking-tight text-balance md:text-6xl lg:text-7xl">
-                {t("Ace Your Next")} <span className="text-primary">{t("Interview")}</span>
-              </h1>
-              <p className="mb-10 text-lg text-muted-foreground text-pretty md:text-xl lg:max-w-xl">
-                {t("Master the art of interviewing with real-time AI feedback. Practice HR and technical scenarios tailored to your target roles.")}
-              </p>
-              <div className="flex flex-col gap-4 sm:flex-row sm:justify-center lg:justify-start">
-                <Link href="/login">
-                  <Button size="lg" className="h-12 px-8 text-base font-semibold shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95">
-                    {t("Get Started for Free")}
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </Button>
-                </Link>
-                <Link href="/register">
-                  <Button size="lg" variant="outline" className="h-12 border-2 px-8 text-base font-semibold backdrop-blur-sm transition-all hover:bg-primary/5">
-                    {t("Create Account")}
-                  </Button>
-                </Link>
-              </div>
-              <div className="mt-8 flex items-center justify-center gap-6 text-sm text-muted-foreground lg:justify-start">
-                <div className="flex items-center">
-                  <ShieldCheck className="mr-2 h-4 w-4 text-emerald-500" />
-                  <span>{t("Secure & Private")}</span>
-                </div>
-                <div className="flex items-center">
-                  <Zap className="mr-2 h-4 w-4 text-amber-500" />
-                  <span>{t("Instant Feedback")}</span>
-                </div>
-              </div>
-            </div>
+    <div className="min-h-screen bg-background text-foreground">
+      <div className="relative overflow-hidden">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-96 bg-gradient-to-b from-sage/20 to-transparent" />
+        <div className="pointer-events-none absolute right-0 top-24 h-72 w-72 rounded-full bg-clay-soft blur-3xl" />
+        <div className="pointer-events-none absolute left-0 top-48 h-72 w-72 rounded-full bg-plum-soft blur-3xl" />
 
-            {/* Visual Hero Element */}
-            <div className="relative flex items-center justify-center">
-              <div className="absolute -inset-4 rounded-3xl bg-gradient-to-tr from-primary/20 via-transparent to-primary/10 blur-2xl" />
-              <Card className="relative w-full max-w-md overflow-hidden border-2 border-primary/10 bg-card/80 backdrop-blur-md">
+        <PageContainer className="relative">
+          <header className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-3 rounded-full border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground shadow-sm shadow-black/5"
+            >
+              <Logo size={24} variant="mark" />
+              <span>RecruitAssistant</span>
+            </Link>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <Select value={theme} onValueChange={handleThemeChange}>
+                <SelectTrigger id="theme" className="w-32">
+                  <SelectValue placeholder={t("Theme")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="light">
+                    <div className="flex items-center gap-2">
+                      <Sun className="h-4 w-4" />
+                      {t("Light")}
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="dark">
+                    <div className="flex items-center gap-2">
+                      <Moon className="h-4 w-4" />
+                      {t("Dark")}
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+
+              <LanguageSwitcher />
+            </div>
+          </header>
+
+          <div className="grid gap-14 lg:grid-cols-[1.2fr_0.9fr] lg:items-center">
+            <section className="space-y-8">
+              <span className="inline-flex rounded-full bg-sage-bg px-4 py-2 text-sm font-semibold uppercase tracking-[0.2em] text-sage">
+                {t("AI-Powered Career Coaching")}
+              </span>
+              <div className="space-y-6">
+                <h1 className="serif-headline max-w-3xl text-5xl leading-tight tracking-tight text-ink-serif md:text-6xl">
+                  {t("Interview confidence starts here")}
+                </h1>
+                <p className="max-w-2xl text-lg leading-8 text-muted-foreground sm:text-xl">
+                  {t("Practice AI-powered mock interviews, CV feedback, and progress tracking in one place.")}
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                <Link href="/login">
+                  <Button size="lg" className="h-14 rounded-full px-8 font-semibold bg-sage text-foreground hover:bg-sage/90 shadow-sm shadow-black/5">
+                    {t("Login")}
+                  </Button>
+                </Link>
+                <p className="max-w-xl text-sm leading-6 text-muted-foreground">
+                  {t("New to RecruitAssistant?")} {" "}
+                  <Link
+                    href="/register"
+                    className="font-semibold text-sage underline decoration-sage/30 underline-offset-4 hover:text-sage/90"
+                  >
+                    {t("Create account")}
+                  </Link>
+                </p>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div className="rounded-[32px] border border-border bg-card p-5 shadow-sm">
+                  <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sage">{t("AI review")}</p>
+                  <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                    {t("Stay sharp with guided practice, real-time feedback, and personalized progress.")}
+                  </p>
+                </div>
+                <div className="rounded-[32px] border border-border bg-card p-5 shadow-sm">
+                  <p className="text-sm font-semibold uppercase tracking-[0.2em] text-clay">{t("CV feedback")}</p>
+                  <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                    {t("Secure your next role with smarter preparation.")}
+                  </p>
+                </div>
+                <div className="rounded-[32px] border border-border bg-card p-5 shadow-sm">
+                  <p className="text-sm font-semibold uppercase tracking-[0.2em] text-plum">{t("Progress insights")}</p>
+                  <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                    {t("Practice AI-powered mock interviews, CV feedback, and progress tracking in one place.")}
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            <section className="relative mx-auto flex max-w-xl justify-center">
+              <Card className="w-full border border-border bg-card shadow-lg shadow-black/5">
                 <CardContent className="p-8">
                   <div className="space-y-6">
-                    {/* Mock chat interaction */}
-                    <div className="space-y-4">
-                      <div className="flex justify-start">
-                        <div className="max-w-[85%] rounded-2xl rounded-tl-sm bg-muted/50 p-4 text-sm shadow-sm ring-1 ring-border">
-                          <p className="font-medium text-primary mb-1 text-xs uppercase tracking-wider">{t("AI Interviewer")}</p>
-                          <p>{t("Tell me about a difficult technical challenge you've faced and how you solved it.")}</p>
+                    <div className="flex items-center justify-between gap-4 rounded-3xl bg-sage-soft p-4">
+                      <div>
+                        <p className="text-sm uppercase tracking-[0.2em] text-sage">{t("Technical Interview")}</p>
+                        <p className="mt-2 text-lg font-semibold text-ink-serif">{t("Practice with real prompts")}</p>
+                      </div>
+                      <div className="rounded-2xl bg-sage p-3 text-white">
+                        <Zap className="h-5 w-5" />
+                      </div>
+                    </div>
+
+                    <div className="rounded-[1.75rem] border border-border bg-background p-6">
+                      <div className="mb-5 flex items-center justify-between gap-4">
+                        <div className="space-y-1">
+                          <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground">AI Interview</p>
+                          <p className="text-lg font-semibold text-foreground">RecruitAssistant guide</p>
                         </div>
                       </div>
-                      <div className="flex justify-end">
-                        <div className="max-w-[85%] rounded-2xl rounded-tr-sm bg-primary p-4 text-sm text-primary-foreground shadow-md ring-1 ring-primary-foreground/10">
-                          <p className="font-medium mb-1 text-xs uppercase tracking-wider opacity-80">{t("Candidate (You)")}</p>
-                          <p>{t("In my last project, I encountered a major memory leak in our data processing pipeline...")}</p>
+
+                      <div className="space-y-4">
+                        <div className="rounded-3xl bg-sage-soft p-4">
+                          <p className="font-semibold text-ink-serif">{t("HR Coach")}</p>
+                          <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                            {t("Describe a challenging interview experience and get AI feedback.")}
+                          </p>
+                        </div>
+                        <div className="rounded-3xl bg-sage-soft p-4">
+                          <p className="font-semibold text-ink-serif">{t("Technical review")}</p>
+                          <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                            {t("Practice answers, improve clarity, and track your strengths.")}
+                          </p>
                         </div>
                       </div>
                     </div>
 
-                    {/* Analytics Preview */}
-                    <div className="rounded-xl border border-border bg-background/50 p-4 shadow-sm">
-                      <div className="mb-4 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <TrendingUp className="h-4 w-4 text-primary" />
-                          <span className="text-sm font-semibold">{t("Live Performance")}</span>
-                        </div>
-                        <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-bold text-emerald-600">88%</span>
+                    <div className="grid gap-3 rounded-[1.75rem] border border-border bg-background p-5">
+                      <div className="flex items-center justify-between text-sm text-muted-foreground">
+                        <span>{t("System Design")}</span>
+                        <span className="font-semibold text-ink-serif">87%</span>
                       </div>
-                      <div className="space-y-3">
-                        <div className="space-y-1.5">
-                          <div className="flex justify-between text-[10px] font-medium uppercase text-muted-foreground">
-                            <span>{t("Technical Accuracy")}</span>
-                            <span>92%</span>
-                          </div>
-                          <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
-                            <div className="h-full w-[92%] bg-primary transition-all duration-1000" />
-                          </div>
-                        </div>
-                        <div className="space-y-1.5">
-                          <div className="flex justify-between text-[10px] font-medium uppercase text-muted-foreground">
-                            <span>{t("Communication confidence")}</span>
-                            <span>84%</span>
-                          </div>
-                          <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
-                            <div className="h-full w-[84%] bg-primary/70 transition-all duration-1000" />
-                          </div>
-                        </div>
+                      <div className="h-2 overflow-hidden rounded-full bg-sage-soft">
+                        <div className="h-full w-[87%] rounded-full bg-sage" />
                       </div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
-            </div>
+            </section>
           </div>
-
-          {/* Features Grid */}
-          <div className="mt-24 grid w-full gap-8 sm:grid-cols-2 lg:mt-32 lg:grid-cols-4">
-            <FeatureItem
-              icon={<MessageSquare className="h-8 w-8" />}
-              title={t("Voice Interviews")}
-              description={t("Real-time voice dialogue with AI avatars specializing in HR and Tech.")}
-            />
-            <FeatureItem
-              icon={<FileText className="h-8 w-8" />}
-              title={t("Smart CV Analysis")}
-              description={t("Get ATS-focused feedback and optimization tips for your resume.")}
-            />
-            <FeatureItem
-              icon={<Target className="h-8 w-8" />}
-              title={t("Targeted Quizzes")}
-              description={t("Sharpen your knowledge with role-specific skill assessments.")}
-            />
-            <FeatureItem
-              icon={<TrendingUp className="h-8 w-8" />}
-              title={t("In-depth Analytics")}
-              description={t("Visualize your progress with metrics on confidence and clarity.")}
-            />
-          </div>
-        </div>
-      </PageContainer>
+        </PageContainer>
+      </div>
     </div>
   )
 }
 
-function FeatureItem({
-  icon,
-  title,
-  description,
-}: {
-  icon: React.ReactNode
-  title: string
-  description: string
-}) {
-  return (
-    <Card className="group relative overflow-hidden border-none bg-transparent transition-all hover:bg-muted/30">
-      <CardContent className="p-8">
-        <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary transition-transform group-hover:scale-110">
-          {icon}
-        </div>
-        <h3 className="mb-3 text-xl font-bold tracking-tight">{title}</h3>
-        <p className="text-muted-foreground leading-relaxed">{description}</p>
-      </CardContent>
-    </Card>
-  )
-}

@@ -14,14 +14,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { CalendarEvent, EventType, useSchedule } from "@/lib/schedule-context"
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, History, Clock, MessageSquare, Brain, Trash2 } from "lucide-react"
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, MessageSquare, Brain, Trash2 } from "lucide-react"
 import { useLanguage } from "@/lib/language-context"
 import { cn } from "@/lib/utils"
 
-type HistorySummary = {
-    week: string
-    stats: { quiz: number, interview: number, practice: string }
-}
+
 
 type DragSelection = {
     day: Date
@@ -126,8 +123,8 @@ function getTimeRangeLayout(startMinutes: number, endMinutes: number): CSSProper
 export default function SchedulePage() {
     const { t, language } = useLanguage()
     const { events, addEvent, removeEvent, fetchEvents, getEventsForRange, isLoading, error } = useSchedule()
-    const [currentDate, setCurrentDate] = useState(new Date())
-    const [now, setNow] = useState(new Date())
+    const [currentDate, setCurrentDate] = useState(() => new Date())
+    const [now, setNow] = useState(() => new Date())
     const gridScrollRef = useRef<HTMLDivElement | null>(null)
 
     const dateLocale = language === "tr" ? tr : enUS
@@ -149,7 +146,7 @@ export default function SchedulePage() {
     )
     const gridHeight = calendarHours.length * HOUR_HEIGHT
     const weekRange = `${format(startOfCurrentWeek, "MMM d", { locale: dateLocale })} - ${format(addDays(startOfCurrentWeek, 6), "MMM d, yyyy", { locale: dateLocale })}`
-    const [historySummaries, setHistorySummaries] = useState<HistorySummary[]>([])
+
 
     useEffect(() => {
         const timer = window.setInterval(() => setNow(new Date()), 60000)
@@ -174,45 +171,7 @@ export default function SchedulePage() {
         fetchEvents(startOfCurrentWeek, endOfCurrentWeek)
     }, [endOfCurrentWeek, fetchEvents, startOfCurrentWeek])
 
-    useEffect(() => {
-        let cancelled = false
-        const historyWeekStarts = [1, 2, 3].map((weeksBack) => subWeeks(startOfCurrentWeek, weeksBack))
-        const oldestHistoryWeek = historyWeekStarts[historyWeekStarts.length - 1]
 
-        getEventsForRange(oldestHistoryWeek, startOfCurrentWeek)
-            .then((historyEvents) => {
-                if (cancelled) return
-
-                const summaries = historyWeekStarts.map((weekStart) => {
-                    const weekEnd = addDays(weekStart, 7)
-                    const weekEvents = historyEvents.filter((event) => {
-                        const eventTime = event.startTime.getTime()
-                        return eventTime >= weekStart.getTime() && eventTime < weekEnd.getTime()
-                    })
-                    const practiceMinutes = weekEvents
-                        .filter((event) => event.type === "practice")
-                        .reduce((total, event) => total + (event.duration ?? 0), 0)
-
-                    return {
-                        week: `${format(weekStart, "MMM d", { locale: dateLocale })} - ${format(addDays(weekStart, 6), "d", { locale: dateLocale })}`,
-                        stats: {
-                            quiz: weekEvents.filter((event) => event.type === "quiz").length,
-                            interview: weekEvents.filter((event) => event.type === "interview").length,
-                            practice: formatPracticeDuration(practiceMinutes),
-                        }
-                    }
-                })
-
-                setHistorySummaries(summaries)
-            })
-            .catch(() => {
-                if (!cancelled) setHistorySummaries([])
-            })
-
-        return () => {
-            cancelled = true
-        }
-    }, [dateLocale, getEventsForRange, startOfCurrentWeek, weekStartMs])
 
     const navigateWeek = (direction: "prev" | "next") => {
         setCurrentDate(prev => direction === "prev" ? subWeeks(prev, 1) : addWeeks(prev, 1))
@@ -331,36 +290,6 @@ export default function SchedulePage() {
                     <div className="shrink-0">
                         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                             <PageHeader className="mb-0 md:mb-0" title={t("Weekly Schedule")} description={t("Plan your tailored preparation journey")} />
-
-                            {/* History Box Popover */}
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button variant="outline" className="gap-2 rounded-lg border-border/70 bg-background/80 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
-                                        <History className="h-4 w-4" />
-                                        {t("View History")}
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-80 rounded-lg border-border/70 p-5 shadow-xl shadow-black/5" align="end">
-                                    <div className="space-y-4">
-                                        <h4 className="text-sm font-semibold">{t("Past Weeks Summary")}</h4>
-                                        <ScrollArea className="h-[200px]">
-                                            <div className="space-y-4 pr-4">
-                                                {historySummaries.length === 0 ? (
-                                                    <p className="py-6 text-center text-sm text-muted-foreground">{t("No history yet.")}</p>
-                                                ) : (
-                                                    historySummaries.map((summary) => (
-                                                        <HistoryItem
-                                                            key={summary.week}
-                                                            week={summary.week}
-                                                            stats={summary.stats}
-                                                        />
-                                                    ))
-                                                )}
-                                            </div>
-                                        </ScrollArea>
-                                    </div>
-                                </PopoverContent>
-                            </Popover>
                         </div>
                     </div>
 
@@ -640,25 +569,4 @@ function EventCard({ event, onDelete, style }: { event: CalendarEvent, onDelete:
     )
 }
 
-function HistoryItem({ week, stats }: { week: string, stats: { quiz: number, interview: number, practice: string } }) {
-    const { t } = useLanguage()
-    return (
-        <div className="rounded-lg border border-border/70 bg-background p-3 text-sm shadow-sm">
-            <div className="mb-3 font-semibold">{week}</div>
-            <div className="grid grid-cols-3 gap-2 text-center text-xs text-muted-foreground">
-                <div className="flex flex-col items-center gap-1 rounded-lg bg-rose-50 px-2 py-2 text-rose-700 dark:bg-rose-950/30 dark:text-rose-200">
-                    <Brain className="h-3.5 w-3.5" />
-                    <span>{stats.quiz} {t("Quizzes")}</span>
-                </div>
-                <div className="flex flex-col items-center gap-1 rounded-lg bg-cyan-50 px-2 py-2 text-cyan-700 dark:bg-cyan-950/30 dark:text-cyan-200">
-                    <MessageSquare className="h-3.5 w-3.5" />
-                    <span>{stats.interview} {t("Intrv.")}</span>
-                </div>
-                <div className="flex flex-col items-center gap-1 rounded-lg bg-emerald-50 px-2 py-2 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-200">
-                    <Clock className="h-3.5 w-3.5" />
-                    <span>{stats.practice}</span>
-                </div>
-            </div>
-        </div>
-    )
-}
+
