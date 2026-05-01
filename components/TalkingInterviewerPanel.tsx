@@ -42,9 +42,9 @@ export function TalkingInterviewerPanel({
   const isLiveAvatar = activeAvatarProvider === "liveavatar_full"
 
   return (
-    <div className="lg:col-span-5 lg:sticky lg:top-6">
+    <div>
       <div className="overflow-hidden border-2 border-primary/10 flex flex-col rounded-xl bg-card shadow-sm">
-        <div className="relative w-full aspect-square bg-gradient-to-b from-slate-800 via-slate-850 to-slate-900">
+        <div className="relative w-full aspect-[16/10] max-h-[55vh] bg-gradient-to-b from-slate-800 via-slate-850 to-slate-900">
           {isLiveAvatar ? (
             <>
               <video

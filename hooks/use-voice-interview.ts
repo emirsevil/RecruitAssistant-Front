@@ -83,6 +83,7 @@ interface UseVoiceInterviewReturn {
     interviewType: string
     avatarProvider: AvatarProvider
   }) => Promise<void>
+  resumeSession: (config: { interviewId: number }) => Promise<void>
   toggleMic: () => void
   submitAnswer: () => void
   transcribeRecording: () => Promise<string>
@@ -108,7 +109,10 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
   const [isTranscribing, setIsTranscribing] = useState(false)
   const [selectedAvatarProvider, setSelectedAvatarProvider] = useState<AvatarProvider>("rpm_cartesia")
   const [activeAvatarProvider, setActiveAvatarProvider] = useState<AvatarProvider>("rpm_cartesia")
+  const [isWrappingUp, setIsWrappingUp] = useState(false)
 
+  const isWrappingUpRef = useRef(false)
+  const micActiveRef = useRef(false)
   const wsRef = useRef<WebSocket | null>(null)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
@@ -138,6 +142,14 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
   useEffect(() => {
     sessionStateRef.current = sessionState
   }, [sessionState])
+
+  useEffect(() => {
+    isWrappingUpRef.current = isWrappingUp
+  }, [isWrappingUp])
+
+  useEffect(() => {
+    micActiveRef.current = micActive
+  }, [micActive])
 
   const releaseBootstrapLiveAvatarSession = useCallback(
     async (reason = "CLIENT_ABORTED") => {
@@ -1057,12 +1069,8 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
       sessionStartInFlightRef.current = false
       liveAvatarSessionOwnedByBackendRef.current = false
       void closeRealtimeConnections()
-      if (playbackContextRef.current) {
-        void playbackContextRef.current.close()
-      }
-    }
-  }, [closeRealtimeConnections])
-
+      if (playbackContextRef.current && playbackContextRef.current.state !== "closed") {
+        playbackContextRef.current.close().catch(() => {})
       }
     }
   }, [closeRealtimeConnections])

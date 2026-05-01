@@ -403,37 +403,33 @@ export default function MockInterviewClient() {
                 </div>
               )}
 
-              <div className="space-y-2">
-                <Label>{t("Categories / Topics")}</Label>
-                <Textarea value={categories} onChange={e => setCategories(e.target.value)} placeholder={t("e.g. React, Node.js, System Design...")} />
-              </div>
+            </div>
+          )}
 
-              {voice.isLiveAvatarEnabled && (
-                <div className="space-y-2">
-                  <Label>{t("Interviewer Mode")}</Label>
-                  <Select
-                    value={voice.selectedAvatarProvider}
-                    onValueChange={(value) =>
-                      voice.setSelectedAvatarProvider(value as "rpm_cartesia" | "liveavatar_full")
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="rpm_cartesia">{t("Classic 3D Avatar (stable)")}</SelectItem>
-                      <SelectItem value="liveavatar_full">{t("Photoreal LiveAvatar (beta)")}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
+          {voice.isLiveAvatarEnabled && (
+            <div className="mb-5 space-y-2">
+              <Label>{t("Interviewer Mode")}</Label>
+              <Select
+                value={voice.selectedAvatarProvider}
+                onValueChange={(value) =>
+                  voice.setSelectedAvatarProvider(value as "rpm_cartesia" | "liveavatar_full")
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="rpm_cartesia">{t("Classic 3D Avatar (stable)")}</SelectItem>
+                  <SelectItem value="liveavatar_full">{t("Photoreal LiveAvatar (beta)")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
-              <Button onClick={startInterview} size="lg" className="w-full gap-2">
-                <Phone className="h-5 w-5" />
-                {t("Start Interview")}
-              </Button>
-            </CardContent>
-          </Card>
+          <Button onClick={startInterview} size="lg" className="w-full gap-2">
+            <Phone className="h-5 w-5" />
+            {t("Start Interview")}
+          </Button>
         </div>
       </div>
     )
@@ -485,21 +481,8 @@ export default function MockInterviewClient() {
               {t("Question")} {activeQIndex + 1}
               <span className="text-subtle"> / {activeQuestions.length || "—"}</span>
             </h1>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5 border-destructive/40 text-destructive hover:bg-red-600 hover:text-white hover:border-red-600"
-              onClick={voice.endSession}
-            >
-              <PhoneOff className="h-3.5 w-3.5" />
-              {t("End")}
-            </Button>
-          </div>
-        </div>
 
-        {/* Progress dots */}
+            {/* Progress dots */}
         {activeQuestions.length > 0 && (
           <div className="mb-6 flex gap-1.5">
             {activeQuestions.map((_, i) => (
@@ -513,182 +496,151 @@ export default function MockInterviewClient() {
           </div>
         )}
 
-        <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
-          {/* Stage */}
-          <div className="rounded-2xl border border-border bg-card p-7">
-            {/* Interviewer header */}
-            <div className="mb-5 flex items-center gap-3.5">
-              <div className="relative flex-shrink-0">
-                <div className="h-16 w-16 overflow-hidden rounded-full border-2 border-sage bg-clay-soft">
-                  <img
-                    src="/avatar/interviewer.png"
-                    alt={t("AI interviewer")}
-                    className="h-full w-full object-cover object-top"
-                  />
-                </div>
-                <span className="absolute -right-0.5 -bottom-0.5 h-4 w-4 rounded-full border-[3px] border-card bg-sage" />
-              </div>
-              <div>
-                <p className="font-serif text-[18px] tracking-tight">{t("AI Interviewer")}</p>
-                <p className="text-[12px] text-muted-foreground">
-                  {voice.isAiSpeaking ? t("AI is speaking...") : voice.sessionState === "processing" ? t("Processing your answer...") : t("Senior Recruiter")}
-                </p>
-              </div>
-            </div>
+        <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr] items-start">
+          {/* ── LEFT: Avatar (large) + Your Answer ── */}
+          <div className="space-y-4">
+            <TalkingInterviewerPanel
+              analyserNode={voice.analyserNode}
+              isSpeaking={voice.isAiSpeaking}
+              activeAvatarProvider={voice.activeAvatarProvider}
+              liveAvatarStatus={voice.liveAvatarStatus}
+              liveAvatarVideoRef={voice.liveAvatarVideoRef}
+              statusLabel={statusConfig.label}
+              statusColor={statusConfig.color}
+              statusPulse={statusConfig.pulse}
+              onInterrupt={voice.interrupt}
+              interviewerLabel={t("AI Interviewer")}
+              showInterruptButton={voice.isAiSpeaking}
+              interruptLabel={t("Interrupt & Speak")}
+            />
 
-            {/* Question card */}
-            {activeQuestion && (
-              <div className="mb-4 rounded-xl border border-border bg-background p-5">
-                <p className="eyebrow mb-2.5 text-clay">{activeQuestion.topic}</p>
-                <p className="font-serif text-[22px] font-normal leading-snug tracking-tight">
-                  &ldquo;{activeQuestion.question}&rdquo;
-                </p>
-              </div>
+            {voice.sessionState === "processing" && (
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />
+                    <p className="text-sm font-medium text-muted-foreground">{t("Processing your answer...")}</p>
+                  </div>
+                </CardContent>
+              </Card>
             )}
 
-            {/* ── Main Grid: Avatar + Controls ── */}
-            <div className="grid gap-4 lg:grid-cols-12 items-start"> {/* Keep items-start here! */}
-              
-              {/* ── Left Column: Avatar Video Panel ── */}
-              <TalkingInterviewerPanel
-                analyserNode={voice.analyserNode}
-                isSpeaking={voice.isAiSpeaking}
-                activeAvatarProvider={voice.activeAvatarProvider}
-                liveAvatarStatus={voice.liveAvatarStatus}
-                liveAvatarVideoRef={voice.liveAvatarVideoRef}
-                statusLabel={statusConfig.label}
-                statusColor={statusConfig.color}
-                statusPulse={statusConfig.pulse}
-                onInterrupt={voice.interrupt}
-                interviewerLabel={t("AI Interviewer")}
-                showInterruptButton={voice.isAiSpeaking}
-                interruptLabel={t("Interrupt & Speak")}
-              />
-
-              {/* ── Right Column: Question + Answer + Conversation ── */}
-              <div className="lg:col-span-7 space-y-4">
-                {/* Question Card */}
-                {activeQuestion && (
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <Badge variant="secondary" className="w-fit text-xs">{activeQuestion.topic}</Badge>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-lg font-medium leading-relaxed">{activeQuestion.question}</p>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
+            {voice.sessionState === "idle" && (
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <Loader2 className="h-5 w-5 text-muted-foreground animate-spin" />
+                    <p className="text-sm font-medium text-muted-foreground">{t("Preparing interview...")}</p>
+                  </div>
+                </CardContent>
+              </Card>
             )}
 
-                {/* Processing / Idle indicators (compact, no avatar duplication) */}
-                {voice.sessionState === "processing" && (
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-3">
-                        <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />
-                        <p className="text-sm font-medium text-muted-foreground">{t("Processing your answer...")}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {voice.sessionState === "idle" && (
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-3">
-                        <Loader2 className="h-5 w-5 text-muted-foreground animate-spin" />
-                        <p className="text-sm font-medium text-muted-foreground">{t("Preparing interview...")}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Answer Area — visible when listening */}
-                {voice.isListening && (
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-base flex items-center gap-2">
-                        {t("Your Answer")}
-                        {voice.isTranscribing && (
-                          <Badge variant="outline" className="gap-1 text-xs">
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                            {t("Transcribing...")}
-                          </Badge>
-                        )}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        <div className="relative">
-                          <Textarea
-                            placeholder={t("Record with the microphone or type your answer here...")}
-                            className="min-h-[100px] resize-none pr-12 text-base"
-                            value={userAnswer}
-                            onChange={(e) => setUserAnswer(e.target.value)}
-                            disabled={voice.isTranscribing}
-                          />
-                          {voice.micActive && (
-                            <div className="absolute top-2 right-2">
-                              <Badge variant="destructive" className="gap-1 text-xs animate-pulse">
-                                {t("Recording")}
-                              </Badge>
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Button 
-                              size="sm" 
-                              variant={voice.micActive ? "destructive" : "outline"}
-                              className="gap-1.5"
-                              onClick={handleMicToggle}
-                              disabled={voice.isTranscribing}
-                            >
-                              {voice.micActive ? <><MicOff className="h-4 w-4" />{t("Stop")}</> : <><Mic className="h-4 w-4" />{t("Record")}</>}
-                            </Button>
-                            <Button variant="ghost" size="sm" className="text-muted-foreground gap-1" onClick={() => { setUserAnswer(""); voice.passQuestion(); }} disabled={voice.sessionState !== "listening"}>
-                              <SkipForward className="h-4 w-4" />
-                              {t("Pass")}
-                            </Button>
-                          </div>
-
-                          <Button size="sm" className="gap-1.5" onClick={handleSubmit} disabled={!userAnswer.trim() || voice.micActive || voice.isTranscribing}>
-                            <Send className="h-4 w-4" />
-                            {t("Submit")}
-                          </Button>
+            {voice.isListening && (
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    {t("Your Answer")}
+                    {voice.isTranscribing && (
+                      <Badge variant="outline" className="gap-1 text-xs">
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        {t("Transcribing...")}
+                      </Badge>
+                    )}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {voice.micActive && (
+                      <div className="flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2">
+                        <Badge variant="destructive" className="gap-1 text-xs animate-pulse shrink-0">
+                          {t("Recording")}
+                        </Badge>
+                        <div className="flex flex-1 items-center justify-center gap-[3px] h-8" aria-hidden="true">
+                          {micLevels.map((level, i) => (
+                            <span
+                              key={i}
+                              className="w-[3px] rounded-full bg-destructive transition-[height] duration-75"
+                              style={{ height: `${Math.max(8, level * 100)}%` }}
+                            />
+                          ))}
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Conversation Log */}
-                <Card className="flex flex-col">
-                  <CardHeader className="pb-2"><CardTitle className="text-base">{t("Conversation")}</CardTitle></CardHeader>
-                  <CardContent className="flex-1 p-0 overflow-hidden">
-                    <div ref={conversationScrollRef} className="max-h-[35vh] overflow-y-auto space-y-3 px-6 pb-4">
-                      {voice.conversationLog.length === 0 && (
-                        <p className="text-sm text-muted-foreground text-center py-6">{t("Conversation will appear here...")}</p>
-                      )}
-                      {voice.conversationLog.map((entry, idx) => (
-                        <div key={idx} className={`flex gap-2 ${entry.role === "interviewer" ? "" : "flex-row-reverse"}`}>
-                          <div className={`rounded-lg px-3 py-2 text-sm max-w-[85%] ${entry.role === "interviewer" ? "bg-primary/10" : "bg-muted"}`}>
-                            <p className="text-xs font-medium mb-1 opacity-60">{entry.role === "interviewer" ? "🤖 AI" : "👤 Sen"}</p>
-                            <p className="leading-relaxed">{entry.text}</p>
-                          </div>
-                        </div>
-                      ))}
+                    )}
+                    <div className="relative">
+                      <Textarea
+                        placeholder={t("Record with the microphone or type your answer here...")}
+                        className="min-h-[100px] resize-none pr-12 text-base"
+                        value={userAnswer}
+                        onChange={(e) => setUserAnswer(e.target.value)}
+                        disabled={voice.isTranscribing}
+                      />
                     </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant={voice.micActive ? "destructive" : "outline"}
+                          className="gap-1.5"
+                          onClick={handleMicToggle}
+                          disabled={voice.isTranscribing}
+                        >
+                          {voice.micActive ? <><MicOff className="h-4 w-4" />{t("Stop")}</> : <><Mic className="h-4 w-4" />{t("Record")}</>}
+                        </Button>
+                        <Button variant="ghost" size="sm" className="text-muted-foreground gap-1" onClick={() => { setUserAnswer(""); voice.passQuestion(); }} disabled={voice.sessionState !== "listening"}>
+                          <SkipForward className="h-4 w-4" />
+                          {t("Pass")}
+                        </Button>
+                      </div>
+
+                      <Button size="sm" className="gap-1.5" onClick={handleSubmit} disabled={!userAnswer.trim() || voice.micActive || voice.isTranscribing}>
+                        <Send className="h-4 w-4" />
+                        {t("Submit")}
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          {/* ── RIGHT: Question + Conversation ── */}
+          <div className="space-y-4">
+            {activeQuestion && (
+              <Card>
+                <CardHeader className="pb-3">
+                  <Badge variant="secondary" className="w-fit text-xs">{activeQuestion.topic}</Badge>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-lg font-medium leading-relaxed">{activeQuestion.question}</p>
+                </CardContent>
+              </Card>
+            )}
+
+            <Card className="flex flex-col">
+              <CardHeader className="pb-2"><CardTitle className="text-base">{t("Conversation")}</CardTitle></CardHeader>
+              <CardContent className="flex-1 p-0 overflow-hidden">
+                <div ref={conversationScrollRef} className="max-h-[60vh] overflow-y-auto space-y-3 px-6 pb-4">
+                  {voice.conversationLog.length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center py-6">{t("Conversation will appear here...")}</p>
+                  )}
+                  {voice.conversationLog.map((entry, idx) => (
+                    <div key={idx} className={`flex gap-2 ${entry.role === "interviewer" ? "" : "flex-row-reverse"}`}>
+                      <div className={`rounded-lg px-3 py-2 text-sm max-w-[85%] ${entry.role === "interviewer" ? "bg-primary/10" : "bg-muted"}`}>
+                        <p className="text-xs font-medium mb-1 opacity-60">{entry.role === "interviewer" ? "🤖 AI" : "👤 Sen"}</p>
+                        <p className="leading-relaxed">{entry.text}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
+          </div>
+        </main>
       </div>
-      </>
     )
   }
 
