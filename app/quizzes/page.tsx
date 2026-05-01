@@ -506,7 +506,7 @@ export default function QuizzesPage() {
   // ─── Browse ─────────────────────────────────────────
   return (
     <div className="px-7 py-7 md:px-9">
-      <div className="mb-7">
+      <div data-tour="quizzes-header" className="mb-7">
         <p className="eyebrow text-clay">{t("quizzes")}</p>
         <h1 className="serif-headline mt-1 text-[32px] font-normal leading-tight tracking-tight">
           {language === "tr" ? "Bilgini sına" : "Test your knowledge"}
@@ -519,7 +519,7 @@ export default function QuizzesPage() {
       </div>
 
       {/* Categories — generation surface */}
-      <section className="mb-8">
+      <section data-tour="quizzes-topics" className="mb-8">
         <div className="mb-3.5 flex items-baseline">
           <h2 className="font-serif text-[19px] font-medium tracking-tight">
             {language === "tr"

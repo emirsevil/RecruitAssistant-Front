@@ -13,6 +13,7 @@ import { Navigation } from "@/components/navigation"
 import { Toaster } from "sonner"
 
 import { OnboardingGuard } from "@/components/onboarding-guard"
+import { TourProvider } from "@/components/guided-tour/TourProvider"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -65,12 +66,14 @@ export default function RootLayout({
                 <OnboardingGuard>
                   <ScheduleProvider>
                     <InterviewLockProvider>
+                      <TourProvider>
                       <div className="flex min-h-screen">
                         <Navigation />
                         <main className="min-w-0 flex-1">
                           <Suspense fallback={null}>{children}</Suspense>
                         </main>
                       </div>
+                      </TourProvider>
                       <Analytics />
                       <Toaster position="top-right" richColors closeButton />
                     </InterviewLockProvider>

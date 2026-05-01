@@ -193,6 +193,7 @@ export function Navigation() {
 
   return (
     <aside
+      data-tour="nav-sidebar"
       className="hidden lg:flex sticky top-0 h-screen w-[232px] flex-shrink-0 flex-col gap-1 border-r border-border bg-sidebar px-3.5 py-5"
     >
       {/* Logo */}

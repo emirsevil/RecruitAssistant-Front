@@ -88,7 +88,7 @@ export default function DashboardPage() {
   return (
     <div className="px-7 py-7 md:px-9">
       {/* Hero header */}
-      <div className="mb-6 flex items-end justify-between gap-4">
+      <div data-tour="dashboard-header" className="mb-6 flex items-end justify-between gap-4">
         <div>
           <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">{mounted ? today : ""}</p>
           <h1 className="serif-headline mt-1.5 text-[32px] font-normal leading-tight tracking-tight">
@@ -117,7 +117,7 @@ export default function DashboardPage() {
 
       {/* Hero readiness band */}
       <div className="mb-5 grid grid-cols-1 gap-4 lg:grid-cols-[1.5fr_1fr_1fr_1fr]">
-        <div className="flex items-center gap-5 rounded-2xl border border-border bg-card p-5">
+        <div data-tour="dashboard-readiness" className="flex items-center gap-5 rounded-2xl border border-border bg-card p-5">
           <RingProgress value={readiness} size={92} />
           <div>
             <p className="eyebrow">{language === "tr" ? "Hazırlığın" : "Your readiness"}</p>
@@ -140,6 +140,7 @@ export default function DashboardPage() {
             </p>
           </div>
         </div>
+
 
         <GoalCard
           label={language === "tr" ? "Mülakatlar" : "Interviews"}
@@ -166,7 +167,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.6fr_1fr]">
         <div className="flex flex-col gap-4">
           {/* Next actions */}
-          <section className="rounded-2xl border border-border bg-card p-6">
+          <section data-tour="dashboard-actions" className="rounded-2xl border border-border bg-card p-6">
             <header className="mb-4 flex items-baseline justify-between">
               <h2 className="font-serif text-[19px] font-medium tracking-tight">
                 {language === "tr" ? "Sıradaki adımlar" : "Next actions"}
@@ -315,6 +316,7 @@ export default function DashboardPage() {
           {language === "tr" ? "Yükleniyor..." : "Loading..."}
         </p>
       )}
+
     </div>
   )
 }

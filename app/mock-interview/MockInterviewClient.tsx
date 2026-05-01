@@ -317,7 +317,7 @@ export default function MockInterviewClient() {
           </p>
         </div>
 
-        <div className="mx-auto w-full max-w-2xl rounded-2xl border border-border bg-card p-7">
+        <div data-tour="interview-setup" className="mx-auto w-full max-w-2xl rounded-2xl border border-border bg-card p-7">
           <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <p className="mb-1.5 text-[12px] font-semibold">{t("Interview Type")}</p>
@@ -426,7 +426,7 @@ export default function MockInterviewClient() {
             </div>
           )}
 
-          <Button onClick={startInterview} size="lg" className="w-full gap-2">
+          <Button data-tour="interview-start-btn" onClick={startInterview} size="lg" className="w-full gap-2">
             <Phone className="h-5 w-5" />
             {t("Start Interview")}
           </Button>
