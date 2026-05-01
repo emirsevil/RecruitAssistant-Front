@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { usePathname } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { useWorkspace } from "@/lib/workspace-context"
@@ -50,7 +50,7 @@ export interface ProductTourState {
 
 export function useProductTour(): ProductTourState {
   const { user, isLoading: authLoading } = useAuth()
-  const { isHydrated } = useWorkspace()
+  const { workspaces, isHydrated } = useWorkspace()
   const pathname = usePathname()
 
   const [hasCompleted, setHasCompleted] = useState(true) // default true to avoid flash
@@ -58,32 +58,27 @@ export function useProductTour(): ProductTourState {
 
   const userId = user?.id ?? null
 
-  // ── Sync hasCompleted from localStorage whenever auth or pathname changes ──
+  // ── Single unified check — runs on every relevant state change ───
+  //    Combines sync + derive into one effect so there is no render-cycle
+  //    gap between reading localStorage and deciding shouldStart.
   useEffect(() => {
-    if (authLoading || userId === null) return
+    if (authLoading || userId === null || !isHydrated) return
 
-    // Check for replay signal first
+    // 1. Consume replay signal if present
     const hasReplay = readFlag(replayKey(userId))
     if (hasReplay) {
       removeFlag(replayKey(userId))
-      setHasCompleted(false)
-      return // let next render pick up hasCompleted=false
     }
 
-    const completed = readFlag(completedKey(userId))
+    // 2. Read completion flag from localStorage
+    const completed = hasReplay ? false : readFlag(completedKey(userId))
     setHasCompleted(completed)
-  }, [authLoading, userId, pathname])
 
-  // ── Derive shouldStart: fires when all conditions are met ────────
-  useEffect(() => {
-    if (authLoading || userId === null) return
-    if (!isHydrated) return // wait for workspace data to load
-    if (pathname !== "/dashboard") return
-
-    if (!hasCompleted) {
+    // 3. Decide shouldStart synchronously within this same effect
+    if (!completed && pathname === "/dashboard" && workspaces.length > 0) {
       setShouldStart(true)
     }
-  }, [authLoading, userId, isHydrated, pathname, hasCompleted])
+  }, [authLoading, userId, isHydrated, pathname, workspaces.length])
 
   // ── Public API ───────────────────────────────────────────────────
   const markCompleted = useCallback(() => {

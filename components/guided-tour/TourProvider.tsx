@@ -73,20 +73,20 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null)
   const [targetFound, setTargetFound] = useState(false)
 
-  // Track if we've already auto-started in this provider lifecycle
-  const didAutoStart = useRef(false)
+  // Edge-detection: track previous shouldStart to detect false→true
+  const prevShouldStart = useRef(false)
 
   const totalSteps = TOUR_STEPS.length
   const step = TOUR_STEPS[currentStep]
 
-  // ── Auto-start on first visit OR after replay ────────────────────
+  // ── Auto-start: detect shouldStart transitioning from false→true ──
   useEffect(() => {
-    if (shouldStart && !isActive && !didAutoStart.current && pathname === "/dashboard") {
-      didAutoStart.current = true
+    if (shouldStart && !prevShouldStart.current && !isActive) {
       setCurrentStep(0)
       setIsActive(true)
     }
-  }, [shouldStart, pathname, isActive])
+    prevShouldStart.current = shouldStart
+  }, [shouldStart, isActive])
 
   // ── Resume after cross-page navigation ───────────────────────────
   useEffect(() => {
@@ -225,8 +225,8 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   const startTour = useCallback(() => {
     // Reset persistence + session state
     resetTour()
-    // Reset provider state
-    didAutoStart.current = true
+    // Reset provider state — clear prevShouldStart so edge detection works
+    prevShouldStart.current = false
     setCurrentStep(0)
     setTargetRect(null)
     setTargetFound(false)
