@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { apiUrl } from "@/lib/api-config"
 
 export interface MockQuestion {
   id: number
@@ -56,7 +57,7 @@ export function useMockInterview() {
     setEvaluation(null)
     
     try {
-      const res = await fetch("http://localhost:8000/interviews/generate", {
+      const res = await fetch(apiUrl("/interviews/generate"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -115,7 +116,7 @@ export function useMockInterview() {
         answer: mergedAnswers[idx] || "(No answer provided)",
       }))
 
-      const res = await fetch("http://localhost:8000/interviews/evaluate", {
+      const res = await fetch(apiUrl("/interviews/evaluate"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

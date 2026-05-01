@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, type CSSProperties } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 
 import { PageContainer, PageHeader } from "@/components/page-container"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
@@ -17,6 +17,8 @@ import { useLanguage } from "@/lib/language-context"
 import { useVoiceInterview } from "@/hooks/use-voice-interview"
 import { useToast } from "@/hooks/use-toast"
 import { useWorkspace } from "@/lib/workspace-context"
+import { apiUrl } from "@/lib/api-config"
+import { TalkingInterviewerPanel } from "@/components/TalkingInterviewerPanel"
 import { useMicLevel } from "@/hooks/use-mic-level"
 import { useNavigationGuard } from "@/hooks/use-navigation-guard"
 import { RingProgress } from "@/components/calm/ring-progress"
@@ -188,6 +190,7 @@ export default function MockInterviewClient() {
       categories: selectedCategories.length > 0 ? selectedCategories : ["Genel"],
       difficulty,
       interviewType: interviewType,
+      avatarProvider: voice.selectedAvatarProvider,
     })
   }
 
@@ -399,23 +402,44 @@ export default function MockInterviewClient() {
                   </p>
                 </div>
               )}
-            </div>
-          )}
 
-          <Button
-            onClick={startInterview}
-            size="lg"
-            className="w-full gap-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
-          >
-            <Phone className="h-4 w-4" />
-            {t("Start Interview")}
-          </Button>
+              <div className="space-y-2">
+                <Label>{t("Categories / Topics")}</Label>
+                <Textarea value={categories} onChange={e => setCategories(e.target.value)} placeholder={t("e.g. React, Node.js, System Design...")} />
+              </div>
+
+              {voice.isLiveAvatarEnabled && (
+                <div className="space-y-2">
+                  <Label>{t("Interviewer Mode")}</Label>
+                  <Select
+                    value={voice.selectedAvatarProvider}
+                    onValueChange={(value) =>
+                      voice.setSelectedAvatarProvider(value as "rpm_cartesia" | "liveavatar_full")
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="rpm_cartesia">{t("Classic 3D Avatar (stable)")}</SelectItem>
+                      <SelectItem value="liveavatar_full">{t("Photoreal LiveAvatar (beta)")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              <Button onClick={startInterview} size="lg" className="w-full gap-2">
+                <Phone className="h-5 w-5" />
+                {t("Start Interview")}
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
     )
   }
 
-  // ─── Active Interview ─────────────────
+  // ─── Active Interview — Video Call Layout ─────────────────
 
   if (state === "active") {
     const activeQuestions = voice.questions
@@ -423,27 +447,39 @@ export default function MockInterviewClient() {
     const activeQuestion = activeQuestions[activeQIndex]
     const isConnected = voice.connectionStatus === "connected"
 
+    // Status label & color for the avatar panel
+    const statusConfig = {
+      idle: { label: t("Preparing..."), color: "bg-yellow-500", pulse: true },
+      ai_speaking: { label: t("Speaking..."), color: "bg-green-500", pulse: true },
+      listening: { label: t("Listening..."), color: "bg-blue-500", pulse: false },
+      processing: { label: t("Processing..."), color: "bg-yellow-500", pulse: true },
+      evaluating: { label: t("Evaluating..."), color: "bg-purple-500", pulse: true },
+      done: { label: t("Done"), color: "bg-gray-500", pulse: false },
+    }[voice.sessionState] || { label: "", color: "bg-gray-500", pulse: false }
+
     return (
-      <>
-      <LeaveInterviewDialog
-        open={!!navConfirm}
-        onConfirm={handleConfirmLeave}
-        onCancel={handleCancelLeave}
-        t={t}
-      />
-      <div className="mx-auto w-full max-w-6xl px-7 py-7 md:px-9">
-        {/* Header */}
-        <div className="mb-5 flex items-end justify-between gap-3">
-          <div>
-            <div className="mb-1.5 flex items-center gap-2">
-              <span
-                className={`h-2 w-2 rounded-full ${
-                  isConnected ? "bg-sage" : voice.connectionStatus === "connecting" ? "bg-clay animate-pulse" : "bg-destructive"
-                }`}
-              />
-              <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                {isConnected ? `Live · ${activeQuestion?.topic || ""}` : t("Connecting...")}
-              </span>
+      <div className="flex min-h-screen flex-col bg-background">
+        <main className="flex-1 p-4 md:p-6">
+          <div className="mx-auto max-w-6xl space-y-4">
+            {/* ── Top Bar ── */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Badge variant="outline" className="gap-1.5">
+                  <span className={`h-2 w-2 rounded-full ${
+                    voice.connectionStatus === "connected" ? "bg-green-500" : 
+                    voice.connectionStatus === "connecting" ? "bg-yellow-500 animate-pulse" : 
+                    "bg-red-500"
+                  }`} />
+                  {voice.connectionStatus === "connected" ? t("Connected") :
+                   voice.connectionStatus === "connecting" ? t("Connecting...") :
+                   t("Disconnected")}
+                </Badge>
+                <Badge variant="outline">{t("Interview Session")}</Badge>
+              </div>
+              <Button variant="destructive" size="sm" className="gap-1.5" onClick={voice.endSession}>
+                <PhoneOff className="h-4 w-4" />
+                {t("End Interview")}
+              </Button>
             </div>
             <h1 className="serif-headline text-[26px] font-normal leading-tight">
               {t("Question")} {activeQIndex + 1}
@@ -510,158 +546,144 @@ export default function MockInterviewClient() {
               </div>
             )}
 
-            {/* AI speaking / processing indicator */}
-            {(voice.isAiSpeaking || voice.sessionState === "processing" || voice.sessionState === "idle") && (
-              <div className="mb-4 flex items-center justify-between rounded-xl border border-border bg-secondary/40 p-4">
-                <div className="flex items-center gap-2.5">
-                  {voice.sessionState === "processing" || voice.sessionState === "idle" ? (
-                    <Loader2 className="h-4 w-4 animate-spin text-clay" />
-                  ) : (
-                    <Volume2 className="h-4 w-4 animate-pulse text-sage" />
-                  )}
-                  <span className="text-[13px] font-medium">
-                    {voice.isAiSpeaking
-                      ? t("AI is speaking...")
-                      : voice.sessionState === "processing"
-                        ? t("Processing your answer...")
-                        : t("Preparing interview...")}
-                  </span>
-                </div>
-                {voice.isAiSpeaking && (
-                  <Button variant="outline" size="sm" onClick={voice.interrupt} className="gap-1.5">
-                    <Mic className="h-3.5 w-3.5" />
-                    {t("Interrupt & Speak")}
-                  </Button>
+            {/* ── Main Grid: Avatar + Controls ── */}
+            <div className="grid gap-4 lg:grid-cols-12 items-start"> {/* Keep items-start here! */}
+              
+              {/* ── Left Column: Avatar Video Panel ── */}
+              <TalkingInterviewerPanel
+                analyserNode={voice.analyserNode}
+                isSpeaking={voice.isAiSpeaking}
+                activeAvatarProvider={voice.activeAvatarProvider}
+                liveAvatarStatus={voice.liveAvatarStatus}
+                liveAvatarVideoRef={voice.liveAvatarVideoRef}
+                statusLabel={statusConfig.label}
+                statusColor={statusConfig.color}
+                statusPulse={statusConfig.pulse}
+                onInterrupt={voice.interrupt}
+                interviewerLabel={t("AI Interviewer")}
+                showInterruptButton={voice.isAiSpeaking}
+                interruptLabel={t("Interrupt & Speak")}
+              />
+
+              {/* ── Right Column: Question + Answer + Conversation ── */}
+              <div className="lg:col-span-7 space-y-4">
+                {/* Question Card */}
+                {activeQuestion && (
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <Badge variant="secondary" className="w-fit text-xs">{activeQuestion.topic}</Badge>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-lg font-medium leading-relaxed">{activeQuestion.question}</p>
+                    </CardContent>
+                  </Card>
                 )}
               </div>
             )}
 
-            {/* Answer area */}
-            {voice.isListening && (
-              <div className="rounded-xl border border-border bg-secondary/40 p-4">
-                <p className="eyebrow mb-3">
-                  {t("Your Answer")}
-                  {voice.isTranscribing && (
-                    <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-card px-2 py-0.5 text-[10px]">
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                      {t("Transcribing...")}
-                    </span>
-                  )}
-                </p>
-                <Textarea
-                  placeholder={t("Record with the microphone or type your answer here...")}
-                  className="min-h-[110px] resize-none rounded-lg border-border bg-card text-[14px] leading-relaxed"
-                  value={userAnswer}
-                  onChange={(e) => setUserAnswer(e.target.value)}
-                  disabled={voice.isTranscribing}
-                />
+                {/* Processing / Idle indicators (compact, no avatar duplication) */}
+                {voice.sessionState === "processing" && (
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />
+                        <p className="text-sm font-medium text-muted-foreground">{t("Processing your answer...")}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
 
-                {/* Wave bars — driven by live mic amplitude; only move when the user actually speaks */}
-                <div
-                  className="mt-3 flex h-[30px] items-end justify-start gap-[3px]"
-                  aria-hidden="true"
-                >
-                  {micLevels.map((lv, i) => {
-                    // Map amplitude (0..1) to a visible bar height (4..30 px).
-                    const h = 4 + lv * 26
-                    return (
-                      <span
-                        key={i}
-                        className="block w-[3px] rounded-full bg-sage transition-[height,opacity] duration-100 ease-out"
-                        style={{
-                          height: `${h}px`,
-                          opacity: voice.micActive ? Math.max(0.45, 0.45 + lv * 0.55) : 0.25,
-                        }}
-                      />
-                    )
-                  })}
-                </div>
+                {voice.sessionState === "idle" && (
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <Loader2 className="h-5 w-5 text-muted-foreground animate-spin" />
+                        <p className="text-sm font-medium text-muted-foreground">{t("Preparing interview...")}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
 
-                <div className="mt-3 flex items-center justify-between gap-2">
-                  <Button
-                    size="sm"
-                    onClick={handleMicToggle}
-                    disabled={voice.isTranscribing}
-                    className={
-                      voice.micActive
-                        ? "rounded-full gap-2 bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        : "rounded-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
-                    }
-                  >
-                    {voice.micActive ? (
-                      <>
-                        <span className="h-2 w-2 rounded-sm bg-white" />
-                        {t("Stop")}
-                      </>
-                    ) : (
-                      <>
-                        <Mic className="h-3.5 w-3.5" />
-                        {t("Record")}
-                      </>
-                    )}
-                  </Button>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="gap-1.5 text-muted-foreground hover:text-foreground"
-                      onClick={() => {
-                        setUserAnswer("")
-                        voice.passQuestion()
-                      }}
-                      disabled={voice.sessionState !== "listening" || voice.isTranscribing}
-                    >
-                      <SkipForward className="h-3.5 w-3.5" />
-                      {t("Pass")}
-                    </Button>
-                    <Button
-                      size="sm"
-                      className="gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
-                      onClick={handleSubmit}
-                      disabled={!userAnswer.trim() || voice.micActive || voice.isTranscribing}
-                    >
-                      <Send className="h-3.5 w-3.5" />
-                      {t("Submit")}
-                    </Button>
-                  </div>
-                </div>
+                {/* Answer Area — visible when listening */}
+                {voice.isListening && (
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        {t("Your Answer")}
+                        {voice.isTranscribing && (
+                          <Badge variant="outline" className="gap-1 text-xs">
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                            {t("Transcribing...")}
+                          </Badge>
+                        )}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="relative">
+                          <Textarea
+                            placeholder={t("Record with the microphone or type your answer here...")}
+                            className="min-h-[100px] resize-none pr-12 text-base"
+                            value={userAnswer}
+                            onChange={(e) => setUserAnswer(e.target.value)}
+                            disabled={voice.isTranscribing}
+                          />
+                          {voice.micActive && (
+                            <div className="absolute top-2 right-2">
+                              <Badge variant="destructive" className="gap-1 text-xs animate-pulse">
+                                {t("Recording")}
+                              </Badge>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Button 
+                              size="sm" 
+                              variant={voice.micActive ? "destructive" : "outline"}
+                              className="gap-1.5"
+                              onClick={handleMicToggle}
+                              disabled={voice.isTranscribing}
+                            >
+                              {voice.micActive ? <><MicOff className="h-4 w-4" />{t("Stop")}</> : <><Mic className="h-4 w-4" />{t("Record")}</>}
+                            </Button>
+                            <Button variant="ghost" size="sm" className="text-muted-foreground gap-1" onClick={() => { setUserAnswer(""); voice.passQuestion(); }} disabled={voice.sessionState !== "listening"}>
+                              <SkipForward className="h-4 w-4" />
+                              {t("Pass")}
+                            </Button>
+                          </div>
+
+                          <Button size="sm" className="gap-1.5" onClick={handleSubmit} disabled={!userAnswer.trim() || voice.micActive || voice.isTranscribing}>
+                            <Send className="h-4 w-4" />
+                            {t("Submit")}
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Conversation Log */}
+                <Card className="flex flex-col">
+                  <CardHeader className="pb-2"><CardTitle className="text-base">{t("Conversation")}</CardTitle></CardHeader>
+                  <CardContent className="flex-1 p-0 overflow-hidden">
+                    <div ref={conversationScrollRef} className="max-h-[35vh] overflow-y-auto space-y-3 px-6 pb-4">
+                      {voice.conversationLog.length === 0 && (
+                        <p className="text-sm text-muted-foreground text-center py-6">{t("Conversation will appear here...")}</p>
+                      )}
+                      {voice.conversationLog.map((entry, idx) => (
+                        <div key={idx} className={`flex gap-2 ${entry.role === "interviewer" ? "" : "flex-row-reverse"}`}>
+                          <div className={`rounded-lg px-3 py-2 text-sm max-w-[85%] ${entry.role === "interviewer" ? "bg-primary/10" : "bg-muted"}`}>
+                            <p className="text-xs font-medium mb-1 opacity-60">{entry.role === "interviewer" ? "🤖 AI" : "👤 Sen"}</p>
+                            <p className="leading-relaxed">{entry.text}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
-            )}
-          </div>
-
-          {/* Transcript */}
-          <div className="flex flex-col rounded-2xl border border-border bg-card p-6">
-            <h2 className="mb-3.5 font-serif text-[17px] tracking-tight">
-              {t("Conversation")}
-            </h2>
-            <div
-              ref={conversationScrollRef}
-              className="flex max-h-[58vh] flex-col gap-2.5 overflow-y-auto pr-1"
-            >
-              {voice.conversationLog.length === 0 && (
-                <p className="py-6 text-center text-[12px] text-muted-foreground">
-                  {t("Connecting...")}
-                </p>
-              )}
-              {voice.conversationLog.map((entry, idx) => (
-                <div
-                  key={idx}
-                  className={`rounded-lg border-l-2 p-3 text-[13px] leading-relaxed ${
-                    entry.role === "interviewer"
-                      ? "border-sage bg-sage-soft"
-                      : "border-clay bg-secondary"
-                  }`}
-                >
-                  <p
-                    className={`eyebrow mb-1 ${
-                      entry.role === "interviewer" ? "text-sage" : "text-clay"
-                    }`}
-                  >
-                    {entry.role === "interviewer" ? t("AI Interviewer") : t("You")}
-                  </p>
-                  <p className="text-foreground">{entry.text}</p>
-                </div>
-              ))}
             </div>
           </div>
         </div>

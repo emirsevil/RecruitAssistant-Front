@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react"
+import { apiUrl } from "@/lib/api-config"
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -7,6 +8,7 @@ export interface InterviewSummary {
   workspace_id: number
   interview_type: string
   mode: string
+  avatar_provider: "rpm_cartesia" | "liveavatar_full"
   difficulty: string | null
   categories: string | null
   overall_score: number | null
@@ -29,6 +31,7 @@ export interface InterviewDetail {
   workspace_id: number
   interview_type: string
   mode: string
+  avatar_provider: "rpm_cartesia" | "liveavatar_full"
   difficulty: string | null
   categories: string | null
   overall_score: number | null
@@ -99,7 +102,7 @@ export function useInterviewDetail(interviewId: number | null) {
     setError(null)
 
     try {
-      const res = await fetch(`http://localhost:8000/interviews/${id}`, {
+      const res = await fetch(apiUrl(`/interviews/${id}`), {
         credentials: "include",
       })
 
