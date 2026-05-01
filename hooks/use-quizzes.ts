@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useCallback } from "react"
 
 export interface QuizQuestion {
   id: number
@@ -74,7 +74,7 @@ export function useQuizzes() {
   const [error, setError] = useState<string | null>(null)
   const [submitResult, setSubmitResult] = useState<QuizSubmitResponse | null>(null)
 
-  const fetchWorkspaceQuizzes = async (workspaceId: string | number) => {
+  const fetchWorkspaceQuizzes = useCallback(async (workspaceId: string | number) => {
     setIsLoading(true)
     setError(null)
     try {
@@ -91,9 +91,9 @@ export function useQuizzes() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [])
 
-  const fetchUserScores = async () => {
+  const fetchUserScores = useCallback(async () => {
     try {
       const res = await fetch(`http://localhost:8000/quizzes/scores/me`, {
         credentials: "include"
@@ -106,7 +106,7 @@ export function useQuizzes() {
       console.error(e)
       return []
     }
-  }
+  }, [])
 
   const submitQuiz = async (submission: QuizSubmitRequest) => {
     setIsLoading(true)
@@ -147,24 +147,7 @@ export function useQuizzes() {
     }
   }
 
-  const extractSkills = async (workspaceId: string | number) => {
-    setIsLoading(true)
-    setError(null)
-    try {
-      const res = await fetch(`http://localhost:8000/workspaces/${workspaceId}/skills/extract`, {
-        method: "POST",
-        credentials: "include",
-      })
-      if (!res.ok) throw new Error("Failed to extract skills")
-      const data = await res.json()
-      return data as string[]
-    } catch (e: any) {
-      setError(e.message)
-      return []
-    } finally {
-      setIsLoading(false)
-    }
-  }
+
 
   const generateTargetedQuizzes = async (workspaceId: string | number, selections: SkillSelection[], language: string = "tr") => {
     setIsGenerating(true)
@@ -200,7 +183,6 @@ export function useQuizzes() {
     fetchUserScores,
     submitQuiz,
     checkCanStart,
-    extractSkills,
     generateTargetedQuizzes,
   }
 }

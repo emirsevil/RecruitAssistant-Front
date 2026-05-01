@@ -13,6 +13,7 @@ import { Eye, EyeOff, AlertCircle } from "lucide-react"
 import { useLanguage } from "@/lib/language-context"
 import { useAuth } from "@/lib/auth-context"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Logo } from "@/components/logo"
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -64,10 +65,10 @@ export default function RegisterPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
+          <CardHeader className="space-y-1">
           <div className="flex items-center justify-center mb-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-              <span className="text-2xl font-bold">R</span>
+            <div className="flex h-14 w-14 items-center justify-center rounded-3xl bg-primary/10 text-primary shadow-sm">
+              <Logo size={32} variant="mark" />
             </div>
           </div>
           <CardTitle className="text-2xl text-center">{t("Create an account")}</CardTitle>
@@ -186,7 +187,7 @@ export default function RegisterPage() {
               </Link>
             </div>
           </form>
-        </CardContent>
+          </CardContent>
       </Card>
     </div>
   )

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, type CSSProperties } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 
 import { PageContainer, PageHeader } from "@/components/page-container"
@@ -9,9 +9,9 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
 import { Progress } from "@/components/ui/progress"
-import { PlayCircle, Mic, MicOff, Send, BarChart3, SkipForward, Phone, PhoneOff, Loader2, CheckCircle2 } from "lucide-react"
+import { Textarea } from "@/components/ui/textarea"
+import { PlayCircle, Mic, MicOff, Send, ChevronRight, BarChart3, SkipForward, Phone, PhoneOff, Volume2, Loader2, CheckCircle2, Check, Tag } from "lucide-react"
 import Link from "next/link"
 import { useLanguage } from "@/lib/language-context"
 import { useVoiceInterview } from "@/hooks/use-voice-interview"
@@ -19,24 +19,80 @@ import { useToast } from "@/hooks/use-toast"
 import { useWorkspace } from "@/lib/workspace-context"
 import { apiUrl } from "@/lib/api-config"
 import { TalkingInterviewerPanel } from "@/components/TalkingInterviewerPanel"
+import { useMicLevel } from "@/hooks/use-mic-level"
+import { useNavigationGuard } from "@/hooks/use-navigation-guard"
+import { RingProgress } from "@/components/calm/ring-progress"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+
+const WAVE_BARS = 20
 
 type InterviewState = "setup" | "active" | "evaluating" | "completed"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+
+
+const AVATAR_IDLE_FRAME = "/avatar/interviewer.png"
+const AVATAR_FRAME_STYLE = {
+  objectPosition: "50% 0%",
+  scale: 1.08,
+}
+const AVATAR_SPEAKING_FRAMES = [
+  { src: "/avatar/interviewer-1.png", duration: 240 },
+  { src: "/avatar/interviewer-2.png", duration: 310 },
+  { src: "/avatar/interviewer-1.png", duration: 210 },
+  { src: "/avatar/interviewer.png", duration: 200 },
+  { src: "/avatar/interviewer-3.png", duration: 300 },
+  { src: "/avatar/interviewer-2.png", duration: 370 },
+  { src: "/avatar/interviewer-1.png", duration: 260 },
+  { src: "/avatar/interviewer-1.png", duration: 330 },
+  { src: "/avatar/interviewer-2.png", duration: 280 },
+  { src: "/avatar/interviewer.png", duration: 100 },
+]
 
 export default function MockInterviewClient() {
   const [state, setState] = useState<InterviewState>("setup")
   const [interviewType, setInterviewType] = useState("hr")
+
+  // Clear categories when switching to HR (categories are only for technical)
+  const handleInterviewTypeChange = (value: string) => {
+    setInterviewType(value)
+    if (value === "hr") {
+      setSelectedCategories([])
+    }
+  }
   const [difficulty, setDifficulty] = useState("junior")
   const [userAnswer, setUserAnswer] = useState("")
   const { t } = useLanguage()
 
   const { activeWorkspace } = useWorkspace()
-  const [categories, setCategories] = useState("")
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
+
+  // Reset selection when switching interview type or workspace so the user starts
+  // with a blank slate and explicitly opts in to the categories they want.
+  useEffect(() => {
+    setSelectedCategories([])
+  }, [activeWorkspace?.id, interviewType])
   const { toast } = useToast()
   const searchParams = useSearchParams()
   const router = useRouter()
 
+  // Confirmation modal for navigation-away attempts
+  const [navConfirm, setNavConfirm] = useState<{
+    target: string
+    resolve: (allow: boolean) => void
+  } | null>(null)
+
   // Voice interview hook (sole pipeline)
   const voice = useVoiceInterview()
+
+  // Live mic amplitude → wave bars only animate when the user actually speaks
+  const micLevels = useMicLevel(voice.micActive, WAVE_BARS)
 
   // Back-button guard: check if returning to a completed interview
   const [alreadyCompleted, setAlreadyCompleted] = useState(false)
@@ -45,8 +101,8 @@ export default function MockInterviewClient() {
   useEffect(() => {
     const existingId = searchParams.get("id")
     if (existingId) {
-      fetch(apiUrl(`/interviews/${existingId}`), {
-        credentials: "include",
+      fetch(`${API_BASE_URL}/interviews/${existingId}`, {
+        credentials: "include"
       })
         .then((res) => {
           if (!res.ok) return null
@@ -78,6 +134,46 @@ export default function MockInterviewClient() {
     }
   }, [voice.interviewId, state, router])
 
+  // Navigation guard: any attempt to leave the page while the interview is
+  // running pops a confirmation modal. Confirm → discard the interview record
+  // and allow navigation. Cancel → stay on the interview.
+  useNavigationGuard({
+    enabled: state === "active",
+    requestExit: (target) =>
+      new Promise<boolean>((resolve) => {
+        setNavConfirm({ target, resolve })
+      }),
+  })
+
+  const handleConfirmLeave = async () => {
+    if (!navConfirm) return
+    const id = voice.interviewId
+    try {
+      // Permanently discard the in-progress session so it doesn't come back
+      // in the "ongoing interview" prompt next time the user opens the page.
+      if (id) {
+        await fetch(`${API_BASE_URL}/interviews/${id}/discard`, {
+          method: "POST",
+          credentials: "include",
+        })
+      }
+      voice.disconnect()
+    } catch (err) {
+      console.error("Discard on leave failed:", err)
+    } finally {
+      const resolve = navConfirm.resolve
+      setNavConfirm(null)
+      resolve(true)
+    }
+  }
+
+  const handleCancelLeave = () => {
+    if (!navConfirm) return
+    const resolve = navConfirm.resolve
+    setNavConfirm(null)
+    resolve(false)
+  }
+
   const startInterview = async () => {
     if (!activeWorkspace) {
       toast({
@@ -91,7 +187,7 @@ export default function MockInterviewClient() {
     setState("active")
     voice.startSession({
       workspaceId: Number(activeWorkspace.id),
-      categories: categories || "Genel",
+      categories: selectedCategories.length > 0 ? selectedCategories : ["Genel"],
       difficulty,
       interviewType: interviewType,
       avatarProvider: voice.selectedAvatarProvider,
@@ -148,10 +244,10 @@ export default function MockInterviewClient() {
   // Handle mic toggle
   const handleMicToggle = async () => {
     if (voice.micActive) {
-      voice.toggleMic()
+      await voice.toggleMic()
       await voice.transcribeRecording()
     } else {
-      voice.toggleMic()
+      await voice.toggleMic()
     }
   }
 
@@ -166,40 +262,43 @@ export default function MockInterviewClient() {
 
   if (alreadyCompleted) {
     return (
-      <PageContainer>
-        <div className="mx-auto max-w-2xl flex flex-col items-center justify-center min-h-[60vh] gap-6">
-          <div className="h-16 w-16 bg-green-500/10 rounded-full flex items-center justify-center">
-            <CheckCircle2 className="h-8 w-8 text-green-500" />
+      <div className="flex min-h-[70vh] items-center justify-center px-7 py-7 md:px-9">
+        <div className="flex max-w-md flex-col items-center gap-5 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-sage-soft">
+            <CheckCircle2 className="h-7 w-7 text-sage" />
           </div>
-          <div className="text-center">
-            <h2 className="text-2xl font-bold mb-2">{t("Interview Already Completed")}</h2>
-            <p className="text-muted-foreground">{t("This interview has already been completed and evaluated.")}</p>
+          <div>
+            <h2 className="serif-headline text-[28px] font-normal leading-tight">
+              {t("Interview Already Completed")}
+            </h2>
+            <p className="mt-2 text-[14px] text-muted-foreground">
+              {t("This interview has already been completed and evaluated.")}
+            </p>
           </div>
-          <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="flex flex-col gap-2.5 sm:flex-row">
             {completedInterviewId && (
               <Link href="/interview-history">
-                <Button size="lg" className="gap-2">
-                  <BarChart3 className="h-5 w-5" />
+                <Button className="gap-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90">
+                  <BarChart3 className="h-4 w-4" />
                   {t("View Results")}
                 </Button>
               </Link>
             )}
             <Button
-              size="lg"
               variant="outline"
-              className="gap-2"
+              className="gap-2 rounded-lg border-border"
               onClick={() => {
                 setAlreadyCompleted(false)
                 setCompletedInterviewId(null)
                 router.replace("/mock-interview")
               }}
             >
-              <PlayCircle className="h-5 w-5" />
+              <PlayCircle className="h-4 w-4" />
               {t("Start New Interview")}
             </Button>
           </div>
         </div>
-      </PageContainer>
+      </div>
     )
   }
 
@@ -207,47 +306,100 @@ export default function MockInterviewClient() {
 
   if (state === "setup") {
     return (
-      <PageContainer>
-        <PageHeader title={t("Mock Interview")} description={t("Practice your interview skills with AI-powered feedback")} />
+      <div className="mx-auto w-full max-w-3xl px-7 py-7 md:px-9">
+        <div className="mb-6 text-center">
+          <p className="eyebrow mb-1.5 text-clay">{t("Mock Interview")}</p>
+          <h1 className="serif-headline text-[32px] font-normal leading-tight tracking-tight">
+            {t("Configure your practice session")}
+          </h1>
+          <p className="mt-1.5 text-[14px] text-muted-foreground">
+            {t("Practice your interview skills with AI-powered feedback")}
+          </p>
+        </div>
 
-        <div className="mx-auto max-w-2xl">
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("Interview Setup")}</CardTitle>
-              <CardDescription>{t("Configure your practice session")}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label>{t("Interview Type")}</Label>
-                <Select value={interviewType} onValueChange={setInterviewType}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="hr">{t("HR / Behavioral")}</SelectItem>
-                    <SelectItem value="technical">{t("Technical")}</SelectItem>
-                  </SelectContent>
-                </Select>
+        <div className="mx-auto w-full max-w-2xl rounded-2xl border border-border bg-card p-7">
+          <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <p className="mb-1.5 text-[12px] font-semibold">{t("Interview Type")}</p>
+              <Select value={interviewType} onValueChange={handleInterviewTypeChange}>
+                <SelectTrigger className="h-11 rounded-lg border-border bg-background">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="hr">{t("HR / Behavioral")}</SelectItem>
+                  <SelectItem value="technical">{t("Technical")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <p className="mb-1.5 text-[12px] font-semibold">{t("Difficulty Level")}</p>
+              <Select value={difficulty} onValueChange={setDifficulty}>
+                <SelectTrigger className="h-11 rounded-lg border-border bg-background">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="intern">{t("Intern")}</SelectItem>
+                  <SelectItem value="junior">{t("Junior / New Grad")}</SelectItem>
+                  <SelectItem value="mid">{t("Mid-Level")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {activeWorkspace && (
+            <div className="mb-5 rounded-lg border border-border bg-sage-soft px-4 py-3">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-subtle">
+                {t("Active Workspace")}
+              </p>
+              <p className="mt-0.5 font-serif text-[18px] tracking-tight">{activeWorkspace.name}</p>
+            </div>
+          )}
+
+          {interviewType === "technical" && (
+            <div className="mb-5">
+              <div className="mb-2 flex items-center justify-between">
+                <p className="text-[12px] font-semibold">{t("Categories / Topics")}</p>
+                <span className="text-[11px] text-muted-foreground tabular-nums">
+                  {selectedCategories.length} / 5
+                </span>
               </div>
-
-              <div className="space-y-2">
-                <Label>{t("Difficulty Level")}</Label>
-                <Select value={difficulty} onValueChange={setDifficulty}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="intern">{t("Intern")}</SelectItem>
-                    <SelectItem value="junior">{t("Junior / New Grad")}</SelectItem>
-                    <SelectItem value="mid">{t("Mid-Level")}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {activeWorkspace && (
-                <div className="rounded-lg bg-primary/5 p-4 border border-primary/20">
-                  <p className="text-sm font-medium text-primary mb-1">{t("Active Workspace")}</p>
-                  <p className="text-lg font-bold">{activeWorkspace.name}</p>
+              {activeWorkspace?.categories && activeWorkspace.categories.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {activeWorkspace.categories.map((cat) => {
+                    const isSelected = selectedCategories.includes(cat)
+                    const isDisabled = !isSelected && selectedCategories.length >= 5
+                    return (
+                      <button
+                        key={cat}
+                        type="button"
+                        disabled={isDisabled}
+                        onClick={() => {
+                          if (isSelected) {
+                            setSelectedCategories((prev) => prev.filter((c) => c !== cat))
+                          } else if (selectedCategories.length < 5) {
+                            setSelectedCategories((prev) => [...prev, cat])
+                          }
+                        }}
+                        className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 text-[12px] font-medium transition-colors ${
+                          isSelected
+                            ? "border-transparent bg-sage-soft text-sage"
+                            : isDisabled
+                              ? "cursor-not-allowed border-border bg-secondary/40 text-subtle"
+                              : "border-border bg-card text-foreground hover:border-primary/40"
+                        }`}
+                      >
+                        {isSelected && <Check className="h-3 w-3" />}
+                        {cat}
+                      </button>
+                    )
+                  })}
+                </div>
+              ) : (
+                <div className="rounded-xl border border-dashed border-strong bg-secondary/40 py-6 text-center">
+                  <Tag className="mx-auto mb-2 h-5 w-5 text-subtle" />
+                  <p className="text-[12px] text-muted-foreground">
+                    {t("No categories found. Create a workspace with a job description first.")}
+                  </p>
                 </div>
               )}
 
@@ -283,7 +435,7 @@ export default function MockInterviewClient() {
             </CardContent>
           </Card>
         </div>
-      </PageContainer>
+      </div>
     )
   }
 
@@ -293,6 +445,7 @@ export default function MockInterviewClient() {
     const activeQuestions = voice.questions
     const activeQIndex = voice.currentQuestionIndex
     const activeQuestion = activeQuestions[activeQIndex]
+    const isConnected = voice.connectionStatus === "connected"
 
     // Status label & color for the avatar panel
     const statusConfig = {
@@ -328,15 +481,68 @@ export default function MockInterviewClient() {
                 {t("End Interview")}
               </Button>
             </div>
+            <h1 className="serif-headline text-[26px] font-normal leading-tight">
+              {t("Question")} {activeQIndex + 1}
+              <span className="text-subtle"> / {activeQuestions.length || "—"}</span>
+            </h1>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 border-destructive/40 text-destructive hover:bg-red-600 hover:text-white hover:border-red-600"
+              onClick={voice.endSession}
+            >
+              <PhoneOff className="h-3.5 w-3.5" />
+              {t("End")}
+            </Button>
+          </div>
+        </div>
 
-            {/* ── Progress Bar ── */}
-            {activeQuestions.length > 0 && (
-              <div className="space-y-1.5">
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>{t("Question")} {activeQIndex + 1} / {activeQuestions.length}</span>
-                  <span>{activeQuestion?.topic || ""}</span>
+        {/* Progress dots */}
+        {activeQuestions.length > 0 && (
+          <div className="mb-6 flex gap-1.5">
+            {activeQuestions.map((_, i) => (
+              <div
+                key={i}
+                className={`h-1 flex-1 rounded-full ${
+                  i < activeQIndex ? "bg-sage" : i === activeQIndex ? "bg-clay" : "bg-secondary"
+                }`}
+              />
+            ))}
+          </div>
+        )}
+
+        <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
+          {/* Stage */}
+          <div className="rounded-2xl border border-border bg-card p-7">
+            {/* Interviewer header */}
+            <div className="mb-5 flex items-center gap-3.5">
+              <div className="relative flex-shrink-0">
+                <div className="h-16 w-16 overflow-hidden rounded-full border-2 border-sage bg-clay-soft">
+                  <img
+                    src="/avatar/interviewer.png"
+                    alt={t("AI interviewer")}
+                    className="h-full w-full object-cover object-top"
+                  />
                 </div>
-                <Progress value={progress} className="h-2" />
+                <span className="absolute -right-0.5 -bottom-0.5 h-4 w-4 rounded-full border-[3px] border-card bg-sage" />
+              </div>
+              <div>
+                <p className="font-serif text-[18px] tracking-tight">{t("AI Interviewer")}</p>
+                <p className="text-[12px] text-muted-foreground">
+                  {voice.isAiSpeaking ? t("AI is speaking...") : voice.sessionState === "processing" ? t("Processing your answer...") : t("Senior Recruiter")}
+                </p>
+              </div>
+            </div>
+
+            {/* Question card */}
+            {activeQuestion && (
+              <div className="mb-4 rounded-xl border border-border bg-background p-5">
+                <p className="eyebrow mb-2.5 text-clay">{activeQuestion.topic}</p>
+                <p className="font-serif text-[22px] font-normal leading-snug tracking-tight">
+                  &ldquo;{activeQuestion.question}&rdquo;
+                </p>
               </div>
             )}
 
@@ -372,6 +578,8 @@ export default function MockInterviewClient() {
                     </CardContent>
                   </Card>
                 )}
+              </div>
+            )}
 
                 {/* Processing / Idle indicators (compact, no avatar duplication) */}
                 {voice.sessionState === "processing" && (
@@ -478,8 +686,9 @@ export default function MockInterviewClient() {
               </div>
             </div>
           </div>
-        </main>
+        </div>
       </div>
+      </>
     )
   }
 
@@ -487,16 +696,22 @@ export default function MockInterviewClient() {
 
   if (state === "evaluating") {
     return (
-      <PageContainer>
-        <div className="mx-auto max-w-2xl flex flex-col items-center justify-center min-h-[60vh] gap-6">
-          <BarChart3 className="h-12 w-12 text-primary animate-pulse" />
-          <div className="text-center">
-            <h2 className="text-2xl font-bold mb-2">{t("Evaluating Your Answers...")}</h2>
-            <p className="text-muted-foreground">{t("Reviewing your performance")}</p>
+      <div className="flex min-h-[70vh] items-center justify-center px-7 py-7 md:px-9">
+        <div className="flex max-w-md flex-col items-center gap-5 text-center">
+          <Loader2 className="h-10 w-10 animate-spin text-sage" />
+          <div>
+            <h2 className="serif-headline text-[28px] font-normal leading-tight">
+              {t("Evaluating Your Answers...")}
+            </h2>
+            <p className="mt-2 text-[14px] text-muted-foreground">
+              {t("Reviewing your performance")}
+            </p>
           </div>
-          <Progress value={66} className="w-64 h-2" />
+          <div className="h-1 w-64 overflow-hidden rounded-full bg-secondary">
+            <div className="h-full w-2/3 animate-pulse rounded-full bg-sage" />
+          </div>
         </div>
-      </PageContainer>
+      </div>
     )
   }
 
@@ -508,42 +723,213 @@ export default function MockInterviewClient() {
   const overallFeedback = finalEvaluation?.overall_feedback || ""
 
   return (
-    <PageContainer>
-      <div className="mx-auto max-w-4xl space-y-6">
-        <Card className="border-2 border-primary/20 bg-primary/5 p-8 text-center">
-          <div className="mb-2 text-sm font-medium text-muted-foreground">{t("Overall Score")}</div>
-          <div className="mb-4 text-6xl font-bold text-primary">{overallScore}%</div>
-          <p className="text-sm text-muted-foreground">{overallFeedback || t("Review your feedback below.")}</p>
-        </Card>
+    <div className="mx-auto w-full max-w-6xl px-7 py-7 md:px-9">
+      <div className="mb-5">
+        <p className="eyebrow text-clay">
+          {activeWorkspace?.name || ""}{activeWorkspace?.jobName ? ` · ${activeWorkspace.jobName}` : ""}
+        </p>
+        <h1 className="serif-headline mt-1 text-[32px] font-normal leading-tight tracking-tight">
+          {t("Interview Feedback")}
+        </h1>
+      </div>
 
-        <Card>
-          <CardHeader><CardTitle>{t("Detailed Feedback")}</CardTitle></CardHeader>
-          <CardContent className="space-y-4">
-            {results.map((result, idx) => (
-              <div key={idx} className="rounded-lg border p-4 space-y-2">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <Badge variant="outline" className="mb-2">{t(result.topic)}</Badge>
-                    <p className="font-medium">{t(result.question)}</p>
-                  </div>
-                  <div className="text-2xl font-bold text-primary">{result.score}%</div>
-                </div>
-                <p className="text-sm text-muted-foreground">{result.feedback}</p>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+      <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="flex items-center gap-5 rounded-2xl border border-border bg-card p-6">
+          <RingProgress value={overallScore} size={92} />
+          <div>
+            <p className="eyebrow">{t("Overall Score")}</p>
+            <p className="serif-headline mt-1 text-[40px] leading-none tabular-nums">
+              {overallScore}<span className="text-[18px] text-subtle">%</span>
+            </p>
+            <p className="mt-1.5 text-[11px] font-semibold text-sage">
+              ↑ {t("above your average")}
+            </p>
+          </div>
+        </div>
 
-        <div className="flex flex-col gap-3 sm:flex-row pb-20">
-          <Button size="lg" className="flex-1 gap-2" onClick={() => { voice.disconnect(); setState("setup"); }}>
-            <PlayCircle className="h-5 w-5" />
-            {t("Start Another Interview")}
-          </Button>
-          <Link href="/dashboard" className="flex-1">
-            <Button size="lg" variant="outline" className="w-full">{t("Return to Dashboard")}</Button>
-          </Link>
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <div className="mb-3 flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 text-sage" />
+            <span className="font-serif text-[17px] tracking-tight">{t("Strengths")}</span>
+          </div>
+          <p className="text-[13px] leading-relaxed text-muted-foreground">
+            {overallFeedback || t("Review your feedback below.")}
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <div className="mb-3 flex items-center gap-2">
+            <PlayCircle className="h-4 w-4 text-clay" />
+            <span className="font-serif text-[17px] tracking-tight">{t("Next steps")}</span>
+          </div>
+          <div className="flex flex-col gap-2">
+            <Button
+              size="sm"
+              className="justify-start gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+              onClick={() => {
+                voice.disconnect()
+                setState("setup")
+                // Strip ?id=… from the URL so the in-progress probe re-runs
+                // cleanly and we never carry the just-finished interview's id forward.
+                router.replace("/mock-interview", { scroll: false })
+              }}
+            >
+              <PlayCircle className="h-3.5 w-3.5" />
+              {t("Start Another Interview")}
+            </Button>
+            <Link href="/dashboard">
+              <Button size="sm" variant="outline" className="w-full justify-start gap-2 border-border">
+                {t("Return to Dashboard")}
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
-    </PageContainer>
+
+      <div className="rounded-2xl border border-border bg-card p-6">
+        <h2 className="mb-3.5 font-serif text-[17px] font-medium tracking-tight">
+          {t("Detailed Feedback")}
+        </h2>
+        <div className="flex flex-col gap-2">
+          {results.length === 0 && (
+            <p className="py-4 text-center text-sm text-muted-foreground">
+              {t("Review your feedback below.")}
+            </p>
+          )}
+          {results.map((result, idx) => (
+            <div
+              key={idx}
+              className="grid grid-cols-[100px_1fr_80px_60px] items-center gap-3.5 rounded-lg border border-border bg-background p-3.5"
+            >
+              <p className="eyebrow text-clay">{t(result.topic)}</p>
+              <p className="text-[13px]">{t(result.question)}</p>
+              <div className="h-1 overflow-hidden rounded-full bg-secondary">
+                <div
+                  className={`h-full rounded-full ${result.score < 75 ? "bg-clay" : "bg-sage"}`}
+                  style={{ width: `${result.score}%` }}
+                />
+              </div>
+              <span className="text-right font-serif text-[14px] tabular-nums">
+                {result.score}%
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function InterviewerAvatarDisplay({
+  isSpeaking = false,
+}: {
+  isSpeaking?: boolean
+}) {
+  const [frameIndex, setFrameIndex] = useState(0)
+
+  useEffect(() => {
+    for (const src of [AVATAR_IDLE_FRAME, ...AVATAR_SPEAKING_FRAMES.map((frame) => frame.src)]) {
+      const image = new Image()
+      image.src = src
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!isSpeaking) {
+      setFrameIndex(0)
+      return
+    }
+
+    const currentFrame = AVATAR_SPEAKING_FRAMES[frameIndex]
+    const timeout = window.setTimeout(() => {
+      setFrameIndex((index) => (index + 1) % AVATAR_SPEAKING_FRAMES.length)
+    }, currentFrame.duration)
+
+    return () => window.clearTimeout(timeout)
+  }, [frameIndex, isSpeaking])
+
+  const currentFrame = isSpeaking ? AVATAR_SPEAKING_FRAMES[frameIndex] : null
+  const avatarFrame = currentFrame?.src || AVATAR_IDLE_FRAME
+  const imageStyle = {
+    objectPosition: AVATAR_FRAME_STYLE.objectPosition,
+    transform: `scale(${AVATAR_FRAME_STYLE.scale})`,
+  } satisfies CSSProperties
+
+  return (
+    <div className="mx-auto w-full space-y-3">
+      <div
+        className={`relative mx-auto h-[380px] w-[270px] overflow-hidden rounded-lg border bg-muted shadow-sm sm:h-[470px] sm:w-[335px] ${
+          isSpeaking ? "ring-2 ring-primary/30" : ""
+        }`}
+      >
+        <div className="absolute inset-0 origin-center">
+          <img
+            src={avatarFrame}
+            alt="AI interviewer"
+            draggable={false}
+            style={imageStyle}
+            className="h-full w-full select-none object-cover transition-[transform,opacity] duration-150 ease-out"
+          />
+        </div>
+        {isSpeaking && (
+          <div className="absolute bottom-2 right-2 rounded-md bg-background/85 p-1.5 text-primary shadow-sm">
+            <Volume2 className="h-4 w-4 animate-pulse" />
+          </div>
+        )}
+      </div>
+      {isSpeaking && (
+        <div className="mx-auto h-1.5 w-36 overflow-hidden rounded-full bg-primary/10">
+          <div className="h-full w-1/2 animate-pulse rounded-full bg-primary" />
+        </div>
+      )}
+    </div>
+  )
+}
+
+function FeedbackMetric({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between text-sm">
+        <span className="font-medium">{label}</span>
+        <span className="text-muted-foreground">{value}%</span>
+      </div>
+    </div>
+  )
+}
+
+function LeaveInterviewDialog({
+  open,
+  onConfirm,
+  onCancel,
+  t,
+}: {
+  open: boolean
+  onConfirm: () => void
+  onCancel: () => void
+  t: (key: string) => string
+}) {
+  return (
+    <Dialog open={open} onOpenChange={(o) => { if (!o) onCancel() }}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-destructive">{t("Warning")}</DialogTitle>
+          <DialogDescription className="pt-2 text-[14px] leading-relaxed">
+            {t("If you leave this page, your current interview session will be permanently deleted and your progress will not be saved.")}
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter className="gap-2 sm:gap-2">
+          <Button variant="outline" onClick={onCancel}>
+            {t("Stay on this page")}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={onConfirm}
+            className="border-destructive/40 text-destructive hover:bg-red-600 hover:text-white hover:border-red-600"
+          >
+            {t("Leave & Discard")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }

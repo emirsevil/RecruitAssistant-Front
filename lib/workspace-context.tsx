@@ -11,6 +11,7 @@ export interface Workspace {
   createdAt: string
   jobName?: string
   jobDescription?: string
+  categories: string[]
 }
 
 export interface CreateWorkspaceOptions {
@@ -31,7 +32,7 @@ interface WorkspaceContextType {
   activeWorkspace: Workspace | null
   isHydrated: boolean
   setActiveWorkspace: (workspace: Workspace) => void
-  createWorkspace: (name: string, emoji?: string, options?: { jobName?: string; jobDescription?: string }) => Promise<Workspace>
+  createWorkspace: (name: string, emoji?: string, options?: { jobName?: string; jobDescription?: string }) => Promise<{ workspace: Workspace; suggestedCategories: string[] }>
   renameWorkspace: (id: string, name: string) => Promise<void>
   updateWorkspace: (id: string, updates: WorkspaceDetailsUpdate) => Promise<void>
   deleteWorkspace: (id: string) => Promise<void>
@@ -68,6 +69,9 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const [workspaces, setWorkspaces] = useState<Workspace[]>([])
   const [activeWorkspace, setActiveWorkspaceState] = useState<Workspace | null>(null)
   const [isHydrated, setIsHydrated] = useState(false)
+  // Used to debounce workspace clearing when the user briefly goes null
+  // (e.g. during a token refresh) so the UI doesn't flash empty.
+  const clearWorkspacesTimerRef = React.useRef<NodeJS.Timeout | null>(null)
 
   // Mapping function from API to Frontend model
   const mapApiToWorkspace = useCallback((apiWs: any): Workspace => {
@@ -79,6 +83,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       createdAt: apiWs.created_at,
       jobName: apiWs.job_name,
       jobDescription: apiWs.job_description,
+      categories: (apiWs.categories || []).map((c: any) => typeof c === 'string' ? c : c.name),
     }
   }, [])
 
@@ -86,12 +91,25 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const fetchWorkspaces = async () => {
       if (isAuthLoading) return // Wait for auth to resolve before making decisions
-      
+
       if (!user) {
-        setWorkspaces([])
-        setActiveWorkspaceState(null)
-        setIsHydrated(true)
+        // Don't clear immediately — give a short grace period so that a
+        // transient null (e.g. mid-refresh) doesn't flash an empty workspace.
+        if (!clearWorkspacesTimerRef.current) {
+          clearWorkspacesTimerRef.current = setTimeout(() => {
+            setWorkspaces([])
+            setActiveWorkspaceState(null)
+            setIsHydrated(true)
+            clearWorkspacesTimerRef.current = null
+          }, 1500)
+        }
         return
+      }
+
+      // User is valid — cancel any pending clear
+      if (clearWorkspacesTimerRef.current) {
+        clearTimeout(clearWorkspacesTimerRef.current)
+        clearWorkspacesTimerRef.current = null
       }
 
       setIsHydrated(false)
@@ -122,6 +140,14 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     }
 
     fetchWorkspaces()
+
+    return () => {
+      // Clean up any pending clear timer when the effect re-runs
+      if (clearWorkspacesTimerRef.current) {
+        clearTimeout(clearWorkspacesTimerRef.current)
+        clearWorkspacesTimerRef.current = null
+      }
+    }
   }, [mapApiToWorkspace, user, isAuthLoading])
 
   // Persist active workspace ID
@@ -138,7 +164,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     name: string,
     emoji?: string,
     options?: { jobName?: string; jobDescription?: string }
-  ): Promise<Workspace> => {
+  ): Promise<{ workspace: Workspace; suggestedCategories: string[] }> => {
     if (!user) throw new Error("Authentication required")
     
     const wsEmoji = emoji ?? getEmojiForIndex(workspaces.length)
@@ -162,10 +188,11 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     
     const data = await response.json()
     const newWorkspace = mapApiToWorkspace(data)
+    const suggestedCategories: string[] = data.suggested_categories || []
     
     setWorkspaces((prev) => [...prev, newWorkspace])
     setActiveWorkspaceState(newWorkspace)
-    return newWorkspace
+    return { workspace: newWorkspace, suggestedCategories }
   }, [workspaces.length, mapApiToWorkspace, user])
 
   const renameWorkspace = useCallback(async (id: string, name: string) => {

@@ -59,6 +59,7 @@ interface UseVoiceInterviewReturn {
   sessionState: SessionState
   isAiSpeaking: boolean
   isListening: boolean
+  isWrappingUp: boolean
   micActive: boolean
   conversationLog: ConversationEntry[]
   questions: MockQuestion[]
@@ -77,7 +78,7 @@ interface UseVoiceInterviewReturn {
 
   startSession: (config: {
     workspaceId: number
-    categories: string
+    categories: string[]
     difficulty: string
     interviewType: string
     avatarProvider: AvatarProvider
@@ -325,11 +326,26 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
     nextPlayTimeRef.current = 0
   }, [])
 
-  const startMicCapture = useCallback(async () => {
+  // ─── Audio Capture (Mic → STT) ─────────────────────────────────
+
+  const startMicCapture = useCallback(async (): Promise<boolean> => {
+    // If we already have a live recorder, reuse it.
+    if (mediaRecorderRef.current && mediaStreamRef.current) {
+      const tracksAlive = mediaStreamRef.current.getTracks().some((t) => t.readyState === "live")
+      if (tracksAlive) return true
+      // Stale tracks — clean up before re-acquiring
+      try {
+        if (mediaRecorderRef.current.state !== "inactive") mediaRecorderRef.current.stop()
+      } catch {}
+      mediaStreamRef.current.getTracks().forEach((t) => t.stop())
+      mediaStreamRef.current = null
+      mediaRecorderRef.current = null
+    }
+
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         setError("Mikrofon erişimi bu tarayıcı/bağlantıda desteklenmiyor. Lütfen localhost üzerinden erişin.")
-        return
+        return false
       }
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
@@ -347,9 +363,15 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
           audioChunksRef.current.push(event.data)
         }
       }
-    } catch (captureError) {
-      console.error("[Mic] Failed to start capture:", captureError)
-      setError("Mikrofon erişimi reddedildi. Lütfen izin verin.")
+
+      // Permission successfully (re)granted — clear any previous denial error
+      setError(null)
+      console.log("[Mic] Capture ready (MediaRecorder)")
+      return true
+    } catch (err) {
+      console.error("[Mic] Failed to start capture:", err)
+      setError("Mikrofon erişimi reddedildi. Tarayıcı ayarlarından izin verip tekrar deneyin.")
+      return false
     }
   }, [])
 
@@ -461,8 +483,37 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
             allChunksReceivedRef.current = false
           } else {
             allChunksReceivedRef.current = true
-            onPlaybackFinishedRef.current = () => {
-              setSessionState("listening")
+
+            if (data.wrap_up) {
+              // Goodbye speech — lock the UI, wait for playback to finish, then evaluate
+              isWrappingUpRef.current = true
+              setIsWrappingUp(true)
+              setMicActive(false)
+              const triggerEvaluation = () => {
+                // Move out of "ai_speaking" so the UI no longer shows the answer area
+                setSessionState("evaluating")
+                if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+                  wsRef.current.send(JSON.stringify({ type: "start_evaluation" }))
+                }
+              }
+              if (!isPlayingRef.current && scheduledSourcesRef.current.length === 0) {
+                triggerEvaluation()
+                allChunksReceivedRef.current = false
+              } else {
+                onPlaybackFinishedRef.current = () => {
+                  triggerEvaluation()
+                }
+              }
+            } else {
+              // Normal question — transition to listening after playback
+              if (!isPlayingRef.current && scheduledSourcesRef.current.length === 0) {
+                setSessionState("listening")
+                allChunksReceivedRef.current = false
+              } else {
+                onPlaybackFinishedRef.current = () => {
+                  setSessionState("listening")
+                }
+              }
             }
           }
           break
@@ -557,7 +608,7 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
   const startSession = useCallback(
     async (config: {
       workspaceId: number
-      categories: string
+      categories: string[]
       difficulty: string
       interviewType: string
       avatarProvider: AvatarProvider
@@ -582,6 +633,8 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
       currentUtteranceIdRef.current = null
       liveAvatarFailurePendingRef.current = false
       stopPlayback()
+      isWrappingUpRef.current = false
+      setIsWrappingUp(false)
 
       let effectiveProvider = config.avatarProvider
       let liveAvatarSessionId: string | undefined
@@ -698,24 +751,100 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
     [connectLiveAvatar, disconnectLiveAvatar, handleWsMessage, initPlaybackContext, releaseBootstrapLiveAvatarSession, startMicCapture, stopMicCapture, stopPlayback]
   )
 
-  const toggleMic = useCallback(() => {
-    setMicActive((prev) => {
-      const next = !prev
-      if (mediaRecorderRef.current) {
-        if (next) {
-          if (mediaRecorderRef.current.state === "inactive") {
-            audioChunksRef.current = []
-            mediaRecorderRef.current.start()
-          } else if (mediaRecorderRef.current.state === "paused") {
-            mediaRecorderRef.current.resume()
-          }
-        } else if (mediaRecorderRef.current.state === "recording") {
-          mediaRecorderRef.current.pause()
+  const resumeSession = useCallback(
+    async (config: { interviewId: number }) => {
+      setError(null)
+      setConnectionStatus("connecting")
+      setSessionState("idle")
+      setConversationLog([])
+      setQuestions([])
+      setCurrentQuestionIndex(0)
+      setEvaluation(null)
+      isWrappingUpRef.current = false
+      setIsWrappingUp(false)
+
+      let ticket = ""
+      try {
+        const ticketRes = await fetch("http://localhost:8000/auth/ws-ticket", {
+          method: "POST",
+          credentials: "include",
+        })
+        if (ticketRes.ok) {
+          const ticketData = await ticketRes.json()
+          ticket = ticketData.ticket
         }
+      } catch (err) {
+        console.error("Failed to fetch WS ticket:", err)
       }
-      return next
-    })
-  }, [])
+
+      const wsUrl = `ws://localhost:8000/ws/voice-interview${ticket ? `?ticket=${ticket}` : ""}`
+      const ws = new WebSocket(wsUrl)
+      wsRef.current = ws
+      ws.binaryType = "arraybuffer"
+
+      ws.onopen = async () => {
+        setConnectionStatus("connected")
+        await startMicCapture()
+        initPlaybackContext()
+        ws.send(
+          JSON.stringify({
+            type: "resume_session",
+            interview_id: config.interviewId,
+          })
+        )
+      }
+
+      ws.onmessage = handleWsMessage
+
+      ws.onerror = (err) => {
+        console.error("[WS] Error:", err)
+        setError("WebSocket bağlantı hatası")
+        setConnectionStatus("disconnected")
+      }
+
+      ws.onclose = () => {
+        setConnectionStatus("disconnected")
+        stopMicCapture()
+      }
+    },
+    [startMicCapture, stopMicCapture, handleWsMessage, initPlaybackContext]
+  )
+
+  const toggleMic = useCallback(async () => {
+    if (isWrappingUpRef.current) return
+    const isStarting = !micActiveRef.current
+
+    if (isStarting) {
+      // Lazily (re)acquire the microphone — handles the case where the user
+      // initially denied permission and granted it later via browser settings.
+      const ready = await startMicCapture()
+      if (!ready) {
+        // Acquisition failed — keep mic inactive and surface the error
+        setMicActive(false)
+        return
+      }
+
+      const recorder = mediaRecorderRef.current
+      if (!recorder) {
+        setMicActive(false)
+        return
+      }
+
+      if (recorder.state === "inactive") {
+        audioChunksRef.current = []
+        recorder.start()
+      } else if (recorder.state === "paused") {
+        recorder.resume()
+      }
+      setMicActive(true)
+    } else {
+      const recorder = mediaRecorderRef.current
+      if (recorder && recorder.state === "recording") {
+        recorder.pause()
+      }
+      setMicActive(false)
+    }
+  }, [startMicCapture])
 
   const transcribeRecording = useCallback(async (): Promise<string> => {
     setMicActive(false)
@@ -773,6 +902,10 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
   }, [])
 
   const submitTextAnswer = useCallback((text: string) => {
+    if (isWrappingUpRef.current) {
+      // Interview is winding down — ignore further answers
+      return
+    }
     const trimmed = text.trim()
     if (!trimmed) {
       setError("Lütfen bir cevap yazın veya mikrofonu kullanarak konuşun.")
@@ -858,6 +991,10 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
   }, [])
 
   const passQuestion = useCallback(() => {
+    if (isWrappingUpRef.current) {
+      // Interview already ending — don't repeat the wrap-up flow
+      return
+    }
     stopPlayback()
     setMicActive(false)
     setSessionState("processing")
@@ -893,8 +1030,19 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
 
   const endSession = useCallback(() => {
     stopPlayback()
+    setMicActive(false)
+
+    // Optimistically jump the UI into the evaluating state so the user sees
+    // immediate feedback. The backend's "evaluation" / "session_complete"
+    // events will move us into "done" once results are ready.
+    setSessionState("evaluating")
+
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ type: "end_session" }))
+    } else {
+      // WebSocket is gone — there's no way to evaluate. Fall through to "done"
+      // so the UI doesn't hang on the evaluating spinner.
+      setSessionState("done")
     }
   }, [stopPlayback])
 
@@ -915,6 +1063,10 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
     }
   }, [closeRealtimeConnections])
 
+      }
+    }
+  }, [closeRealtimeConnections])
+
   const isAiSpeaking = sessionState === "ai_speaking"
   const isListening = sessionState === "listening"
 
@@ -924,6 +1076,7 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
     sessionState,
     isAiSpeaking,
     isListening,
+    isWrappingUp,
     micActive,
     conversationLog,
     questions,
@@ -940,6 +1093,7 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
     liveAvatarStatus,
     liveAvatarVideoRef,
     startSession,
+    resumeSession,
     toggleMic,
     submitAnswer,
     transcribeRecording,
