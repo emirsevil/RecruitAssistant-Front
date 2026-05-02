@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 
 import { PageContainer, PageHeader } from "@/components/page-container"
 import { Button } from "@/components/ui/button"
@@ -9,11 +10,14 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Moon, Sun, Monitor, Bell, Lock, Palette } from "lucide-react"
+import { Moon, Sun, Monitor, Bell, Lock, Palette, RotateCcw } from "lucide-react"
 import { useLanguage } from "@/lib/language-context"
+import { useTour } from "@/components/guided-tour/TourProvider"
 
 export default function SettingsPage() {
   const { t } = useLanguage()
+  const router = useRouter()
+  const { startTour } = useTour()
   const [theme, setTheme] = useState("system")
   const [notifications, setNotifications] = useState(true)
   const [emailNotifications, setEmailNotifications] = useState(true)
@@ -151,6 +155,28 @@ export default function SettingsPage() {
                   </Button>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Product Tour */}
+          <Card data-tour="settings-tour-card">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <RotateCcw className="h-5 w-5 text-primary" />
+                <CardTitle>{t("Product Tour")}</CardTitle>
+              </div>
+              <CardDescription>{t("Revisit the onboarding walkthrough to learn about all platform features")}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                variant="outline"
+                className="w-full sm:w-auto bg-transparent"
+                onClick={() => {
+                  startTour()
+                }}
+              >
+                {t("Replay onboarding tour")}
+              </Button>
             </CardContent>
           </Card>
 

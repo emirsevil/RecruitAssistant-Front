@@ -23,6 +23,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -191,8 +192,18 @@ export function Navigation() {
     .join("")
     .toUpperCase()
 
+  const getAvatarUrl = (path: string | null | undefined) => {
+    if (!path) return null;
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+    return `${baseUrl.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
+  }
+
+  const avatarUrl = getAvatarUrl(user?.profile_image);
+
   return (
     <aside
+      data-tour="nav-sidebar"
       className="hidden lg:flex sticky top-0 h-screen w-[232px] flex-shrink-0 flex-col gap-1 border-r border-border bg-sidebar px-3.5 py-5"
     >
       {/* Logo */}
@@ -374,9 +385,18 @@ export function Navigation() {
       {/* User chip */}
       <DropdownMenu>
         <DropdownMenuTrigger className="flex items-center gap-2.5 rounded-xl border border-border bg-card px-2.5 py-2 text-left transition-colors hover:bg-secondary/50">
-          <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-clay-soft text-[11px] font-semibold text-clay" suppressHydrationWarning>
-            {mounted ? initials : ""}
-          </span>
+          {mounted ? (
+            <Avatar className="h-7 w-7 flex-shrink-0">
+              {avatarUrl ? (
+                <AvatarImage src={avatarUrl} alt={user?.full_name || "User"} />
+              ) : null}
+              <AvatarFallback className="bg-clay-soft text-[11px] font-semibold text-clay">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+          ) : (
+            <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-clay-soft text-[11px] font-semibold text-clay" suppressHydrationWarning></span>
+          )}
           <span className="min-w-0 flex-1">
             <span className="block truncate text-[12px] font-semibold leading-tight" suppressHydrationWarning>
               {mounted ? (user?.full_name || t("welcome")) : "\u00A0"}

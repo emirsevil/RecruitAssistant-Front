@@ -42,9 +42,9 @@ export function TalkingInterviewerPanel({
   const isLiveAvatar = activeAvatarProvider === "liveavatar_full"
 
   return (
-    <div>
-      <div className="overflow-hidden border-2 border-primary/10 flex flex-col rounded-xl bg-card shadow-sm">
-        <div className="relative w-full aspect-[16/10] max-h-[55vh] bg-gradient-to-b from-slate-800 via-slate-850 to-slate-900">
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border-2 border-primary/10 bg-card shadow-sm">
+        <div className="relative min-h-0 flex-1 bg-gradient-to-b from-slate-800 via-slate-850 to-slate-900">
           {isLiveAvatar ? (
             <>
               <video
@@ -85,18 +85,7 @@ export function TalkingInterviewerPanel({
           )}
         </div>
 
-        <div className="px-4 py-3 bg-card border-t flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-sm">
-              {isLiveAvatar ? "🎥" : "🤖"}
-            </div>
-            <div>
-              <p className="text-sm font-medium">{interviewerLabel}</p>
-              <p className="text-xs text-muted-foreground">{statusLabel}</p>
-            </div>
-          </div>
-          {isSpeaking && <Volume2 className="h-4 w-4 text-green-500 animate-pulse" />}
-        </div>
+
       </div>
     </div>
   )

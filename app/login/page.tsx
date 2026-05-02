@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { Eye, EyeOff, AlertCircle, CheckCircle } from "lucide-react"
+import { Eye, EyeOff, AlertCircle, CheckCircle, Globe } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useLanguage } from "@/lib/language-context"
 import { useAuth } from "@/lib/auth-context"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -18,7 +19,7 @@ import { useSearchParams } from "next/navigation"
 export default function LoginPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { t } = useLanguage()
+  const { language, setLanguage, t } = useLanguage()
   const { login } = useAuth()
   const [showPassword, setShowPassword] = useState(false)
   const isRegistered = searchParams.get("registered") === "true"
@@ -59,7 +60,20 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4 relative">
+      <div className="absolute top-4 right-4">
+        <Select value={language} onValueChange={(val) => setLanguage(val as 'en' | 'tr')}>
+          <SelectTrigger className="w-[130px] bg-background/50 backdrop-blur-sm border-primary/20 hover:border-primary/50 transition-colors">
+            <Globe className="w-4 h-4 mr-2" />
+            <SelectValue placeholder="Language" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="tr">Türkçe</SelectItem>
+            <SelectItem value="en">English</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       <Card className="w-full max-w-md">
           <CardHeader className="space-y-1">
           <div className="flex items-center justify-center mb-4">

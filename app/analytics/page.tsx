@@ -86,6 +86,7 @@ export default function AnalyticsPage() {
 
   return (
     <PageContainer>
+      <div data-tour="analytics-header">
       <PageHeader
         title={t("Analytics")}
         description={
@@ -106,6 +107,7 @@ export default function AnalyticsPage() {
           </Select>
         }
       />
+      </div>
 
       {isLoading && !data && (
         <Card>
@@ -127,7 +129,7 @@ export default function AnalyticsPage() {
       {data && (
         <div className="space-y-6">
           {/* A. KPI strip */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div data-tour="analytics-kpis" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <KpiTile
               label={t("Interviews")}
               value={data.kpis.interviews.current}

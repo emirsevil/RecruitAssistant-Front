@@ -35,6 +35,9 @@ export default function ProfilePage() {
   })
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
   const [isDeletingCv, setIsDeletingCv] = useState(false)
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false)
+  const [isUploadingCv, setIsUploadingCv] = useState(false)
+  
   const [profile, setProfile] = useState({
     full_name: "",
     email: "",
@@ -154,6 +157,115 @@ export default function ProfilePage() {
     }
   }
 
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingPhoto(true);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/upload-profile-image`, {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        handleChange("profile_image", data.url);
+        await checkUser(); // Refresh global user to sync changes
+        toast({
+          title: t("Photo Updated"),
+          description: t("Your profile photo has been successfully updated."),
+        });
+      } else {
+        throw new Error("Upload failed");
+      }
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: t("Error"),
+        description: err.message || t("Failed to upload photo"),
+      });
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
+
+  const handleBaseCvUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.type !== "application/pdf") {
+      toast({
+        variant: "destructive",
+        title: t("Error"),
+        description: t("Only PDF files are supported"),
+      });
+      return;
+    }
+
+    setIsUploadingCv(true);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/upload-base-cv`, {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        await checkUser();
+        toast({
+          title: t("Base CV Updated"),
+          description: t("Your base CV has been extracted and saved successfully."),
+        });
+      } else {
+        throw new Error("Upload failed");
+      }
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: t("Error"),
+        description: err.message || t("Failed to upload Base CV"),
+      });
+    } finally {
+      setIsUploadingCv(false);
+    }
+  };
+
+  const handleRemoveBaseCv = async () => {
+    setIsUploadingCv(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/base-cv`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        await checkUser();
+        toast({
+          title: t("Base CV Removed"),
+          description: t("Your base CV has been removed successfully."),
+        });
+      } else {
+        throw new Error("Failed to remove Base CV");
+      }
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: t("Error"),
+        description: err.message || t("Failed to remove Base CV"),
+      });
+    } finally {
+      setIsUploadingCv(false);
+    }
+  };
+
   const getInitials = (name: string) => {
     return name
       .split(" ")
@@ -161,6 +273,13 @@ export default function ProfilePage() {
       .join("")
       .toUpperCase()
       .substring(0, 2)
+  }
+
+  const getAvatarUrl = (path: string | null | undefined) => {
+    if (!path) return null;
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    const baseUrl = API_BASE_URL;
+    return `${baseUrl.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
   }
 
   return (
@@ -176,7 +295,9 @@ export default function ProfilePage() {
           </CardHeader>
           <CardContent className="flex flex-col items-center gap-4">
             <Avatar className="h-32 w-32 border-2 border-primary/20">
-              <AvatarImage src={profile.profile_image || "/diverse-user-avatars.png"} alt={profile.full_name} />
+              {getAvatarUrl(profile.profile_image) ? (
+                <AvatarImage src={getAvatarUrl(profile.profile_image)!} alt={profile.full_name} />
+              ) : null}
               <AvatarFallback className="text-3xl bg-secondary">{getInitials(profile.full_name || "User")}</AvatarFallback>
             </Avatar>
             <div className="w-full space-y-2">
@@ -186,13 +307,23 @@ export default function ProfilePage() {
                 value={profile.profile_image} 
                 onChange={(e) => handleChange("profile_image", e.target.value)} 
                 placeholder="https://example.com/photo.jpg"
-                disabled={isSaving}
+                disabled={isSaving || isUploadingPhoto}
               />
             </div>
-            <Button variant="outline" className="w-full gap-2 bg-transparent">
-              <Camera className="h-4 w-4" />
-              {t("Change Photo")}
-            </Button>
+            <div className="relative w-full">
+              <Input
+                type="file"
+                accept="image/*"
+                className="absolute inset-0 opacity-0 cursor-pointer w-full"
+                onChange={handlePhotoUpload}
+                disabled={isSaving || isUploadingPhoto}
+                title={t("Click to upload")}
+              />
+              <Button variant="outline" className="w-full gap-2 bg-transparent pointer-events-none" disabled={isSaving || isUploadingPhoto}>
+                {isUploadingPhoto ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+                {isUploadingPhoto ? t("Uploading...") : t("Change Photo")}
+              </Button>
+            </div>
           </CardContent>
         </Card>
 

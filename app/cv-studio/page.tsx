@@ -517,8 +517,7 @@ type CVData = {
 
   return (
     <div className="px-7 py-7 md:px-9">
-      {/* Header */}
-      <div className="mb-7">
+      <div data-tour="cv-header" className="mb-7">
         <p className="eyebrow text-clay">{t("cvStudio")}</p>
         <h1 className="serif-headline mt-1 text-[32px] font-normal leading-tight tracking-tight">
           {t("CV Studio")}
@@ -776,6 +775,7 @@ type CVData = {
             title={t("Upload Resume")}
             iconBg="sage"
             icon={<Upload className="h-5 w-5" />}
+            dataTour="cv-upload"
           >
             {uploadedFileName ? (
               <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-sage-soft/40 px-3.5 py-2.5">
@@ -850,6 +850,7 @@ type CVData = {
 
           <div className="flex flex-col gap-2.5">
             <Button
+              data-tour="cv-generate-btn"
               className="gap-2 rounded-lg bg-primary px-5 py-3 text-[14px] font-semibold text-primary-foreground hover:bg-primary/90"
               onClick={generateCV}
               disabled={isGenerating || isGeneratingCoverLetter}
@@ -1125,12 +1126,14 @@ function Section({
   action,
   icon,
   iconBg,
+  dataTour,
 }: {
   title: string
   children: React.ReactNode
   action?: React.ReactNode
   icon?: React.ReactNode
   iconBg?: "sage" | "clay" | "plum"
+  dataTour?: string
 }) {
   const iconBgClass =
     iconBg === "sage"
@@ -1141,7 +1144,7 @@ function Section({
           ? "bg-plum-soft text-plum"
           : "bg-secondary text-muted-foreground"
   return (
-    <section className="rounded-2xl border border-border bg-card p-6">
+    <section className="rounded-2xl border border-border bg-card p-6" data-tour={dataTour}>
       <header className="mb-4 flex items-center justify-between gap-3">
         <h2 className="flex items-center gap-2.5 font-serif text-[18px] font-medium tracking-tight">
           {icon && (

@@ -342,7 +342,7 @@ export default function MockInterviewClient() {
           </p>
         </div>
 
-        <div className="mx-auto w-full max-w-2xl rounded-2xl border border-border bg-card p-7">
+        <div data-tour="interview-setup" className="mx-auto w-full max-w-2xl rounded-2xl border border-border bg-card p-7">
           <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <p className="mb-1.5 text-[12px] font-semibold">{t("Interview Type")}</p>
@@ -490,7 +490,6 @@ export default function MockInterviewClient() {
     const activeQuestions = voice.questions
     const activeQIndex = voice.currentQuestionIndex
     const activeQuestion = activeQuestions[activeQIndex]
-    const isConnected = voice.connectionStatus === "connected"
 
     // Status label & color for the avatar panel
     const statusConfig = {
@@ -502,52 +501,159 @@ export default function MockInterviewClient() {
       done: { label: t("Done"), color: "bg-gray-500", pulse: false },
     }[voice.sessionState] || { label: "", color: "bg-gray-500", pulse: false }
 
-    return (
-      <div className="flex min-h-screen flex-col bg-background">
-        <main className="flex-1 p-4 md:p-6">
-          <div className="mx-auto max-w-6xl space-y-4">
-            {/* ── Top Bar ── */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Badge variant="outline" className="gap-1.5">
-                  <span className={`h-2 w-2 rounded-full ${
-                    voice.connectionStatus === "connected" ? "bg-green-500" : 
-                    voice.connectionStatus === "connecting" ? "bg-yellow-500 animate-pulse" : 
-                    "bg-red-500"
-                  }`} />
-                  {voice.connectionStatus === "connected" ? t("Connected") :
-                   voice.connectionStatus === "connecting" ? t("Connecting...") :
-                   t("Disconnected")}
+    const answerComposer = voice.isListening ? (
+      <Card className="shrink-0">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            {t("Your Answer")}
+            {voice.isTranscribing && (
+              <Badge variant="outline" className="gap-1 text-xs">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                {t("Transcribing...")}
+              </Badge>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {voice.micActive && (
+              <div className="flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2">
+                <Badge variant="destructive" className="shrink-0 animate-pulse gap-1 text-xs">
+                  {t("Recording")}
                 </Badge>
-                <Badge variant="outline">{t("Interview Session")}</Badge>
+                <div className="flex h-8 flex-1 items-center justify-center gap-[3px]" aria-hidden="true">
+                  {micLevels.map((level, i) => (
+                    <span
+                      key={i}
+                      className="w-[3px] rounded-full bg-destructive transition-[height] duration-75"
+                      style={{ height: `${Math.max(8, level * 100)}%` }}
+                    />
+                  ))}
+                </div>
               </div>
-              <Button variant="destructive" size="sm" className="gap-1.5" onClick={voice.endSession}>
-                <PhoneOff className="h-4 w-4" />
-                {t("End Interview")}
+            )}
+
+            <Textarea
+              placeholder={t("Record with the microphone or type your answer here...")}
+              className="min-h-[110px] resize-none text-base lg:min-h-[120px]"
+              value={userAnswer}
+              onChange={(e) => setUserAnswer(e.target.value)}
+              disabled={voice.isTranscribing}
+            />
+
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant={voice.micActive ? "destructive" : "outline"}
+                  className="gap-1.5"
+                  onClick={handleMicToggle}
+                  disabled={voice.isTranscribing}
+                >
+                  {voice.micActive ? (
+                    <>
+                      <MicOff className="h-4 w-4" />
+                      {t("Stop")}
+                    </>
+                  ) : (
+                    <>
+                      <Mic className="h-4 w-4" />
+                      {t("Record")}
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="gap-1 text-muted-foreground"
+                  onClick={() => {
+                    setUserAnswer("")
+                    voice.passQuestion()
+                  }}
+                  disabled={voice.sessionState !== "listening"}
+                >
+                  <SkipForward className="h-4 w-4" />
+                  {t("Pass")}
+                </Button>
+              </div>
+
+              <Button
+                size="sm"
+                className="gap-1.5"
+                onClick={handleSubmit}
+                disabled={!userAnswer.trim() || voice.micActive || voice.isTranscribing}
+              >
+                <Send className="h-4 w-4" />
+                {t("Submit")}
               </Button>
             </div>
-            <h1 className="serif-headline text-[26px] font-normal leading-tight">
-              {t("Question")} {activeQIndex + 1}
-              <span className="text-subtle"> / {activeQuestions.length || "—"}</span>
-            </h1>
-
-            {/* Progress dots */}
-        {activeQuestions.length > 0 && (
-          <div className="mb-6 flex gap-1.5">
-            {activeQuestions.map((_, i) => (
-              <div
-                key={i}
-                className={`h-1 flex-1 rounded-full ${
-                  i < activeQIndex ? "bg-sage" : i === activeQIndex ? "bg-clay" : "bg-secondary"
-                }`}
-              />
-            ))}
           </div>
-        )}
+        </CardContent>
+      </Card>
+    ) : null
 
-        <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr] items-start">
-          {/* ── LEFT: Avatar (large) + Your Answer ── */}
-          <div className="space-y-4">
+    return (
+      <div className="flex h-[100dvh] flex-col overflow-hidden bg-background">
+        <main className="flex min-h-0 flex-1 flex-col p-4 md:p-6">
+          <div className="mx-auto flex w-full max-w-6xl min-h-0 flex-1 flex-col space-y-4">
+            {/* ── Top Bar ── */}
+            <div className="shrink-0 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Badge variant="outline" className="gap-1.5">
+                    <span className={`h-2 w-2 rounded-full ${
+                      voice.connectionStatus === "connected" ? "bg-green-500" : 
+                      voice.connectionStatus === "connecting" ? "bg-yellow-500 animate-pulse" : 
+                      "bg-red-500"
+                    }`} />
+                    {voice.connectionStatus === "connected" ? t("Connected") :
+                     voice.connectionStatus === "connecting" ? t("Connecting...") :
+                     t("Disconnected")}
+                  </Badge>
+                  <Badge variant="outline">{t("Interview Session")}</Badge>
+                </div>
+                <Button variant="destructive" size="sm" className="gap-1.5" onClick={voice.endSession}>
+                  <PhoneOff className="h-4 w-4" />
+                  {t("End Interview")}
+                </Button>
+              </div>
+
+              <div>
+                <h1 className="serif-headline text-[26px] font-normal leading-tight">
+                  {t("Question")} {activeQIndex + 1}
+                  <span className="text-subtle"> / {activeQuestions.length || "—"}</span>
+                </h1>
+
+                {/* Progress dots */}
+                {activeQuestions.length > 0 && (
+                  <div className="mt-2 flex gap-1.5">
+                    {activeQuestions.map((_, i) => (
+                      <div
+                        key={i}
+                        className={`h-1 flex-1 rounded-full ${
+                          i < activeQIndex ? "bg-sage" : i === activeQIndex ? "bg-clay" : "bg-secondary"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[1.6fr_1fr]">
+          {/* ── LEFT: Avatar (large) + session state ── */}
+          <div className="flex min-h-0 flex-col gap-4 lg:h-full">
+            {activeQuestion && (
+              <Card className="shrink-0 py-3 gap-0">
+                <CardContent className="py-0">
+                  <div className="mb-1.5">
+                    <Badge variant="secondary" className="w-fit text-[10px] py-0 px-2">{activeQuestion.topic}</Badge>
+                  </div>
+                  <p className="text-[14px] font-medium leading-relaxed lg:text-[15px]">{activeQuestion.question}</p>
+                </CardContent>
+              </Card>
+            )}
+
             <TalkingInterviewerPanel
               analyserNode={voice.analyserNode}
               isSpeaking={voice.isAiSpeaking}
@@ -559,7 +665,7 @@ export default function MockInterviewClient() {
               statusPulse={statusConfig.pulse}
               onInterrupt={voice.interrupt}
               interviewerLabel={t("AI Interviewer")}
-              showInterruptButton={voice.isAiSpeaking}
+              showInterruptButton={voice.isAiSpeaking && !voice.isWrappingUp}
               interruptLabel={t("Interrupt & Speak")}
             />
 
@@ -584,93 +690,17 @@ export default function MockInterviewClient() {
                 </CardContent>
               </Card>
             )}
-
-            {voice.isListening && (
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    {t("Your Answer")}
-                    {voice.isTranscribing && (
-                      <Badge variant="outline" className="gap-1 text-xs">
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                        {t("Transcribing...")}
-                      </Badge>
-                    )}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {voice.micActive && (
-                      <div className="flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2">
-                        <Badge variant="destructive" className="gap-1 text-xs animate-pulse shrink-0">
-                          {t("Recording")}
-                        </Badge>
-                        <div className="flex flex-1 items-center justify-center gap-[3px] h-8" aria-hidden="true">
-                          {micLevels.map((level, i) => (
-                            <span
-                              key={i}
-                              className="w-[3px] rounded-full bg-destructive transition-[height] duration-75"
-                              style={{ height: `${Math.max(8, level * 100)}%` }}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    <div className="relative">
-                      <Textarea
-                        placeholder={t("Record with the microphone or type your answer here...")}
-                        className="min-h-[100px] resize-none pr-12 text-base"
-                        value={userAnswer}
-                        onChange={(e) => setUserAnswer(e.target.value)}
-                        disabled={voice.isTranscribing}
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          variant={voice.micActive ? "destructive" : "outline"}
-                          className="gap-1.5"
-                          onClick={handleMicToggle}
-                          disabled={voice.isTranscribing}
-                        >
-                          {voice.micActive ? <><MicOff className="h-4 w-4" />{t("Stop")}</> : <><Mic className="h-4 w-4" />{t("Record")}</>}
-                        </Button>
-                        <Button variant="ghost" size="sm" className="text-muted-foreground gap-1" onClick={() => { setUserAnswer(""); voice.passQuestion(); }} disabled={voice.sessionState !== "listening"}>
-                          <SkipForward className="h-4 w-4" />
-                          {t("Pass")}
-                        </Button>
-                      </div>
-
-                      <Button size="sm" className="gap-1.5" onClick={handleSubmit} disabled={!userAnswer.trim() || voice.micActive || voice.isTranscribing}>
-                        <Send className="h-4 w-4" />
-                        {t("Submit")}
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
           </div>
 
-          {/* ── RIGHT: Question + Conversation ── */}
-          <div className="space-y-4">
-            {activeQuestion && (
-              <Card>
-                <CardHeader className="pb-3">
-                  <Badge variant="secondary" className="w-fit text-xs">{activeQuestion.topic}</Badge>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-lg font-medium leading-relaxed">{activeQuestion.question}</p>
-                </CardContent>
-              </Card>
-            )}
-
-            <Card className="flex flex-col">
+          {/* ── RIGHT: Conversation + Answer ── */}
+          <div className="flex min-h-0 flex-col gap-4 lg:h-full lg:overflow-hidden">
+            <Card className="flex min-h-0 flex-col overflow-hidden lg:flex-1">
               <CardHeader className="pb-2"><CardTitle className="text-base">{t("Conversation")}</CardTitle></CardHeader>
-              <CardContent className="flex-1 p-0 overflow-hidden">
-                <div ref={conversationScrollRef} className="max-h-[60vh] overflow-y-auto space-y-3 px-6 pb-4">
+              <CardContent className="flex min-h-0 flex-1 overflow-hidden p-0">
+                <div
+                  ref={conversationScrollRef}
+                  className="h-[220px] min-h-0 overflow-y-auto overscroll-contain space-y-3 px-6 pb-4 pr-4 lg:h-full"
+                >
                   {voice.conversationLog.length === 0 && (
                     <p className="text-sm text-muted-foreground text-center py-6">{t("Conversation will appear here...")}</p>
                   )}
@@ -685,6 +715,8 @@ export default function MockInterviewClient() {
                 </div>
               </CardContent>
             </Card>
+
+            {answerComposer}
           </div>
         </div>
           </div>
