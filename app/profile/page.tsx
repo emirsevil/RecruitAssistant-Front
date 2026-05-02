@@ -36,8 +36,7 @@ export default function ProfilePage() {
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
   const [isDeletingCv, setIsDeletingCv] = useState(false)
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false)
-  const [isUploadingCv, setIsUploadingCv] = useState(false)
-  
+
   const [profile, setProfile] = useState({
     full_name: "",
     email: "",
@@ -191,78 +190,6 @@ export default function ProfilePage() {
       });
     } finally {
       setIsUploadingPhoto(false);
-    }
-  };
-
-  const handleBaseCvUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.type !== "application/pdf") {
-      toast({
-        variant: "destructive",
-        title: t("Error"),
-        description: t("Only PDF files are supported"),
-      });
-      return;
-    }
-
-    setIsUploadingCv(true);
-    const formData = new FormData();
-    formData.append("file", file);
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/auth/upload-base-cv`, {
-        method: "POST",
-        body: formData,
-        credentials: "include",
-      });
-
-      if (response.ok) {
-        await checkUser();
-        toast({
-          title: t("Base CV Updated"),
-          description: t("Your base CV has been extracted and saved successfully."),
-        });
-      } else {
-        throw new Error("Upload failed");
-      }
-    } catch (err: any) {
-      toast({
-        variant: "destructive",
-        title: t("Error"),
-        description: err.message || t("Failed to upload Base CV"),
-      });
-    } finally {
-      setIsUploadingCv(false);
-    }
-  };
-
-  const handleRemoveBaseCv = async () => {
-    setIsUploadingCv(true);
-    try {
-      const response = await fetch(`${API_BASE_URL}/auth/base-cv`, {
-        method: "DELETE",
-        credentials: "include",
-      });
-
-      if (response.ok) {
-        await checkUser();
-        toast({
-          title: t("Base CV Removed"),
-          description: t("Your base CV has been removed successfully."),
-        });
-      } else {
-        throw new Error("Failed to remove Base CV");
-      }
-    } catch (err: any) {
-      toast({
-        variant: "destructive",
-        title: t("Error"),
-        description: err.message || t("Failed to remove Base CV"),
-      });
-    } finally {
-      setIsUploadingCv(false);
     }
   };
 
