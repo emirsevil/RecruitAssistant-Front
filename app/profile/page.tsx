@@ -8,7 +8,15 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { User as UserIcon, Briefcase, Camera, Loader2 } from "lucide-react"
+import { User as UserIcon, Briefcase, Camera, Loader2, FileText, Trash2, Eye } from "lucide-react"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { useLanguage } from "@/lib/language-context"
 import { useAuth } from "@/lib/auth-context"
 import { useToast } from "@/hooks/use-toast"
@@ -21,6 +29,12 @@ export default function ProfilePage() {
   const { toast } = useToast()
   
   const [isSaving, setIsSaving] = useState(false)
+  const [baseCv, setBaseCv] = useState<{ exists: boolean; hasPdf: boolean }>({
+    exists: false,
+    hasPdf: false,
+  })
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
+  const [isDeletingCv, setIsDeletingCv] = useState(false)
   const [profile, setProfile] = useState({
     full_name: "",
     email: "",
@@ -32,6 +46,47 @@ export default function ProfilePage() {
     skills: "",
     profile_image: "",
   })
+
+  const refreshBaseCvStatus = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/cv/base`, { credentials: "include" })
+      if (!res.ok) return
+      const data = await res.json()
+      setBaseCv({ exists: !!data.parsed_data, hasPdf: !!data.has_pdf })
+    } catch {
+      // Treat as no base CV; UI will show the upload widget.
+    }
+  }
+
+  useEffect(() => {
+    refreshBaseCvStatus()
+  }, [])
+
+  const handleViewPdf = () => {
+    window.open(`${API_BASE_URL}/api/cv/base/pdf`, "_blank")
+  }
+
+  const handleDeleteCv = async () => {
+    setIsDeletingCv(true)
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/cv/base`, {
+        method: "DELETE",
+        credentials: "include",
+      })
+      if (!res.ok && res.status !== 204) throw new Error("Failed to delete base CV")
+      setBaseCv({ exists: false, hasPdf: false })
+      toast({ title: t("Base CV Deleted"), description: t("Your base CV has been removed.") })
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: t("Error"),
+        description: err.message || t("Something went wrong"),
+      })
+    } finally {
+      setIsDeletingCv(false)
+      setConfirmDeleteOpen(false)
+    }
+  }
 
   // Sync state with user data from AuthContext
   useEffect(() => {
@@ -265,8 +320,38 @@ export default function ProfilePage() {
             <CardDescription>{t("Upload your main resume to use as a fallback for new workspaces")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {baseCv.exists && (
+              <div className="flex items-center justify-between rounded-lg border border-border bg-card p-3">
+                <div className="flex items-center gap-3">
+                  <FileText className="h-5 w-5 text-primary" />
+                  <div>
+                    <p className="text-sm font-medium">{t("Base CV on file")}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {baseCv.hasPdf ? t("PDF available") : t("No PDF preview (uploaded as DOCX)")}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {baseCv.hasPdf && (
+                    <Button variant="outline" size="sm" onClick={handleViewPdf} className="gap-1.5">
+                      <Eye className="h-4 w-4" />
+                      {t("View PDF")}
+                    </Button>
+                  )}
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => setConfirmDeleteOpen(true)}
+                    className="gap-1.5"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    {t("Delete")}
+                  </Button>
+                </div>
+              </div>
+            )}
             <div className="space-y-2">
-              <Label htmlFor="base_cv">{t("Upload Base CV")}</Label>
+              <Label htmlFor="base_cv">{baseCv.exists ? t("Replace Base CV") : t("Upload Base CV")}</Label>
               <div className="flex items-center gap-4">
                 <Input
                   id="base_cv"
@@ -286,15 +371,26 @@ export default function ProfilePage() {
                       })
                       if (!parseRes.ok) throw new Error("Failed to parse resume")
                       const parsedData = await parseRes.json()
-                      
+
+                      const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")
+                      const pdf_base64 = isPdf
+                        ? await new Promise<string>((resolve, reject) => {
+                            const reader = new FileReader()
+                            reader.onload = () => resolve((reader.result as string).split(",", 2)[1] || "")
+                            reader.onerror = reject
+                            reader.readAsDataURL(file)
+                          })
+                        : null
+
                       const saveRes = await fetch(`${API_BASE_URL}/api/cv/base`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify(parsedData),
+                        body: JSON.stringify({ parsed_data: parsedData, pdf_base64 }),
                         credentials: "include"
                       })
                       if (!saveRes.ok) throw new Error("Failed to save Base CV")
-                      
+
+                      await refreshBaseCvStatus()
                       toast({
                         title: t("Base CV Updated"),
                         description: t("Your Base CV has been successfully processed and saved."),
@@ -333,6 +429,26 @@ export default function ProfilePage() {
           </Button>
         </div>
       </div>
+
+      <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("Delete Base CV")}</DialogTitle>
+            <DialogDescription>
+              {t("This will permanently remove your base CV. Workspaces that don't have their own generated CV will lose this fallback. You can re-upload at any time.")}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDeleteOpen(false)} disabled={isDeletingCv}>
+              {t("Cancel")}
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteCv} disabled={isDeletingCv} className="gap-1.5">
+              {isDeletingCv ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+              {t("Delete")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </PageContainer>
   )
 }

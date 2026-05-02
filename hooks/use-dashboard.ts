@@ -9,7 +9,6 @@ export interface DashboardStats {
   avg_hr_score_trend: number
   avg_technical_score: number
   avg_technical_score_trend: number
-  cv_ats_score: number
 }
 
 export interface DashboardActivity {
@@ -53,7 +52,7 @@ export interface DashboardData {
   upcoming_events: DashboardUpcomingEvent[]
 }
 
-export function useDashboard() {
+export function useDashboard(workspaceId?: number | null) {
   const [data, setData] = useState<DashboardData | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -63,7 +62,10 @@ export function useDashboard() {
     setError(null)
 
     try {
-      const response = await fetch(`${API_BASE_URL}/dashboard/summary`, {
+      const url = workspaceId
+        ? `${API_BASE_URL}/dashboard/summary?workspace_id=${workspaceId}`
+        : `${API_BASE_URL}/dashboard/summary`
+      const response = await fetch(url, {
         credentials: "include",
       })
 
@@ -81,7 +83,7 @@ export function useDashboard() {
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [workspaceId])
 
   useEffect(() => {
     fetchDashboard()

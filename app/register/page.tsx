@@ -74,11 +74,20 @@ export default function RegisterPage() {
           
           if (parseRes.ok) {
             const parsedData = await parseRes.json()
+            const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")
+            const pdf_base64 = isPdf
+              ? await new Promise<string>((resolve, reject) => {
+                  const reader = new FileReader()
+                  reader.onload = () => resolve((reader.result as string).split(",", 2)[1] || "")
+                  reader.onerror = reject
+                  reader.readAsDataURL(file)
+                })
+              : null
             // Save as base CV
             await fetch(`${API_BASE_URL}/api/cv/base`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(parsedData),
+              body: JSON.stringify({ parsed_data: parsedData, pdf_base64 }),
               credentials: "include"
             })
           }

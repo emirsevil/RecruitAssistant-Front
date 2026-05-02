@@ -341,18 +341,18 @@ type CVData = {
       }
       const parsed = await res.json()
       setCvData((prev) => ({
-        ...prev,
-        name: parsed.name || prev.name,
-        email: parsed.email || prev.email,
-        phone: parsed.phone || prev.phone,
-        location: parsed.location || prev.location,
-        linkedin: parsed.linkedin || prev.linkedin,
-        github: parsed.github || prev.github,
-        summary: parsed.summary || prev.summary,
-        education: parsed.education?.length ? parsed.education : prev.education,
-        experience: parsed.experience?.length ? parsed.experience : prev.experience,
-        projects: parsed.projects?.length ? parsed.projects : prev.projects,
-        skills: parsed.skills?.length ? parsed.skills : prev.skills,
+        name: parsed.name ?? "",
+        email: parsed.email ?? "",
+        phone: parsed.phone ?? "",
+        location: parsed.location ?? "",
+        linkedin: parsed.linkedin ?? "",
+        github: parsed.github ?? "",
+        summary: parsed.summary ?? "",
+        education: parsed.education ?? [],
+        experience: parsed.experience ?? [],
+        projects: parsed.projects ?? [],
+        skills: parsed.skills ?? [],
+        specialInstructions: prev.specialInstructions,
       }))
       setUploadedFileName(file.name)
     } catch (e: any) {
