@@ -38,6 +38,7 @@ export type SessionState =
   | "evaluating"
   | "done"
 export type AvatarProvider = "rpm_cartesia" | "liveavatar_full"
+type OutputMode = "cartesia_stream" | "liveavatar" | "browser_tts"
 
 interface LiveAvatarBootstrapResponse {
   provider: AvatarProvider
@@ -132,7 +133,10 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
 
   const sessionStateRef = useRef<SessionState>("idle")
   const activeAvatarProviderRef = useRef<AvatarProvider>("rpm_cartesia")
+  const activeOutputModeRef = useRef<OutputMode>("cartesia_stream")
   const currentUtteranceIdRef = useRef<string | null>(null)
+  const browserSpeechUtteranceIdRef = useRef<string | null>(null)
+  const interviewIdRef = useRef<number | null>(null)
   const liveAvatarFailurePendingRef = useRef(false)
   const sessionStartInFlightRef = useRef(false)
   const pendingLiveAvatarSessionIdRef = useRef<string | null>(null)
@@ -150,6 +154,10 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
   useEffect(() => {
     micActiveRef.current = micActive
   }, [micActive])
+
+  useEffect(() => {
+    interviewIdRef.current = interviewId
+  }, [interviewId])
 
   const releaseBootstrapLiveAvatarSession = useCallback(
     async (reason = "CLIENT_ABORTED") => {
@@ -186,6 +194,81 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
       }
     },
     []
+  )
+
+  const sendSpeechFinished = useCallback((utteranceId: string | null) => {
+    if (!utteranceId) {
+      return
+    }
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(
+        JSON.stringify({
+          type: "avatar_done_speaking",
+          utterance_id: utteranceId,
+        })
+      )
+    }
+  }, [])
+
+  const cancelBrowserSpeech = useCallback(() => {
+    browserSpeechUtteranceIdRef.current = null
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel()
+    }
+  }, [])
+
+  const speakWithBrowserTts = useCallback(
+    (text: string, utteranceId: string | null) => {
+      if (!utteranceId) {
+        return
+      }
+
+      if (
+        typeof window === "undefined" ||
+        !("speechSynthesis" in window) ||
+        typeof SpeechSynthesisUtterance === "undefined"
+      ) {
+        setError("Tarayıcı seslendirmesi bu tarayıcıda desteklenmiyor.")
+        sendSpeechFinished(utteranceId)
+        return
+      }
+
+      cancelBrowserSpeech()
+
+      const synth = window.speechSynthesis
+      const utterance = new SpeechSynthesisUtterance(text)
+      const voices = synth.getVoices()
+      const turkishVoice = voices.find((voice) => voice.lang?.toLowerCase().startsWith("tr"))
+
+      utterance.lang = turkishVoice?.lang || "tr-TR"
+      utterance.rate = 1
+      utterance.pitch = 1
+      if (turkishVoice) {
+        utterance.voice = turkishVoice
+      }
+
+      browserSpeechUtteranceIdRef.current = utteranceId
+
+      utterance.onend = () => {
+        if (browserSpeechUtteranceIdRef.current !== utteranceId) {
+          return
+        }
+        browserSpeechUtteranceIdRef.current = null
+        sendSpeechFinished(utteranceId)
+      }
+
+      utterance.onerror = () => {
+        if (browserSpeechUtteranceIdRef.current !== utteranceId) {
+          return
+        }
+        browserSpeechUtteranceIdRef.current = null
+        setError("Tarayıcı seslendirmesi başarısız oldu.")
+        sendSpeechFinished(utteranceId)
+      }
+
+      synth.speak(utterance)
+    },
+    [cancelBrowserSpeech, sendSpeechFinished]
   )
 
   const reportLiveAvatarFailure = useCallback((reason: string) => {
@@ -324,6 +407,7 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
   )
 
   const stopPlayback = useCallback(() => {
+    cancelBrowserSpeech()
     shouldPlayAudioRef.current = false
     allChunksReceivedRef.current = false
     onPlaybackFinishedRef.current = null
@@ -336,6 +420,46 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
     playbackQueueRef.current = []
     isPlayingRef.current = false
     nextPlayTimeRef.current = 0
+  }, [cancelBrowserSpeech])
+
+  const waitForCartesiaPlayback = useCallback((onFinished: () => void) => {
+    if (!isPlayingRef.current && playbackQueueRef.current.length > 0) {
+      isPlayingRef.current = true
+      nextPlayTimeRef.current = 0
+      drainQueue()
+    }
+
+    const hasPendingPlayback =
+      isPlayingRef.current ||
+      scheduledSourcesRef.current.length > 0 ||
+      playbackQueueRef.current.length > 0
+
+    if (!hasPendingPlayback) {
+      allChunksReceivedRef.current = false
+      onPlaybackFinishedRef.current = null
+      onFinished()
+      return
+    }
+
+    allChunksReceivedRef.current = true
+    onPlaybackFinishedRef.current = onFinished
+  }, [drainQueue])
+
+  const startFinalEvaluation = useCallback(() => {
+    if (sessionStateRef.current === "evaluating" || sessionStateRef.current === "done") {
+      return
+    }
+
+    isWrappingUpRef.current = true
+    setIsWrappingUp(true)
+    setMicActive(false)
+    allChunksReceivedRef.current = false
+    onPlaybackFinishedRef.current = null
+    setSessionState("evaluating")
+
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: "start_evaluation" }))
+    }
   }, [])
 
   // ─── Audio Capture (Mic → STT) ─────────────────────────────────
@@ -416,8 +540,11 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
       setConnectionStatus("disconnected")
       if (!preserveSessionState) {
         setSessionState("idle")
+        setInterviewId(null)
+        interviewIdRef.current = null
         setActiveAvatarProvider("rpm_cartesia")
         activeAvatarProviderRef.current = "rpm_cartesia"
+        activeOutputModeRef.current = "cartesia_stream"
       }
     },
     [disconnectLiveAvatar, releaseBootstrapLiveAvatarSession, stopMicCapture, stopPlayback]
@@ -430,28 +557,41 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
       switch (msgType) {
         case "session_started": {
           const provider = (data.avatar_provider || activeAvatarProviderRef.current) as AvatarProvider
+          const outputMode = (data.output_mode ||
+            (provider === "liveavatar_full" ? "liveavatar" : "cartesia_stream")) as OutputMode
           setQuestions(data.questions || [])
           setInterviewId(data.interview_id || null)
+          interviewIdRef.current = data.interview_id || null
           setCurrentQuestionIndex(0)
           setActiveAvatarProvider(provider)
           activeAvatarProviderRef.current = provider
+          activeOutputModeRef.current = outputMode
           if (provider === "liveavatar_full") {
             liveAvatarSessionOwnedByBackendRef.current = true
             pendingLiveAvatarSessionIdRef.current = null
             pendingLiveAvatarWorkspaceIdRef.current = null
           }
-          shouldPlayAudioRef.current = provider === "rpm_cartesia"
+          shouldPlayAudioRef.current = outputMode === "cartesia_stream"
+          if (outputMode !== "cartesia_stream") {
+            stopPlayback()
+          }
           setSessionState("ai_speaking")
           break
         }
 
         case "ai_speaking": {
           const provider = (data.avatar_provider || activeAvatarProviderRef.current) as AvatarProvider
+          const outputMode = (data.output_mode ||
+            (provider === "liveavatar_full" ? "liveavatar" : activeOutputModeRef.current || "cartesia_stream")) as OutputMode
           const transcript = data.transcript || ""
+          const isWrapUpTurn = Boolean(data.wrap_up)
           currentUtteranceIdRef.current = data.utterance_id || null
           setSessionState("ai_speaking")
+          isWrappingUpRef.current = isWrapUpTurn
+          setIsWrappingUp(isWrapUpTurn)
           setActiveAvatarProvider(provider)
           activeAvatarProviderRef.current = provider
+          activeOutputModeRef.current = outputMode
           setConversationLog((prev) => [
             ...prev,
             {
@@ -464,9 +604,9 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
             setCurrentQuestionIndex(data.question_index)
           }
 
-          if (provider === "rpm_cartesia") {
+          if (outputMode === "cartesia_stream") {
             shouldPlayAudioRef.current = true
-          } else {
+          } else if (outputMode === "liveavatar") {
             shouldPlayAudioRef.current = false
             stopPlayback()
             try {
@@ -476,13 +616,24 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
               console.error("LiveAvatar speak error:", liveAvatarError)
               reportLiveAvatarFailure("LiveAvatar yanıtı oynatılamadı.")
             }
+          } else {
+            shouldPlayAudioRef.current = false
+            stopPlayback()
+            speakWithBrowserTts(transcript, currentUtteranceIdRef.current)
           }
           break
         }
 
         case "ai_done_speaking": {
           currentUtteranceIdRef.current = null
-          if (activeAvatarProviderRef.current === "liveavatar_full") {
+
+          if (data.wrap_up) {
+            if (activeOutputModeRef.current === "cartesia_stream") {
+              waitForCartesiaPlayback(startFinalEvaluation)
+            } else {
+              startFinalEvaluation()
+            }
+          } else if (activeOutputModeRef.current === "liveavatar") {
             setSessionState("listening")
             try {
               await startLiveAvatarListening()
@@ -490,43 +641,12 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
               console.error("LiveAvatar listening error:", listenError)
               reportLiveAvatarFailure("LiveAvatar dinleme durumuna geçemedi.")
             }
-          } else if (!isPlayingRef.current && scheduledSourcesRef.current.length === 0) {
+          } else if (activeOutputModeRef.current === "browser_tts") {
             setSessionState("listening")
-            allChunksReceivedRef.current = false
           } else {
-            allChunksReceivedRef.current = true
-
-            if (data.wrap_up) {
-              // Goodbye speech — lock the UI, wait for playback to finish, then evaluate
-              isWrappingUpRef.current = true
-              setIsWrappingUp(true)
-              setMicActive(false)
-              const triggerEvaluation = () => {
-                // Move out of "ai_speaking" so the UI no longer shows the answer area
-                setSessionState("evaluating")
-                if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-                  wsRef.current.send(JSON.stringify({ type: "start_evaluation" }))
-                }
-              }
-              if (!isPlayingRef.current && scheduledSourcesRef.current.length === 0) {
-                triggerEvaluation()
-                allChunksReceivedRef.current = false
-              } else {
-                onPlaybackFinishedRef.current = () => {
-                  triggerEvaluation()
-                }
-              }
-            } else {
-              // Normal question — transition to listening after playback
-              if (!isPlayingRef.current && scheduledSourcesRef.current.length === 0) {
-                setSessionState("listening")
-                allChunksReceivedRef.current = false
-              } else {
-                onPlaybackFinishedRef.current = () => {
-                  setSessionState("listening")
-                }
-              }
-            }
+            waitForCartesiaPlayback(() => {
+              setSessionState("listening")
+            })
           }
           break
         }
@@ -537,13 +657,32 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
           setActiveAvatarProvider(provider)
           activeAvatarProviderRef.current = provider
           if (provider === "rpm_cartesia") {
-            shouldPlayAudioRef.current = true
             await disconnectLiveAvatar()
             liveAvatarSessionOwnedByBackendRef.current = false
             pendingLiveAvatarSessionIdRef.current = null
             pendingLiveAvatarWorkspaceIdRef.current = null
             if (data.reason) {
               setError(`LiveAvatar devre dışı kaldı: ${data.reason}`)
+            }
+          }
+          break
+        }
+
+        case "output_mode_switched": {
+          const outputMode = (data.output_mode || "cartesia_stream") as OutputMode
+          activeOutputModeRef.current = outputMode
+
+          if (outputMode === "browser_tts") {
+            shouldPlayAudioRef.current = false
+            stopPlayback()
+            await disconnectLiveAvatar()
+            if (data.reason) {
+              setError(data.reason)
+            }
+            const transcript = data.transcript || ""
+            const utteranceId = data.utterance_id || currentUtteranceIdRef.current
+            if (transcript && utteranceId) {
+              speakWithBrowserTts(transcript, utteranceId)
             }
           }
           break
@@ -578,9 +717,11 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
 
         case "error":
           setError(data.message || "Bilinmeyen hata")
-          setSessionState("listening")
           setMicActive(false)
-          if (!liveAvatarSessionOwnedByBackendRef.current) {
+          if (!data.recoverable) {
+            setSessionState(interviewIdRef.current ? "listening" : "idle")
+          }
+          if (!data.recoverable && !liveAvatarSessionOwnedByBackendRef.current && !interviewIdRef.current) {
             void closeRealtimeConnections({
               preserveSessionState: true,
               liveAvatarStopReason: "CLIENT_START_FAILED",
@@ -592,7 +733,16 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
           console.log("[WS] Unknown message type:", msgType, data)
       }
     },
-    [closeRealtimeConnections, disconnectLiveAvatar, reportLiveAvatarFailure, speakLiveAvatarText, startLiveAvatarListening, stopLiveAvatarListening, stopPlayback]
+    [
+      closeRealtimeConnections,
+      disconnectLiveAvatar,
+      reportLiveAvatarFailure,
+      speakLiveAvatarText,
+      speakWithBrowserTts,
+      startLiveAvatarListening,
+      stopLiveAvatarListening,
+      stopPlayback,
+    ]
   )
 
   const handleWsMessage = useCallback(
@@ -641,8 +791,10 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
       setCurrentQuestionIndex(0)
       setEvaluation(null)
       setInterviewId(null)
+      interviewIdRef.current = null
       setPendingTranscript("")
       currentUtteranceIdRef.current = null
+      activeOutputModeRef.current = "cartesia_stream"
       liveAvatarFailurePendingRef.current = false
       stopPlayback()
       isWrappingUpRef.current = false
@@ -772,6 +924,9 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
       setQuestions([])
       setCurrentQuestionIndex(0)
       setEvaluation(null)
+      setInterviewId(null)
+      interviewIdRef.current = null
+      activeOutputModeRef.current = "cartesia_stream"
       isWrappingUpRef.current = false
       setIsWrappingUp(false)
 

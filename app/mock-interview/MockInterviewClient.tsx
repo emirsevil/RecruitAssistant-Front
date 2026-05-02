@@ -616,7 +616,7 @@ export default function MockInterviewClient() {
               statusPulse={statusConfig.pulse}
               onInterrupt={voice.interrupt}
               interviewerLabel={t("AI Interviewer")}
-              showInterruptButton={voice.isAiSpeaking}
+              showInterruptButton={voice.isAiSpeaking && !voice.isWrappingUp}
               interruptLabel={t("Interrupt & Speak")}
             />
 
