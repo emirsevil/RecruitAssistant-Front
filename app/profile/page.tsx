@@ -255,6 +255,67 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
+        {/* Base CV Upload */}
+        <Card className="lg:col-span-3">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <UserIcon className="h-5 w-5 text-primary" />
+              <CardTitle>{t("Base CV")}</CardTitle>
+            </div>
+            <CardDescription>{t("Upload your main resume to use as a fallback for new workspaces")}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="base_cv">{t("Upload Base CV")}</Label>
+              <div className="flex items-center gap-4">
+                <Input
+                  id="base_cv"
+                  type="file"
+                  accept=".pdf,.docx"
+                  disabled={isSaving}
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0]
+                    if (!file) return
+                    setIsSaving(true)
+                    try {
+                      const fd = new FormData()
+                      fd.append("file", file)
+                      const parseRes = await fetch("/api/parse-resume", {
+                        method: "POST",
+                        body: fd,
+                      })
+                      if (!parseRes.ok) throw new Error("Failed to parse resume")
+                      const parsedData = await parseRes.json()
+                      
+                      const saveRes = await fetch(`${API_BASE_URL}/api/cv/base`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(parsedData),
+                        credentials: "include"
+                      })
+                      if (!saveRes.ok) throw new Error("Failed to save Base CV")
+                      
+                      toast({
+                        title: t("Base CV Updated"),
+                        description: t("Your Base CV has been successfully processed and saved."),
+                      })
+                    } catch (err: any) {
+                      toast({
+                        variant: "destructive",
+                        title: t("Error"),
+                        description: err.message || t("Something went wrong"),
+                      })
+                    } finally {
+                      setIsSaving(false)
+                      e.target.value = ""
+                    }
+                  }}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Save Button */}
         <div className="lg:col-span-3 flex justify-end gap-3">
           <Button variant="outline" size="lg" disabled={isSaving}>

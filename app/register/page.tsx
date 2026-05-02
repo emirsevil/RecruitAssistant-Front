@@ -31,6 +31,8 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const [file, setFile] = useState<File | null>(null)
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
@@ -49,7 +51,46 @@ export default function RegisterPage() {
 
     try {
       await register(formData.email, formData.password, formData.name)
-      // Kayıt başarılı, login sayfasına yönlendir
+      
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+      
+      if (file) {
+        // Login temporarily to get token for saving base CV
+        const loginRes = await fetch(`${API_BASE_URL}/auth/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: formData.email, password: formData.password }),
+          credentials: "include"
+        })
+
+        if (loginRes.ok) {
+          // Parse resume
+          const fd = new FormData()
+          fd.append("file", file)
+          const parseRes = await fetch("/api/parse-resume", {
+            method: "POST",
+            body: fd,
+          })
+          
+          if (parseRes.ok) {
+            const parsedData = await parseRes.json()
+            // Save as base CV
+            await fetch(`${API_BASE_URL}/api/cv/base`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(parsedData),
+              credentials: "include"
+            })
+          }
+          
+          // Log out so they can log in via the login page
+          await fetch(`${API_BASE_URL}/auth/logout`, {
+            method: "POST",
+            credentials: "include"
+          })
+        }
+      }
+      
       router.push("/login?registered=true")
     } catch (err: any) {
       setError(err.message || "Kayıt işlemi başarısız oldu.")
@@ -155,6 +196,19 @@ export default function RegisterPage() {
                   )}
                 </Button>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="cvUpload">{t("Upload CV (Optional)")}</Label>
+              <Input
+                id="cvUpload"
+                type="file"
+                accept=".pdf,.docx"
+                onChange={(e) => setFile(e.target.files?.[0] || null)}
+              />
+              <p className="text-xs text-muted-foreground">
+                {t("We will use this as your Base CV to pre-fill information.")}
+              </p>
             </div>
 
             <div className="flex items-center space-x-2">

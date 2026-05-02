@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useRef, useState, useEffect } from "react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -140,6 +140,72 @@ type CVData = {
   const removeSkill = (i: number) =>
     setCvData({ ...cvData, skills: cvData.skills.filter((_, idx) => idx !== i) })
 
+  // Fetch initial CV Data
+  
+  useEffect(() => {
+    const fetchInitialCV = async () => {
+      try {
+        let url = `${API_BASE}/api/cv/base`
+        // If workspace already has a generated CV, load that instead of base CV
+        if (activeWorkspace?.generated_cv_id) {
+          url = `${API_BASE}/api/cv/${activeWorkspace.generated_cv_id}`
+        }
+        
+        const response = await fetch(url, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include"
+        })
+        
+        if (response.ok) {
+          const data = await response.json()
+          if (data.parsed_data) {
+            // Mapping the parsed JSON back to CVData state
+            // The JSON from OpenAI has slightly different keys sometimes depending on the prompt
+            const p = data.parsed_data
+            setCvData(prev => ({
+              ...prev,
+              name: p.name || p.full_name || prev.name,
+              email: p.email || prev.email,
+              phone: p.phone || prev.phone,
+              location: p.location || prev.location,
+              linkedin: p.linkedin || prev.linkedin,
+              github: p.github || prev.github,
+              summary: p.summary || prev.summary,
+              education: p.education?.length ? p.education : prev.education,
+              experience: p.experience?.length ? p.experience : prev.experience,
+              projects: p.projects?.length ? p.projects : prev.projects,
+              skills: p.skills?.length ? p.skills : prev.skills,
+            }))
+          }
+          if (data.latex_content) {
+            setIsCompiling(true)
+            setIsGenerated(true)
+            setGeneratedLatex(data.latex_content)
+            fetch(`${API_BASE}/api/compile-latex`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                latex_content: data.latex_content,
+                workspace_id: null, // null so we don't overwrite DB unnecessarily
+                document_type: "cv"
+              }),
+              credentials: "include"
+            }).then(res => res.json()).then(compileData => {
+              if (compileData.pdf_base64) {
+                setGeneratedPdfBase64(compileData.pdf_base64)
+              }
+            }).catch(err => console.error("Auto compile failed", err))
+              .finally(() => setIsCompiling(false))
+          }
+        }
+      } catch (e) {
+        console.error("Failed to load initial CV data:", e)
+      }
+    }
+    fetchInitialCV()
+  }, [activeWorkspace?.generated_cv_id])
+
   const addBullet = (expIndex: number) => {
     const next = [...cvData.experience]
     next[expIndex].bullets.push("")
@@ -234,13 +300,19 @@ type CVData = {
           latex_content: latex,
           workspace_id: workspaceId,
           document_type: documentType,
+          cv_data: isCoverLetter ? undefined : cvData,
         }),
         credentials: "include",
       })
       const data = await response.json()
       if (!response.ok) throw new Error(data.error || "Compilation failed on backend")
       if (isCoverLetter) setGeneratedCoverLetterPdfBase64(data.pdf_base64)
-      else setGeneratedPdfBase64(data.pdf_base64)
+      else {
+        setGeneratedPdfBase64(data.pdf_base64)
+        if (data.cv_id && activeWorkspace) {
+          activeWorkspace.generated_cv_id = data.cv_id
+        }
+      }
     } catch (e: any) {
       console.error("Compile Error:", e.message)
       if (isCoverLetter) setGeneratedCoverLetterPdfBase64(null)

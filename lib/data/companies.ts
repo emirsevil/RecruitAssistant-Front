@@ -187,7 +187,6 @@ export const COMPANIES: Company[] = [
   { name: "Delivery Hero", category: "Global Tech" },
   { name: "Zalando", category: "Global Tech" },
   { name: "About You", category: "Global Tech" },
-  { name: "Spotify", category: "Global Tech" },
   { name: "Samsung", category: "Global Tech" },
   { name: "LG", category: "Global Tech" },
   { name: "Sony", category: "Global Tech" },
