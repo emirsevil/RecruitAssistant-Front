@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { User as UserIcon, Briefcase, Camera, Loader2 } from "lucide-react"
+import { User as UserIcon, Briefcase, Camera, Loader2, FileText, Upload, Trash2 } from "lucide-react"
 import { useLanguage } from "@/lib/language-context"
 import { useAuth } from "@/lib/auth-context"
 import { useToast } from "@/hooks/use-toast"
@@ -21,6 +21,9 @@ export default function ProfilePage() {
   const { toast } = useToast()
   
   const [isSaving, setIsSaving] = useState(false)
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false)
+  const [isUploadingCv, setIsUploadingCv] = useState(false)
+  
   const [profile, setProfile] = useState({
     full_name: "",
     email: "",
@@ -99,6 +102,115 @@ export default function ProfilePage() {
     }
   }
 
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingPhoto(true);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/upload-profile-image`, {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        handleChange("profile_image", data.url);
+        await checkUser(); // Refresh global user to sync changes
+        toast({
+          title: t("Photo Updated"),
+          description: t("Your profile photo has been successfully updated."),
+        });
+      } else {
+        throw new Error("Upload failed");
+      }
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: t("Error"),
+        description: err.message || t("Failed to upload photo"),
+      });
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
+
+  const handleBaseCvUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.type !== "application/pdf") {
+      toast({
+        variant: "destructive",
+        title: t("Error"),
+        description: t("Only PDF files are supported"),
+      });
+      return;
+    }
+
+    setIsUploadingCv(true);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/upload-base-cv`, {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        await checkUser();
+        toast({
+          title: t("Base CV Updated"),
+          description: t("Your base CV has been extracted and saved successfully."),
+        });
+      } else {
+        throw new Error("Upload failed");
+      }
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: t("Error"),
+        description: err.message || t("Failed to upload Base CV"),
+      });
+    } finally {
+      setIsUploadingCv(false);
+    }
+  };
+
+  const handleRemoveBaseCv = async () => {
+    setIsUploadingCv(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/base-cv`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        await checkUser();
+        toast({
+          title: t("Base CV Removed"),
+          description: t("Your base CV has been removed successfully."),
+        });
+      } else {
+        throw new Error("Failed to remove Base CV");
+      }
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: t("Error"),
+        description: err.message || t("Failed to remove Base CV"),
+      });
+    } finally {
+      setIsUploadingCv(false);
+    }
+  };
+
   const getInitials = (name: string) => {
     return name
       .split(" ")
@@ -106,6 +218,13 @@ export default function ProfilePage() {
       .join("")
       .toUpperCase()
       .substring(0, 2)
+  }
+
+  const getAvatarUrl = (path: string | null | undefined) => {
+    if (!path) return null;
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    const baseUrl = API_BASE_URL;
+    return `${baseUrl.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
   }
 
   return (
@@ -121,7 +240,9 @@ export default function ProfilePage() {
           </CardHeader>
           <CardContent className="flex flex-col items-center gap-4">
             <Avatar className="h-32 w-32 border-2 border-primary/20">
-              <AvatarImage src={profile.profile_image || "/diverse-user-avatars.png"} alt={profile.full_name} />
+              {getAvatarUrl(profile.profile_image) ? (
+                <AvatarImage src={getAvatarUrl(profile.profile_image)!} alt={profile.full_name} />
+              ) : null}
               <AvatarFallback className="text-3xl bg-secondary">{getInitials(profile.full_name || "User")}</AvatarFallback>
             </Avatar>
             <div className="w-full space-y-2">
@@ -131,13 +252,23 @@ export default function ProfilePage() {
                 value={profile.profile_image} 
                 onChange={(e) => handleChange("profile_image", e.target.value)} 
                 placeholder="https://example.com/photo.jpg"
-                disabled={isSaving}
+                disabled={isSaving || isUploadingPhoto}
               />
             </div>
-            <Button variant="outline" className="w-full gap-2 bg-transparent">
-              <Camera className="h-4 w-4" />
-              {t("Change Photo")}
-            </Button>
+            <div className="relative w-full">
+              <Input
+                type="file"
+                accept="image/*"
+                className="absolute inset-0 opacity-0 cursor-pointer w-full"
+                onChange={handlePhotoUpload}
+                disabled={isSaving || isUploadingPhoto}
+                title={t("Click to upload")}
+              />
+              <Button variant="outline" className="w-full gap-2 bg-transparent pointer-events-none" disabled={isSaving || isUploadingPhoto}>
+                {isUploadingPhoto ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+                {isUploadingPhoto ? t("Uploading...") : t("Change Photo")}
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
@@ -252,6 +383,84 @@ export default function ProfilePage() {
                 disabled={isSaving}
               />
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Base CV Section */}
+        <Card className="lg:col-span-3 border-primary/20">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" />
+              <CardTitle>{t("Base CV")}</CardTitle>
+            </div>
+            <CardDescription>{t("Upload a default CV PDF. We will extract the text to use as context for AI interviews when a workspace specific CV is not available.")}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {user?.base_cv ? (
+              <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg border border-border">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-full">
+                    <FileText className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium">{t("CV Extracted Successfully")}</h4>
+                    <p className="text-sm text-muted-foreground line-clamp-1 max-w-[300px]">
+                      {user.base_cv.substring(0, 100)}...
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <div className="relative">
+                    <Input
+                      type="file"
+                      accept=".pdf"
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full"
+                      onChange={handleBaseCvUpload}
+                      disabled={isUploadingCv}
+                      title={t("Update Base CV")}
+                    />
+                    <Button variant="outline" size="sm" className="pointer-events-none" disabled={isUploadingCv}>
+                      {isUploadingCv ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
+                      {t("Replace")}
+                    </Button>
+                  </div>
+                  <Button variant="destructive" size="sm" onClick={handleRemoveBaseCv} disabled={isUploadingCv}>
+                    {isUploadingCv ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4 mr-2" />}
+                    {t("Remove")}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center hover:bg-muted/50 transition-colors">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mb-4">
+                  <Upload className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="text-lg font-medium mb-1">{t("Upload your Base CV")}</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  {t("PDF files only. Maximum size 5MB.")}
+                </p>
+                <div className="relative max-w-xs mx-auto">
+                  <Input
+                    type="file"
+                    accept=".pdf"
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                    onChange={handleBaseCvUpload}
+                    disabled={isUploadingCv}
+                    title={t("Click to upload")}
+                  />
+                  <Button className="w-full pointer-events-none" disabled={isUploadingCv}>
+                    {isUploadingCv ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        {t("Uploading...")}
+                      </>
+                    ) : (
+                      t("Select File")
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
