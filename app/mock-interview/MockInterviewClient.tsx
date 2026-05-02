@@ -174,6 +174,9 @@ export default function MockInterviewClient() {
     resolve(false)
   }
 
+  const [missingCvOpen, setMissingCvOpen] = useState(false)
+  const [isCheckingCv, setIsCheckingCv] = useState(false)
+
   const startInterview = async () => {
     if (!activeWorkspace) {
       toast({
@@ -182,6 +185,28 @@ export default function MockInterviewClient() {
         variant: "destructive",
       })
       return
+    }
+
+    if (interviewType === "hr") {
+      setIsCheckingCv(true)
+      try {
+        const res = await fetch(
+          apiUrl(`/api/cv/workspace/${activeWorkspace.id}/availability`),
+          { credentials: "include" },
+        )
+        if (res.ok) {
+          const { has_cv } = await res.json()
+          if (!has_cv) {
+            setMissingCvOpen(true)
+            return
+          }
+        }
+      } catch (err) {
+        console.error("CV availability check failed:", err)
+        // Fall through and let the backend reject if needed.
+      } finally {
+        setIsCheckingCv(false)
+      }
     }
 
     setState("active")
@@ -426,11 +451,35 @@ export default function MockInterviewClient() {
             </div>
           )}
 
-          <Button data-tour="interview-start-btn" onClick={startInterview} size="lg" className="w-full gap-2">
-            <Phone className="h-5 w-5" />
+          <Button onClick={startInterview} size="lg" className="w-full gap-2" disabled={isCheckingCv}>
+            {isCheckingCv ? <Loader2 className="h-5 w-5 animate-spin" /> : <Phone className="h-5 w-5" />}
             {t("Start Interview")}
           </Button>
         </div>
+
+        <Dialog open={missingCvOpen} onOpenChange={setMissingCvOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{t("CV Required")}</DialogTitle>
+              <DialogDescription>
+                {t("HR interviews are tailored to your CV. Please upload or generate a CV before starting an HR interview.")}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setMissingCvOpen(false)}>
+                {t("Cancel")}
+              </Button>
+              <Button
+                onClick={() => {
+                  setMissingCvOpen(false)
+                  router.push("/cv-studio")
+                }}
+              >
+                {t("Go to CV Studio")}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     )
   }

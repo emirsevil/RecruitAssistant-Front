@@ -196,7 +196,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const data = await response.json()
       setUser(data.user)
       lastActivityRef.current = Date.now() // Reset activity timer on login
-      router.push("/dashboard")
     } catch (error) {
       throw error
     } finally {

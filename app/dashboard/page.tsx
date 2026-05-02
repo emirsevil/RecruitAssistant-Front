@@ -24,8 +24,8 @@ import { cn } from "@/lib/utils"
 export default function DashboardPage() {
   const router = useRouter()
   const { user } = useAuth()
-  const { workspaces, isHydrated } = useWorkspace()
-  const { data, isLoading } = useDashboard()
+  const { workspaces, isHydrated, activeWorkspace } = useWorkspace()
+  const { data, isLoading } = useDashboard(activeWorkspace ? Number(activeWorkspace.id) : null)
   const { t, language } = useLanguage()
   const dateLocale = language === "tr" ? tr : enUS
 
@@ -63,7 +63,7 @@ export default function DashboardPage() {
   }, [language])
 
   const readiness = data
-    ? Math.round((data.stats.avg_hr_score + data.stats.avg_technical_score + data.stats.cv_ats_score) / 3) || 0
+    ? Math.round((data.stats.avg_hr_score + data.stats.avg_technical_score) / 2) || 0
     : 0
   const trend = data?.stats?.avg_hr_score_trend ?? 0
 
@@ -208,8 +208,8 @@ export default function DashboardPage() {
                 title={language === "tr" ? "CV'yi geliştir" : "Polish your CV"}
                 sub={
                   language === "tr"
-                    ? "ATS skoru: " + (data?.stats.cv_ats_score ?? 0) + "% — birkaç hızlı düzenleme bekliyor"
-                    : "ATS score: " + (data?.stats.cv_ats_score ?? 0) + "% — a few quick wins available"
+                    ? "Bu çalışma alanı için CV'nizi güncelleyin"
+                    : "Update your CV for this workspace"
                 }
                 cta={language === "tr" ? "Aç" : "Open"}
                 href="/cv-studio"

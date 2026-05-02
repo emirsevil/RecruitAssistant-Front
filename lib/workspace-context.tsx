@@ -12,6 +12,7 @@ export interface Workspace {
   jobName?: string
   jobDescription?: string
   categories: string[]
+  generated_cv_id?: number
 }
 
 export interface CreateWorkspaceOptions {
@@ -84,6 +85,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       jobName: apiWs.job_name,
       jobDescription: apiWs.job_description,
       categories: (apiWs.categories || []).map((c: any) => typeof c === 'string' ? c : c.name),
+      generated_cv_id: apiWs.generated_cv_id,
     }
   }, [])
 

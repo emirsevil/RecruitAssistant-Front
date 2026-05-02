@@ -48,17 +48,6 @@ export default function OnboardingPage() {
   const stepLabel = (n: number) =>
     language === "tr" ? `Adım ${n} / ${totalSteps}` : `Step ${n} of ${totalSteps}`
 
-  // Naive skill extraction from JD: take Capitalized tokens
-  const extractedSkills = formData.jobDescription
-    ? Array.from(
-        new Set(
-          formData.jobDescription
-            .split(/[^A-Za-z+#.]+/)
-            .filter((w) => w.length > 1 && /^[A-Z]/.test(w))
-            .slice(0, 7)
-        )
-      )
-    : []
 
   const goNext = async () => {
     if (step === 1) {
@@ -240,26 +229,7 @@ export default function OnboardingPage() {
                 />
               </div>
 
-              {extractedSkills.length > 0 && (
-                <div>
-                  <div className="mb-2 flex items-center gap-2 whitespace-nowrap">
-                    <Sparkles className="h-3.5 w-3.5 flex-shrink-0 text-clay" />
-                    <span className="text-[12px] font-semibold">
-                      {language === "tr" ? "Çıkarılan yetenekler" : "Extracted skills"}
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {extractedSkills.map((s) => (
-                      <span
-                        key={s}
-                        className="whitespace-nowrap rounded-full bg-sage-soft px-2.5 py-1 text-[12px] font-medium text-sage"
-                      >
-                        {s}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
+
             </div>
           )}
 
@@ -278,29 +248,7 @@ export default function OnboardingPage() {
                 }
               />
 
-              <div className="rounded-xl border border-dashed border-strong bg-secondary/40 p-4">
-                <div className="flex items-center gap-3.5">
-                  <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-card text-clay">
-                    <Upload className="h-5 w-5" />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[13px] font-semibold">
-                      {language === "tr" ? "CV ekle (opsiyonel)" : "Add your CV (optional)"}
-                    </p>
-                    <p className="text-[11px] text-muted-foreground">
-                      {language === "tr"
-                        ? "PDF veya DOCX yükleyin — geri bildirim ve CV stüdyosu için kullanılır."
-                        : "Upload a PDF or DOCX — we'll use it for feedback and CV studio."}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    className="whitespace-nowrap rounded-lg border border-strong bg-card px-3.5 py-2 text-[12px] font-semibold transition-colors hover:bg-secondary"
-                  >
-                    {language === "tr" ? "CV yükle" : "Upload CV"}
-                  </button>
-                </div>
-              </div>
+
             </div>
           )}
 

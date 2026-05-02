@@ -35,6 +35,23 @@ export default function LoginPage() {
 
     try {
       await login(email, password)
+      
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+      const res = await fetch(`${API_BASE_URL}/workspaces/`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include"
+      })
+      
+      if (res.ok) {
+        const workspaces = await res.json()
+        if (workspaces.length === 0) {
+          window.location.href = "/onboarding"
+          return
+        }
+      }
+      
+      window.location.href = "/dashboard"
     } catch (err: any) {
       setError(err.message || "Giriş yapılamadı. Lütfen bilgilerinizi kontrol edin.")
     } finally {
