@@ -18,6 +18,7 @@ import {
   Sparkles,
   Trash2,
   Upload,
+  X,
 } from "lucide-react"
 import { useLanguage } from "@/lib/language-context"
 import { useWorkspace } from "@/lib/workspace-context"
@@ -1243,13 +1244,17 @@ function SkillsMultiSelect({
           <Badge
             key={`${skill}-${idx}`}
             variant="outline"
-            className="gap-1.5 rounded-full border-border bg-sage-soft px-3 py-1.5 text-[12px] font-medium text-sage hover:bg-sage hover:text-white"
+            className="group gap-1.5 rounded-full border-border bg-sage-soft px-3 py-1.5 text-[12px] font-medium text-sage"
           >
             {skill}
-            <Trash2
-              className="ml-0.5 h-3 w-3 cursor-pointer opacity-70 hover:opacity-100"
+            <button
+              type="button"
               onClick={() => onRemove(idx)}
-            />
+              aria-label={`${t("Remove")} ${skill}`}
+              className="-mr-1 ml-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full text-sage/70 hover:bg-sage hover:text-white"
+            >
+              <X className="h-3 w-3" />
+            </button>
           </Badge>
         ))}
         {selected.length === 0 && (
