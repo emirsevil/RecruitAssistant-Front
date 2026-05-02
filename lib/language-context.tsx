@@ -587,6 +587,15 @@ const translations: Translations = {
         "This will permanently remove your base CV. Workspaces that don't have their own generated CV will lose this fallback. You can re-upload at any time.": "This will permanently remove your base CV. Workspaces that don't have their own generated CV will lose this fallback. You can re-upload at any time.",
         "Base CV Deleted": "Base CV Deleted",
         "Your base CV has been removed.": "Your base CV has been removed.",
+        "Profile Updated": "Profile Updated",
+        "Your profile information has been successfully saved.": "Your profile information has been successfully saved.",
+        "Photo Updated": "Photo Updated",
+        "Your profile photo has been successfully updated.": "Your profile photo has been successfully updated.",
+        "Failed to upload photo": "Failed to upload photo",
+        "Base CV Updated": "Base CV Updated",
+        "Your Base CV has been successfully processed and saved.": "Your Base CV has been successfully processed and saved.",
+        "Error": "Error",
+        "Something went wrong": "Something went wrong",
 
         // Settings Page
         "Settings": "Settings",
@@ -1226,6 +1235,15 @@ const translations: Translations = {
         "This will permanently remove your base CV. Workspaces that don't have their own generated CV will lose this fallback. You can re-upload at any time.": "Bu işlem temel CV'nizi kalıcı olarak siler. Kendi oluşturulmuş CV'si olmayan çalışma alanları bu yedeği kaybeder. İstediğiniz zaman tekrar yükleyebilirsiniz.",
         "Base CV Deleted": "Temel CV Silindi",
         "Your base CV has been removed.": "Temel CV'niz kaldırıldı.",
+        "Profile Updated": "Profil Güncellendi",
+        "Your profile information has been successfully saved.": "Profil bilgileriniz başarıyla kaydedildi.",
+        "Photo Updated": "Fotoğraf Güncellendi",
+        "Your profile photo has been successfully updated.": "Profil fotoğrafınız başarıyla güncellendi.",
+        "Failed to upload photo": "Fotoğraf yüklenemedi",
+        "Base CV Updated": "Temel CV Güncellendi",
+        "Your Base CV has been successfully processed and saved.": "Temel CV'niz başarıyla işlendi ve kaydedildi.",
+        "Error": "Hata",
+        "Something went wrong": "Bir şeyler ters gitti",
 
         // Settings Page
         "Settings": "Ayarlar",
