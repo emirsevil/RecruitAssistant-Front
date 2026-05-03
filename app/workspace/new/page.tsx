@@ -36,7 +36,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
 export default function NewWorkspacePage() {
   const router = useRouter()
   const { createWorkspace } = useWorkspace()
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const [values, setValues] = useState<WorkspaceFormValues>(emptyWorkspaceFormValues)
 
   // 2-step flow state
@@ -67,6 +67,11 @@ export default function NewWorkspacePage() {
   const handleCreateWorkspace = async () => {
     const name = values.workspaceName.trim()
     if (!name) return
+
+    if (values.jobDescription.trim().length < 50) {
+      toast.error(language === "tr" ? "İş tanımı en az 50 karakter olmalıdır" : "Job description must be at least 50 characters")
+      return
+    }
 
     setIsCreating(true)
     try {

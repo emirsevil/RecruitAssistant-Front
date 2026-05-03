@@ -14,13 +14,14 @@ import {
 } from "@/components/workspace-form"
 import { useWorkspace } from "@/lib/workspace-context"
 import { useLanguage } from "@/lib/language-context"
+import { toast } from "sonner"
 
 export default function EditWorkspacePage() {
   const params = useParams()
   const router = useRouter()
   const id = typeof params.id === "string" ? params.id : ""
   const { workspaces, isHydrated, updateWorkspace } = useWorkspace()
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const [values, setValues] = useState<WorkspaceFormValues>(emptyWorkspaceFormValues)
 
   const workspace = workspaces.find((w) => w.id === id)
@@ -46,6 +47,12 @@ export default function EditWorkspacePage() {
   const handleSave = () => {
     const name = values.workspaceName.trim()
     if (!name || !workspace) return
+
+    if (values.jobDescription.trim().length < 50) {
+      toast.error(language === "tr" ? "İş tanımı en az 50 karakter olmalıdır" : "Job description must be at least 50 characters")
+      return
+    }
+
     updateWorkspace(id, {
       name,
       emoji: values.selectedEmoji || workspace.emoji,

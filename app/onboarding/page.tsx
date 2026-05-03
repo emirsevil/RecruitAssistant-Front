@@ -70,7 +70,11 @@ export default function OnboardingPage() {
     }
     if (step === 2) {
       if (!formData.company.trim() || !formData.jobName.trim()) {
-        toast.error(t("Please fill in all education details"))
+        toast.error(language === "tr" ? "Lütfen şirket ve pozisyon bilgilerini doldurun" : "Please fill in company and role details")
+        return
+      }
+      if (formData.jobDescription.trim().length < 50) {
+        toast.error(language === "tr" ? "İş tanımı en az 50 karakter olmalıdır" : "Job description must be at least 50 characters")
         return
       }
       setStep(3)

@@ -53,20 +53,20 @@ export default function CVStudioPage() {
   const { t } = useLanguage()
   const { activeWorkspace } = useWorkspace()
   const [language, setLanguage] = useState("en")
-type CVData = {
-  name: string
-  email: string
-  phone: string
-  location: string
-  linkedin: string
-  github: string
-  summary: string
-  education: { degree: string; school: string; gpa: string; startDate: string; endDate: string }[]
-  experience: { role: string; company: string; bullets: string[]; startDate: string; endDate: string }[]
-  projects: { title: string; techStack: string; date: string; description: string }[]
-  skills: string[]
-  specialInstructions: string
-}
+  type CVData = {
+    name: string
+    email: string
+    phone: string
+    location: string
+    linkedin: string
+    github: string
+    summary: string
+    education: { degree: string; school: string; gpa: string; startDate: string; endDate: string }[]
+    experience: { role: string; company: string; bullets: string[]; startDate: string; endDate: string }[]
+    projects: { title: string; techStack: string; date: string; description: string }[]
+    skills: string[]
+    specialInstructions: string
+  }
 
   const [cvData, setCvData] = useState<CVData>({
     name: "",
@@ -142,7 +142,7 @@ type CVData = {
     setCvData({ ...cvData, skills: cvData.skills.filter((_, idx) => idx !== i) })
 
   // Fetch initial CV Data
-  
+
   useEffect(() => {
     const fetchInitialCV = async () => {
       try {
@@ -151,13 +151,13 @@ type CVData = {
         if (activeWorkspace?.generated_cv_id) {
           url = `${API_BASE}/api/cv/${activeWorkspace.generated_cv_id}`
         }
-        
+
         const response = await fetch(url, {
           method: "GET",
           headers: { "Content-Type": "application/json" },
           credentials: "include"
         })
-        
+
         if (response.ok) {
           const data = await response.json()
           if (data.parsed_data) {
@@ -175,11 +175,11 @@ type CVData = {
               summary: p.summary || prev.summary,
               education: p.education?.length ? p.education : prev.education,
               experience: p.experience?.length ? p.experience : prev.experience,
-              projects: p.projects?.length 
+              projects: p.projects?.length
                 ? p.projects.map((proj: any) => ({
-                    ...proj,
-                    techStack: Array.isArray(proj.techStack) ? proj.techStack.join(", ") : (proj.techStack || "")
-                  })) 
+                  ...proj,
+                  techStack: Array.isArray(proj.techStack) ? proj.techStack.join(", ") : (proj.techStack || "")
+                }))
                 : prev.projects,
               skills: p.skills?.length ? p.skills : prev.skills,
             }))
@@ -229,17 +229,17 @@ type CVData = {
   }
   const updateExperience = (i: number, field: string, value: string) => {
     const next = [...cvData.experience]
-    ;(next[i] as any)[field] = value
+      ; (next[i] as any)[field] = value
     setCvData({ ...cvData, experience: next })
   }
   const updateProject = (i: number, field: string, value: string) => {
     const next = [...cvData.projects]
-    ;(next[i] as any)[field] = value
+      ; (next[i] as any)[field] = value
     setCvData({ ...cvData, projects: next })
   }
   const updateEducation = (i: number, field: string, value: string) => {
     const next = [...cvData.education]
-    ;(next[i] as any)[field] = value
+      ; (next[i] as any)[field] = value
     setCvData({ ...cvData, education: next })
   }
 
@@ -274,9 +274,9 @@ type CVData = {
       technologies: Array.isArray(p.techStack)
         ? p.techStack
         : (p.techStack || "")
-            .split(",")
-            .map((s) => s.trim())
-            .filter(Boolean),
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
     })),
     certifications: [],
   })
@@ -1306,9 +1306,8 @@ function SkillsMultiSelect({
                           className="cursor-pointer text-[13px]"
                         >
                           <Check
-                            className={`mr-2 h-3.5 w-3.5 ${
-                              isSelected ? "opacity-100 text-sage" : "opacity-0"
-                            }`}
+                            className={`mr-2 h-3.5 w-3.5 ${isSelected ? "opacity-100 text-sage" : "opacity-0"
+                              }`}
                           />
                           <span className="truncate">{name}</span>
                         </CommandItem>
