@@ -225,18 +225,8 @@ export default function ProfilePage() {
               {getAvatarUrl(profile.profile_image) ? (
                 <AvatarImage src={getAvatarUrl(profile.profile_image)!} alt={profile.full_name} />
               ) : null}
-              <AvatarFallback className="text-3xl bg-secondary">{getInitials(profile.full_name || "User")}</AvatarFallback>
+              <AvatarFallback className="text-3xl bg-clay-soft text-clay">{getInitials(profile.full_name || "User")}</AvatarFallback>
             </Avatar>
-            <div className="w-full space-y-2">
-              <Label htmlFor="profile_image">{t("Profile Image URL")}</Label>
-              <Input 
-                id="profile_image" 
-                value={profile.profile_image} 
-                onChange={(e) => handleChange("profile_image", e.target.value)} 
-                placeholder="https://example.com/photo.jpg"
-                disabled={isSaving || isUploadingPhoto}
-              />
-            </div>
             <div className="relative w-full">
               <Input
                 type="file"

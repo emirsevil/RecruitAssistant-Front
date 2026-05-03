@@ -99,31 +99,7 @@ export const TOUR_STEPS: TourStep[] = [
     placement: "left",
   },
 
-  // ── Mock Interview (steps 7–8) ───────────────────────────────────
-  {
-    route: "/mock-interview",
-    target: "interview-setup",
-    title: "Configure Your Interview",
-    titleTr: "Mülakatınızı Yapılandırın",
-    description:
-      "Choose between HR/Behavioral or Technical interview types, set the difficulty level, and pick specific topics. Your active workspace context is used automatically.",
-    descriptionTr:
-      "İK/Davranışsal veya Teknik mülakat türleri arasında seçim yapın, zorluk seviyesini belirleyin ve belirli konuları seçin. Aktif çalışma alanı bağlamınız otomatik olarak kullanılır.",
-    placement: "bottom",
-  },
-  {
-    route: "/mock-interview",
-    target: "interview-start-btn",
-    title: "Start Interview",
-    titleTr: "Mülakatı Başlat",
-    description:
-      "Hit this button to begin a live AI-powered interview session. You can answer by voice or text, and you'll receive detailed feedback and scores when it's done.",
-    descriptionTr:
-      "Canlı bir yapay zeka destekli mülakat oturumu başlatmak için bu düğmeye basın. Sesli veya yazılı yanıt verebilir, bittiğinde detaylı geri bildirim ve puanlarınızı alabilirsiniz.",
-    placement: "top",
-  },
-
-  // ── Quizzes (steps 9–10) ─────────────────────────────────────────
+  // ── Quizzes (steps 7–8) ─────────────────────────────────────────
   {
     route: "/quizzes",
     target: "quizzes-header",
@@ -145,6 +121,30 @@ export const TOUR_STEPS: TourStep[] = [
     descriptionTr:
       "Bunlar iş tanımınızdan çıkarılan yeteneklerdir. Herhangi bir konu için zorluk seçin, 'Quiz oluştur'a tıklayın ve kendinizi test edin. Özel konular da ekleyebilirsiniz.",
     placement: "bottom",
+  },
+
+  // ── Mock Interview (steps 9–10) ───────────────────────────────────
+  {
+    route: "/mock-interview",
+    target: "interview-setup",
+    title: "Configure Your Interview",
+    titleTr: "Mülakatınızı Yapılandırın",
+    description:
+      "Choose between HR/Behavioral or Technical interview types, set the difficulty level, and pick specific topics. Your active workspace context is used automatically.",
+    descriptionTr:
+      "İK/Davranışsal veya Teknik mülakat türleri arasında seçim yapın, zorluk seviyesini belirleyin ve belirli konuları seçin. Aktif çalışma alanı bağlamınız otomatik olarak kullanılır.",
+    placement: "bottom",
+  },
+  {
+    route: "/mock-interview",
+    target: "interview-start-btn",
+    title: "Start Interview",
+    titleTr: "Mülakatı Başlat",
+    description:
+      "Hit this button to begin a live AI-powered interview session. You can answer by voice or text, and you'll receive detailed feedback and scores when it's done.",
+    descriptionTr:
+      "Canlı bir yapay zeka destekli mülakat oturumu başlatmak için bu düğmeye basın. Sesli veya yazılı yanıt verebilir, bittiğinde detaylı geri bildirim ve puanlarınızı alabilirsiniz.",
+    placement: "top",
   },
 
   // ── Analytics (steps 11–12) ──────────────────────────────────────

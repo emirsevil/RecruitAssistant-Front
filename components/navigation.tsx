@@ -65,11 +65,11 @@ import { useEffect, useState } from "react"
 
 const navItems = [
   { href: "/dashboard", label: "dashboard", icon: LayoutDashboard },
-  { href: "/mock-interview", label: "mockInterview", icon: MessageSquare },
-  { href: "/quizzes", label: "quizzes", icon: FileQuestion },
   { href: "/cv-studio", label: "cvStudio", icon: FileText },
-  { href: "/schedule", label: "schedule", icon: Calendar },
+  { href: "/quizzes", label: "quizzes", icon: FileQuestion },
+  { href: "/mock-interview", label: "mockInterview", icon: MessageSquare },
   { href: "/interview-history", label: "interviewHistory", icon: ClipboardList },
+  { href: "/schedule", label: "schedule", icon: Calendar },
   { href: "/analytics", label: "analytics", icon: BarChart3 },
 ] as const
 
@@ -180,17 +180,6 @@ export function Navigation() {
     }
   }, [])
 
-  // Hide on auth/landing/onboarding
-  if (
-    pathname === "/" ||
-    pathname?.startsWith("/login") ||
-    pathname?.startsWith("/register") ||
-    pathname?.startsWith("/forgot-password") ||
-    pathname?.startsWith("/reset-password") ||
-    pathname?.startsWith("/onboarding")
-  ) {
-    return null
-  }
 
   const initials = (user?.full_name || user?.email || "?")
     .split(" ")
@@ -216,6 +205,18 @@ export function Navigation() {
   useEffect(() => {
     setMobileOpen(false)
   }, [pathname])
+  // Hide on auth/landing/onboarding
+  if (
+    pathname === "/" ||
+    pathname?.startsWith("/login") ||
+    pathname?.startsWith("/register") ||
+    pathname?.startsWith("/forgot-password") ||
+    pathname?.startsWith("/reset-password") ||
+    pathname?.startsWith("/onboarding")
+  ) {
+    return null
+  }
+
 
   return (
     <>
@@ -440,7 +441,7 @@ export function Navigation() {
     {/* ── Desktop sidebar (unchanged, hidden on mobile) ──── */}
     <aside
       data-tour="nav-sidebar"
-      className="hidden lg:flex sticky top-0 h-screen w-[232px] flex-shrink-0 flex-col gap-1 border-r border-border bg-sidebar px-3.5 py-5"
+      className="hidden lg:flex fixed left-0 top-0 z-30 h-screen w-[232px] flex-shrink-0 flex-col gap-1 border-r border-border bg-sidebar px-3.5 py-5"
     >
       {/* Logo */}
       <Link href="/dashboard" className="mb-4 flex items-center gap-2.5 px-2 py-1.5">

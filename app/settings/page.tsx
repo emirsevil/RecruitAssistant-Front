@@ -10,18 +10,30 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Moon, Sun, Monitor, Bell, Lock, Palette, RotateCcw } from "lucide-react"
+import { Moon, Sun, Monitor, Bell, Lock, Palette, RotateCcw, Loader2, AlertTriangle } from "lucide-react"
 import { useLanguage } from "@/lib/language-context"
 import { useTour } from "@/components/guided-tour/TourProvider"
+import { useAuth } from "@/lib/auth-context"
+import { useToast } from "@/hooks/use-toast"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 export default function SettingsPage() {
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const router = useRouter()
   const { startTour } = useTour()
+  const { logout } = useAuth()
+  const { toast } = useToast()
+  
   const [theme, setTheme] = useState("system")
-  const [notifications, setNotifications] = useState(true)
-  const [emailNotifications, setEmailNotifications] = useState(true)
-  const [interviewReminders, setInterviewReminders] = useState(true)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
 
   const handleThemeChange = (value: string) => {
     setTheme(value)
@@ -36,6 +48,40 @@ export default function SettingsPage() {
       } else {
         document.documentElement.classList.remove("dark")
       }
+    }
+  }
+
+  const handleDeleteAccount = async () => {
+    setIsDeleting(true)
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+      const response = await fetch(`${baseUrl}/auth/account`, {
+        method: "DELETE",
+        credentials: "include",
+      })
+
+      if (response.ok) {
+        toast({
+          title: language === "tr" ? "Hesap Silindi" : "Account Deleted",
+          description: language === "tr" 
+            ? "Hesabınız ve tüm verileriniz başarıyla silindi." 
+            : "Your account and all associated data have been successfully removed.",
+        })
+        logout() // Clear local state
+        router.push("/register")
+      } else {
+        const error = await response.json()
+        throw new Error(error.detail || "Failed to delete account")
+      }
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: language === "tr" ? "Hata" : "Error",
+        description: err.message || (language === "tr" ? "Bir şeyler yanlış gitti" : "Something went wrong"),
+      })
+    } finally {
+      setIsDeleting(false)
+      setDeleteDialogOpen(false)
     }
   }
 
@@ -87,46 +133,6 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
 
-          {/* Notification Settings */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Bell className="h-5 w-5 text-primary" />
-                <CardTitle>{t("Notifications")}</CardTitle>
-              </div>
-              <CardDescription>{t("Configure how you receive notifications")}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="push-notifications">{t("Push Notifications")}</Label>
-                  <p className="text-sm text-muted-foreground">{t("Receive push notifications for important updates")}</p>
-                </div>
-                <Switch id="push-notifications" checked={notifications} onCheckedChange={setNotifications} />
-              </div>
-
-              <Separator />
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="email-notifications">{t("Email Notifications")}</Label>
-                  <p className="text-sm text-muted-foreground">{t("Get notified via email for weekly progress reports")}</p>
-                </div>
-                <Switch id="email-notifications" checked={emailNotifications} onCheckedChange={setEmailNotifications} />
-              </div>
-
-              <Separator />
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="interview-reminders">{t("Interview Reminders")}</Label>
-                  <p className="text-sm text-muted-foreground">{t("Remind me to practice mock interviews")}</p>
-                </div>
-                <Switch id="interview-reminders" checked={interviewReminders} onCheckedChange={setInterviewReminders} />
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Privacy & Security */}
           <Card>
             <CardHeader>
@@ -147,10 +153,11 @@ export default function SettingsPage() {
               <div className="space-y-2">
                 <h4 className="text-sm font-medium">{t("Data Management")}</h4>
                 <div className="flex flex-wrap gap-2">
-                  <Button variant="outline" size="sm">
-                    {t("Download My Data")}
-                  </Button>
-                  <Button variant="outline" size="sm">
+                  <Button 
+                    variant="destructive" 
+                    size="sm"
+                    onClick={() => setDeleteDialogOpen(true)}
+                  >
                     {t("Delete Account")}
                   </Button>
                 </div>
@@ -186,6 +193,47 @@ export default function SettingsPage() {
           </div>
         </div>
       </PageContainer>
+
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              {t("Delete Account")}
+            </DialogTitle>
+            <DialogDescription className="space-y-3 pt-2 text-foreground">
+              <p className="font-semibold">
+                {language === "tr" 
+                  ? "Hesabınızı silmek istediğinizden emin misiniz?" 
+                  : "Are you sure you want to delete your account?"}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {language === "tr"
+                  ? "Bu işlem geri alınamaz. Hesabınız, oluşturduğunuz CV'ler, çalışma alanları, quiz sonuçları ve mülakat geçmişi dahil tüm verileriniz kalıcı olarak silinecektir."
+                  : "This action cannot be undone. Your profile, generated CVs, workspaces, quiz results, and interview history will be permanently deleted."}
+              </p>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button 
+              variant="outline" 
+              onClick={() => setDeleteDialogOpen(false)} 
+              disabled={isDeleting}
+            >
+              {t("cancel")}
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleDeleteAccount} 
+              disabled={isDeleting}
+              className="gap-2"
+            >
+              {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              {language === "tr" ? "Hesabı Kalıcı Olarak Sil" : "Permanently Delete Account"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

@@ -9,7 +9,7 @@ import { LanguageProvider } from "@/lib/language-context"
 import { WorkspaceProvider } from "@/lib/workspace-context"
 import { AuthProvider } from "@/lib/auth-context"
 import { InterviewLockProvider } from "@/lib/interview-lock-context"
-import { Navigation } from "@/components/navigation"
+import { LayoutWrapper } from "@/components/layout-wrapper"
 import { Toaster } from "sonner"
 
 import { OnboardingGuard } from "@/components/onboarding-guard"
@@ -67,12 +67,9 @@ export default function RootLayout({
                   <ScheduleProvider>
                     <InterviewLockProvider>
                       <TourProvider>
-                      <div className="flex min-h-screen overflow-x-hidden">
-                        <Navigation />
-                        <main className="min-w-0 flex-1 pt-14 lg:pt-0">
+                        <LayoutWrapper>
                           <Suspense fallback={null}>{children}</Suspense>
-                        </main>
-                      </div>
+                        </LayoutWrapper>
                       </TourProvider>
                       <Analytics />
                       <Toaster richColors closeButton />
