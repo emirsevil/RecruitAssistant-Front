@@ -318,10 +318,9 @@ export default function SchedulePage() {
                             {isLoading && <p className="mb-4 text-sm text-muted-foreground">{t("Loading")}...</p>}
                             <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-border/70 bg-background shadow-sm">
                                 <div ref={gridScrollRef} className={cn("min-h-0 flex-1 overflow-x-auto overflow-y-auto overscroll-contain", dragSelection && "select-none")}>
-                                    <div className="min-w-[1080px]">
+                                    <div className="min-w-[468px] md:min-w-[1080px]">
                                         <div
-                                            className="sticky top-0 z-40 grid border-b border-border/70 bg-background shadow-sm"
-                                            style={{ gridTemplateColumns: "72px repeat(7, minmax(140px, 1fr))" }}
+                                            className="sticky top-0 z-40 grid border-b border-border/70 bg-background shadow-sm grid-cols-[48px_repeat(7,minmax(60px,1fr))] md:grid-cols-[72px_repeat(7,minmax(140px,1fr))]"
                                         >
                                             <div className="sticky left-0 z-50 border-r border-border/70 bg-background" />
                                             {weekDays.map((day) => {
@@ -335,10 +334,10 @@ export default function SchedulePage() {
                                                             isToday && "bg-primary/[0.04]"
                                                         )}
                                                     >
-                                                        <div className={cn("text-xs font-semibold uppercase text-muted-foreground", isToday && "text-primary")}>
+                                                        <div className={cn("text-[10px] md:text-xs font-semibold uppercase text-muted-foreground", isToday && "text-primary")}>
                                                             {format(day, "EEE", { locale: dateLocale })}
                                                         </div>
-                                                        <div className={cn("mt-1 inline-flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-lg font-semibold text-foreground", isToday && "bg-primary text-primary-foreground shadow-sm")}>
+                                                        <div className={cn("mt-1 inline-flex h-6 min-w-6 md:h-8 md:min-w-8 items-center justify-center rounded-md px-1 md:px-2 text-sm md:text-lg font-semibold text-foreground", isToday && "bg-primary text-primary-foreground shadow-sm")}>
                                                             {format(day, "d", { locale: dateLocale })}
                                                         </div>
                                                     </div>
@@ -347,8 +346,7 @@ export default function SchedulePage() {
                                         </div>
 
                                         <div
-                                            className="grid"
-                                            style={{ gridTemplateColumns: "72px repeat(7, minmax(140px, 1fr))" }}
+                                            className="grid grid-cols-[48px_repeat(7,minmax(60px,1fr))] md:grid-cols-[72px_repeat(7,minmax(140px,1fr))]"
                                         >
                                             <div
                                                 className="sticky left-0 z-30 border-r border-border/70 bg-background"
@@ -357,7 +355,7 @@ export default function SchedulePage() {
                                                 {calendarHours.map((hour, index) => (
                                                     <div
                                                         key={hour}
-                                                        className="absolute right-3 text-xs font-medium text-muted-foreground"
+                                                        className="absolute right-1 md:right-3 text-[9px] md:text-xs font-medium text-muted-foreground"
                                                         style={{ top: index === 0 ? 8 : index * HOUR_HEIGHT - 8 }}
                                                     >
                                                         {formatMinutesAsTime(hour * 60)}

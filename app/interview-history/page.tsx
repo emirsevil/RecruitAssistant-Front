@@ -38,7 +38,7 @@ export default function InterviewHistoryPage() {
   }
 
   return (
-    <div className="px-7 py-7 md:px-9">
+    <div className="px-4 py-5 sm:px-7 sm:py-7 md:px-9">
       <div className="mb-6 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-end">
         <div>
           <p className="eyebrow text-clay">{t("interviewHistory")}</p>
@@ -192,7 +192,7 @@ function InterviewDetailView({
 
   if (isLoading) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center px-7 py-7 md:px-9">
+      <div className="flex min-h-[60vh] items-center justify-center px-4 py-5 sm:px-7 sm:py-7 md:px-9">
         <div className="h-7 w-7 animate-spin rounded-full border-2 border-sage border-t-transparent" />
       </div>
     )
@@ -200,7 +200,7 @@ function InterviewDetailView({
 
   if (error || !detail) {
     return (
-      <div className="px-7 py-7 md:px-9">
+      <div className="px-4 py-5 sm:px-7 sm:py-7 md:px-9">
         <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-5 py-4 text-center text-[13px] text-destructive">
           {error || "Interview not found"}
         </div>
@@ -230,7 +230,7 @@ function InterviewDetailView({
     .map((q) => q.feedback as string)
 
   return (
-    <div className="px-7 py-7 md:px-9">
+    <div className="px-4 py-5 sm:px-7 sm:py-7 md:px-9">
       <Button
         variant="ghost"
         size="sm"
@@ -337,7 +337,7 @@ function InterviewDetailView({
               <div
                 key={idx}
                 className={cn(
-                  "grid grid-cols-[100px_1fr_80px_60px] items-center gap-3.5 rounded-lg border border-border bg-background p-3.5"
+                  "flex flex-col gap-2 rounded-lg border border-border bg-background p-3.5 sm:grid sm:grid-cols-[100px_1fr_80px_60px] sm:items-center sm:gap-3.5"
                 )}
               >
                 <span className="eyebrow text-clay">{qa.topic || `Q${idx + 1}`}</span>

@@ -255,7 +255,7 @@ export default function QuizzesPage() {
     const optionLetters = ["a", "b", "c", "d", "e"]
 
     return (
-      <div className="px-7 py-7 md:px-9">
+      <div className="px-4 py-5 sm:px-7 sm:py-7 md:px-9">
         <div className="mx-auto max-w-[880px]">
           <div className="mb-5 flex items-center justify-between">
             <button
@@ -320,11 +320,11 @@ export default function QuizzesPage() {
             ))}
           </div>
 
-          <div className="mb-5 rounded-2xl border border-border bg-card p-9">
+          <div className="mb-5 rounded-2xl border border-border bg-card p-5 sm:p-9">
             <p className="eyebrow mb-3.5">
               {language === "tr" ? "Cevabını seç" : "Pick your answer"}
             </p>
-            <p className="mb-7 font-serif text-[26px] font-normal leading-snug tracking-tight text-balance">
+            <p className="mb-7 font-serif text-[20px] sm:text-[26px] font-normal leading-snug tracking-tight text-balance">
               {question.question}
             </p>
 
@@ -395,7 +395,7 @@ export default function QuizzesPage() {
   // ─── Results ───────────────────────────────────────
   if (quizState === "results" && submitResult) {
     return (
-      <div className="px-7 py-7 md:px-9">
+      <div className="px-4 py-5 sm:px-7 sm:py-7 md:px-9">
         <div className="mx-auto max-w-[880px] space-y-5">
           <div className="rounded-2xl border border-border bg-sage-soft p-10 text-center">
             <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-sage text-white">
@@ -505,7 +505,7 @@ export default function QuizzesPage() {
 
   // ─── Browse ─────────────────────────────────────────
   return (
-    <div className="px-7 py-7 md:px-9">
+    <div className="px-4 py-5 sm:px-7 sm:py-7 md:px-9">
       <div data-tour="quizzes-header" className="mb-7">
         <p className="eyebrow text-clay">{t("quizzes")}</p>
         <h1 className="serif-headline mt-1 text-[32px] font-normal leading-tight tracking-tight">

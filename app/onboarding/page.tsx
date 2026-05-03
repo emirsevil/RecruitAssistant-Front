@@ -102,7 +102,7 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="flex min-h-screen w-full items-center justify-center bg-background px-6 py-10">
+    <div className="flex min-h-screen w-full items-center justify-center bg-background px-4 py-6 sm:px-6 sm:py-10">
       <div className="w-full max-w-[760px]">
         {/* Logo */}
         <Link href="/" className="mb-8 inline-flex items-center gap-2.5">
@@ -115,7 +115,7 @@ export default function OnboardingPage() {
         </p>
 
         {/* Headline */}
-        <h1 className="serif-headline text-[44px] font-normal leading-[1.1] tracking-tight">
+        <h1 className="serif-headline text-[32px] sm:text-[44px] font-normal leading-[1.1] tracking-tight">
           {step === 1 && (
             <>
               {language === "tr" ? "Tanışalım" : "Let's get to know you"}
@@ -149,7 +149,7 @@ export default function OnboardingPage() {
         </div>
 
         {/* Step card */}
-        <div className="rounded-2xl border border-border bg-card p-7">
+        <div className="rounded-2xl border border-border bg-card p-5 sm:p-7">
           {step === 1 && (
             <div className="space-y-5">
               <div className="mb-1 flex items-center gap-2 whitespace-nowrap">

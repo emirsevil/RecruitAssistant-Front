@@ -86,12 +86,12 @@ export default function DashboardPage() {
     language === "tr" ? ["P", "S", "Ç", "P", "C", "C", "P"] : ["M", "T", "W", "T", "F", "S", "S"]
 
   return (
-    <div className="px-7 py-7 md:px-9">
+    <div className="px-4 py-5 sm:px-7 sm:py-7 md:px-9">
       {/* Hero header */}
-      <div data-tour="dashboard-header" className="mb-6 flex items-end justify-between gap-4">
+      <div data-tour="dashboard-header" className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
         <div>
           <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">{mounted ? today : ""}</p>
-          <h1 className="serif-headline mt-1.5 text-[32px] font-normal leading-tight tracking-tight">
+          <h1 className="serif-headline mt-1.5 text-[24px] sm:text-[32px] font-normal leading-tight tracking-tight">
             {mounted ? (
               <>
                 {greeting}
@@ -116,8 +116,8 @@ export default function DashboardPage() {
       </div>
 
       {/* Hero readiness band */}
-      <div className="mb-5 grid grid-cols-1 gap-4 lg:grid-cols-[1.5fr_1fr_1fr_1fr]">
-        <div data-tour="dashboard-readiness" className="flex items-center gap-5 rounded-2xl border border-border bg-card p-5">
+      <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr_1fr]">
+        <div data-tour="dashboard-readiness" className="flex items-center gap-5 rounded-2xl border border-border bg-card p-5 sm:col-span-2 lg:col-span-1">
           <RingProgress value={readiness} size={92} />
           <div>
             <p className="eyebrow">{language === "tr" ? "Hazırlığın" : "Your readiness"}</p>
@@ -420,7 +420,7 @@ function ActionRow({
 function SkillRow({ name, score }: { name: string; score: number }) {
   const color = score < 65 ? "bg-clay" : score < 80 ? "bg-[var(--gold)]" : "bg-sage"
   return (
-    <div className="grid grid-cols-[180px_1fr_36px] items-center gap-3.5">
+    <div className="grid grid-cols-[minmax(80px,1fr)_2fr_36px] items-center gap-3.5">
       <span className="truncate text-[13px] font-medium">{name}</span>
       <div className="h-1.5 overflow-hidden rounded-full bg-secondary">
         <div className={cn("h-full rounded-full", color)} style={{ width: `${score}%` }} />

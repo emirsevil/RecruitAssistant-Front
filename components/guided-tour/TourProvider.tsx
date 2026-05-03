@@ -125,22 +125,36 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
 
     function poll() {
       if (cancelled) return
-      const el = document.querySelector(`[data-tour="${step.target}"]`) as HTMLElement | null
+      
+      // Find all elements with this target and pick the visible one
+      const els = document.querySelectorAll(`[data-tour="${step.target}"]`)
+      const el = Array.from(els).find(e => {
+        const r = (e as HTMLElement).getBoundingClientRect()
+        return r.width > 0 && r.height > 0
+      }) as HTMLElement | null
+      
       if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "center" })
-        // Small delay to let scroll finish before reading rect
+        const rect = el.getBoundingClientRect()
+        // Valid target found (already checked for non-zero size)
+        const y = rect.top + window.scrollY - 100 // Safe offset for fixed header
+        window.scrollTo({ top: y, behavior: "smooth" })
+        
+        // Small delay to let scroll finish before reading final rect
         setTimeout(() => {
           if (cancelled) return
-          const rect = el.getBoundingClientRect()
-          setTargetRect(rect)
+          const finalRect = el.getBoundingClientRect()
+          setTargetRect(finalRect)
           setTargetFound(true)
         }, 350)
         return
-      }
-      if (Date.now() - startTime > TIMEOUT) {
-        // Target not found — show centered fallback (not auto-skip)
-        setTargetRect(null)
-        setTargetFound(true)
+      } else if (Date.now() - startTime > TIMEOUT) {
+        // Target not found at all or all matches are hidden after timeout, skip step
+        if (currentStep < totalSteps - 1) {
+          setCurrentStep((c) => c + 1)
+        } else {
+          setTargetRect(null)
+          setTargetFound(true)
+        }
         return
       }
       requestAnimationFrame(poll)

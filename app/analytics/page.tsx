@@ -283,11 +283,11 @@ function ScoreTimeseries({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={series} margin={{ left: -12 }}>
-            <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-            <XAxis dataKey="bucket" tick={{ fontSize: 11 }} />
-            <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} />
+          <ResponsiveContainer width="100%" height={320}>
+            <LineChart data={series} margin={{ left: -12, right: 16, bottom: 16 }}>
+              <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+              <XAxis dataKey="bucket" tick={{ fontSize: 10 }} interval="preserveStartEnd" angle={-45} textAnchor="end" />
+              <YAxis domain={[0, 100]} tick={{ fontSize: 10 }} />
             <Tooltip
               contentStyle={{
                 borderRadius: "8px",
@@ -481,11 +481,11 @@ function DifficultyProgression({
             {t("No completed interviews in this window.")}
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={rows} margin={{ left: -16 }}>
+          <ResponsiveContainer width="100%" height={280}>
+            <BarChart data={rows} margin={{ left: -16, right: 16 }}>
               <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-              <XAxis dataKey="difficulty" tick={{ fontSize: 11 }} />
-              <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} />
+              <XAxis dataKey="difficulty" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
+              <YAxis domain={[0, 100]} tick={{ fontSize: 10 }} />
               <Tooltip
                 contentStyle={{
                   borderRadius: "8px",
@@ -531,7 +531,7 @@ function ModeSplitSection({
             {t("No completed interviews in this window.")}
           </div>
         ) : (
-          <div className="grid grid-cols-2 items-center gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 items-center gap-4">
             <ResponsiveContainer width="100%" height={180}>
               <PieChart>
                 <Pie
@@ -555,7 +555,7 @@ function ModeSplitSection({
                 />
               </PieChart>
             </ResponsiveContainer>
-            <div className="space-y-3">
+            <div className="space-y-3 flex flex-col justify-center">
               <ModeStat
                 label={t("Voice")}
                 color="#8884d8"

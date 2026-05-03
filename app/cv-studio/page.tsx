@@ -563,15 +563,15 @@ export default function CVStudioPage() {
   }
 
   return (
-    <div className="px-7 py-7 md:px-9">
+    <div className="px-4 py-5 sm:px-7 sm:py-7 md:px-9">
       <div data-tour="cv-header" className="mb-7">
         <p className="eyebrow text-clay">{t("cvStudio")}</p>
-        <h1 className="serif-headline mt-1 text-[32px] font-normal leading-tight tracking-tight">
+        <h1 className="serif-headline mt-1 text-[24px] sm:text-[32px] font-normal leading-tight tracking-tight">
           {t("CV Studio")}
         </h1>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-12 lg:items-start">
+      <div className="flex flex-col-reverse gap-6 lg:grid lg:grid-cols-12 lg:items-start">
         {/* Input Form (col 8) */}
         <div className="space-y-5 lg:col-span-8">
           {/* Personal Information */}
@@ -979,7 +979,7 @@ export default function CVStudioPage() {
                       {generatedPdfBase64 ? (
                         <iframe
                           src={`data:application/pdf;base64,${generatedPdfBase64}`}
-                          className="min-h-[65vh] w-full rounded-xl"
+                          className="min-h-[50vh] lg:min-h-[65vh] w-full rounded-xl"
                           title="CV PDF"
                         />
                       ) : isCompiling ? (
@@ -1018,7 +1018,7 @@ export default function CVStudioPage() {
                   <TabsContent value="latex">
                     <div className="overflow-hidden rounded-xl border border-border">
                       <Editor
-                        height="65vh"
+                        height="50vh"
                         defaultLanguage="latex"
                         theme="vs-dark"
                         value={generatedLatex}
@@ -1067,7 +1067,7 @@ export default function CVStudioPage() {
                       {generatedCoverLetterPdfBase64 ? (
                         <iframe
                           src={`data:application/pdf;base64,${generatedCoverLetterPdfBase64}`}
-                          className="min-h-[65vh] w-full rounded-xl"
+                          className="min-h-[50vh] lg:min-h-[65vh] w-full rounded-xl"
                           title="Cover Letter PDF"
                         />
                       ) : isCompiling ? (

@@ -67,15 +67,15 @@ export default function RootLayout({
                   <ScheduleProvider>
                     <InterviewLockProvider>
                       <TourProvider>
-                      <div className="flex min-h-screen">
+                      <div className="flex min-h-screen overflow-x-hidden">
                         <Navigation />
-                        <main className="min-w-0 flex-1">
+                        <main className="min-w-0 flex-1 pt-14 lg:pt-0">
                           <Suspense fallback={null}>{children}</Suspense>
                         </main>
                       </div>
                       </TourProvider>
                       <Analytics />
-                      <Toaster position="top-right" richColors closeButton />
+                      <Toaster richColors closeButton />
                     </InterviewLockProvider>
                   </ScheduleProvider>
                 </OnboardingGuard>

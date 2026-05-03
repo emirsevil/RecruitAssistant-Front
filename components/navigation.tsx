@@ -23,6 +23,13 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog"
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -46,6 +53,7 @@ import {
   Plus,
   Pencil,
   Trash2,
+  Menu,
 } from "lucide-react"
 import { useLanguage } from "@/lib/language-context"
 import { useWorkspace, type Workspace } from "@/lib/workspace-context"
@@ -201,7 +209,235 @@ export function Navigation() {
 
   const avatarUrl = getAvatarUrl(user?.profile_image);
 
+  /* ── Mobile top bar + drawer (< lg) ─────────────────────── */
+  const [mobileOpen, setMobileOpen] = useState(false)
+
+  // Close mobile drawer on route change
+  useEffect(() => {
+    setMobileOpen(false)
+  }, [pathname])
+
   return (
+    <>
+    {/* ── Mobile top bar ────────────────────────────────────── */}
+    <header className="fixed inset-x-0 top-0 z-40 flex h-14 items-center justify-between border-b border-border bg-sidebar px-4 lg:hidden">
+      <button
+        type="button"
+        aria-label="Open menu"
+        data-tour="nav-sidebar"
+        onClick={() => setMobileOpen(true)}
+        className="flex h-9 w-9 items-center justify-center rounded-lg text-foreground hover:bg-secondary"
+      >
+        <Menu className="h-5 w-5" />
+      </button>
+      <Link href="/dashboard" className="flex items-center gap-2">
+        <Logo size={26} />
+      </Link>
+      {/* User avatar (mobile) */}
+      <Link href="/profile" className="flex h-9 w-9 items-center justify-center">
+        {mounted ? (
+          <Avatar className="h-7 w-7 flex-shrink-0">
+            {avatarUrl ? (
+              <AvatarImage src={avatarUrl} alt={user?.full_name || "User"} />
+            ) : null}
+            <AvatarFallback className="bg-clay-soft text-[11px] font-semibold text-clay">
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+        ) : (
+          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-clay-soft" />
+        )}
+      </Link>
+    </header>
+
+    {/* ── Mobile drawer ─────────────────────────────────────── */}
+    <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+      <SheetContent side="left" className="w-[272px] p-0 bg-sidebar border-border overflow-y-auto">
+        <SheetHeader className="sr-only">
+          <SheetTitle>Navigation</SheetTitle>
+          <SheetDescription>Main navigation menu</SheetDescription>
+        </SheetHeader>
+        <div className="flex flex-col gap-1 px-3.5 py-5 min-h-full">
+          {/* Logo */}
+          <Link href="/dashboard" className="mb-4 flex items-center gap-2.5 px-2 py-1.5" onClick={() => setMobileOpen(false)}>
+            <Logo size={30} />
+          </Link>
+
+          {/* Workspace switcher (mobile) */}
+          {mounted && activeWorkspace ? (
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className="mb-3.5 flex w-full items-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-left transition-colors hover:bg-secondary/50"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-subtle">
+                      {language === "tr" ? "Aktif çalışma alanı" : "Active workspace"}
+                    </p>
+                    <p className="mt-0.5 truncate text-[13px] font-semibold leading-tight">
+                      {activeWorkspace.name}
+                    </p>
+                  </div>
+                  <ChevronsUpDown className="h-3.5 w-3.5 flex-shrink-0 text-subtle" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="start" sideOffset={8} className="w-60 p-0">
+                <div className="border-b border-border px-3 py-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                    {language === "tr" ? "Çalışma alanları" : "Workspaces"}
+                  </p>
+                </div>
+                <div className="max-h-[220px] overflow-y-auto p-1.5">
+                  {workspaces.map((ws) => (
+                    <div
+                      key={ws.id}
+                      onClick={() => { handleWorkspaceSelect(ws); setMobileOpen(false) }}
+                      className={cn(
+                        "flex w-full cursor-pointer items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-[13px] transition-colors",
+                        ws.id === activeWorkspace.id
+                          ? "bg-accent text-accent-foreground"
+                          : "hover:bg-accent/50"
+                      )}
+                    >
+                      <div className={cn("flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md text-sm text-white shadow-sm", ws.color)}>
+                        {ws.emoji}
+                      </div>
+                      <span className="flex-1 truncate font-medium">{ws.name}</span>
+                      {ws.id === activeWorkspace.id && <Check className="h-4 w-4 flex-shrink-0 text-primary" />}
+                    </div>
+                  ))}
+                </div>
+                <div className="border-t border-border p-1.5">
+                  <Link
+                    href="/workspace/new"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground"
+                  >
+                    <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md border border-dashed border-border">
+                      <Plus className="h-4 w-4" />
+                    </div>
+                    {t("createWorkspace")}
+                  </Link>
+                </div>
+              </PopoverContent>
+            </Popover>
+          ) : mounted ? (
+            <Link
+              href="/workspace/new"
+              onClick={() => setMobileOpen(false)}
+              className="mb-3.5 flex items-center gap-2 rounded-xl border border-dashed border-border bg-card px-3 py-2.5 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-secondary/50 hover:text-foreground"
+            >
+              <Plus className="h-4 w-4" />
+              {t("createWorkspace")}
+            </Link>
+          ) : null}
+
+          {/* Nav items (mobile) */}
+          <nav className="flex flex-col gap-0.5">
+            {navItems.map((item) => {
+              const isActive = pathname === item.href
+              const Icon = item.icon
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMobileOpen(false)}
+                  className={cn(
+                    "flex items-center gap-2.5 rounded-lg px-2.5 py-2.5 text-[14px] font-medium transition-colors",
+                    isActive
+                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                      : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                  {t(item.label)}
+                </Link>
+              )
+            })}
+          </nav>
+
+          <div className="flex-1" />
+
+          {/* Bottom: theme + lang (mobile) */}
+          <div className="flex items-center gap-1 px-1 pb-2">
+            <button
+              type="button"
+              aria-label="Toggle theme"
+              onClick={toggleDark}
+              className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground"
+            >
+              {mounted && (isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />)}
+            </button>
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                aria-label="Switch language"
+                className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground"
+              >
+                <Globe className="h-4 w-4" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem onClick={() => setLanguage("en")}>
+                  <span className="flex items-center gap-2">
+                    {language === "en" && <Check className="h-3.5 w-3.5" />}
+                    <span className={language !== "en" ? "pl-5" : ""}>English</span>
+                  </span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setLanguage("tr")}>
+                  <span className="flex items-center gap-2">
+                    {language === "tr" && <Check className="h-3.5 w-3.5" />}
+                    <span className={language !== "tr" ? "pl-5" : ""}>Türkçe</span>
+                  </span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          {/* User chip (mobile) */}
+          <div className="rounded-xl border border-border bg-card px-2.5 py-2">
+            <div className="flex items-center gap-2.5">
+              {mounted ? (
+                <Avatar className="h-7 w-7 flex-shrink-0">
+                  {avatarUrl ? <AvatarImage src={avatarUrl} alt={user?.full_name || "User"} /> : null}
+                  <AvatarFallback className="bg-clay-soft text-[11px] font-semibold text-clay">{initials}</AvatarFallback>
+                </Avatar>
+              ) : (
+                <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-clay-soft" />
+              )}
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[12px] font-semibold leading-tight">{mounted ? (user?.full_name || t("welcome")) : "\u00A0"}</span>
+                <span className="block truncate text-[10px] text-subtle">{mounted ? (user?.email || "") : "\u00A0"}</span>
+              </span>
+            </div>
+            <div className="mt-2 flex gap-1.5">
+              <Link href="/profile" onClick={() => setMobileOpen(false)} className="flex-1">
+                <Button variant="ghost" size="sm" className="w-full justify-start gap-1.5 text-[12px]">
+                  <User className="h-3.5 w-3.5" />
+                  {t("profile")}
+                </Button>
+              </Link>
+              <Link href="/settings" onClick={() => setMobileOpen(false)} className="flex-1">
+                <Button variant="ghost" size="sm" className="w-full justify-start gap-1.5 text-[12px]">
+                  <Settings className="h-3.5 w-3.5" />
+                  {t("settings")}
+                </Button>
+              </Link>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => { logout(); setMobileOpen(false) }}
+              className="mt-1 w-full justify-start gap-1.5 text-[12px] text-destructive hover:text-destructive"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              {t("logout")}
+            </Button>
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
+
+    {/* ── Desktop sidebar (unchanged, hidden on mobile) ──── */}
     <aside
       data-tour="nav-sidebar"
       className="hidden lg:flex sticky top-0 h-screen w-[232px] flex-shrink-0 flex-col gap-1 border-r border-border bg-sidebar px-3.5 py-5"
@@ -491,5 +727,6 @@ export function Navigation() {
         </DialogContent>
       </Dialog>
     </aside>
+    </>
   )
 }

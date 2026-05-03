@@ -451,7 +451,13 @@ export default function MockInterviewClient() {
             </div>
           )}
 
-          <Button onClick={startInterview} size="lg" className="w-full gap-2" disabled={isCheckingCv}>
+          <Button 
+            data-tour="interview-start-btn"
+            onClick={startInterview} 
+            size="lg" 
+            className="w-full gap-2" 
+            disabled={isCheckingCv}
+          >
             {isCheckingCv ? <Loader2 className="h-5 w-5 animate-spin" /> : <Phone className="h-5 w-5" />}
             {t("Start Interview")}
           </Button>
@@ -593,14 +599,14 @@ export default function MockInterviewClient() {
     ) : null
 
     return (
-      <div className="flex h-[100dvh] flex-col overflow-hidden bg-background">
-        <main className="flex min-h-0 flex-1 flex-col p-4 md:p-6">
+      <div className="flex h-[100dvh] flex-col overflow-hidden bg-background pt-14 lg:pt-0">
+        <main className="flex min-h-0 flex-1 flex-col p-3 sm:p-4 md:p-6">
           <div className="mx-auto flex w-full max-w-6xl min-h-0 flex-1 flex-col space-y-4">
             {/* ── Top Bar ── */}
             <div className="shrink-0 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Badge variant="outline" className="gap-1.5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="outline" className="gap-1.5 text-[11px]">
                     <span className={`h-2 w-2 rounded-full ${
                       voice.connectionStatus === "connected" ? "bg-green-500" : 
                       voice.connectionStatus === "connecting" ? "bg-yellow-500 animate-pulse" : 
@@ -619,7 +625,7 @@ export default function MockInterviewClient() {
               </div>
 
               <div>
-                <h1 className="serif-headline text-[26px] font-normal leading-tight">
+                <h1 className="serif-headline text-[20px] sm:text-[26px] font-normal leading-tight">
                   {t("Question")} {activeQIndex + 1}
                   <span className="text-subtle"> / {activeQuestions.length || "—"}</span>
                 </h1>
@@ -640,9 +646,9 @@ export default function MockInterviewClient() {
               </div>
             </div>
 
-            <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[1.6fr_1fr]">
+            <div className="grid min-h-0 flex-1 gap-4 grid-cols-1 lg:grid-cols-[1.6fr_1fr]">
           {/* ── LEFT: Avatar (large) + session state ── */}
-          <div className="flex min-h-0 flex-col gap-4 lg:h-full">
+          <div className="flex min-h-0 flex-col gap-4 max-h-[55vh] lg:max-h-none lg:h-full">
             {activeQuestion && (
               <Card className="shrink-0 py-3 gap-0">
                 <CardContent className="py-0">
@@ -699,7 +705,7 @@ export default function MockInterviewClient() {
               <CardContent className="flex min-h-0 flex-1 overflow-hidden p-0">
                 <div
                   ref={conversationScrollRef}
-                  className="h-[220px] min-h-0 overflow-y-auto overscroll-contain space-y-3 px-6 pb-4 pr-4 lg:h-full"
+                  className="h-[160px] sm:h-[220px] min-h-0 overflow-y-auto overscroll-contain space-y-3 px-4 sm:px-6 pb-4 pr-4 lg:h-full"
                 >
                   {voice.conversationLog.length === 0 && (
                     <p className="text-sm text-muted-foreground text-center py-6">{t("Conversation will appear here...")}</p>
@@ -756,7 +762,7 @@ export default function MockInterviewClient() {
   const overallFeedback = finalEvaluation?.overall_feedback || ""
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-7 py-7 md:px-9">
+    <div className="mx-auto w-full max-w-6xl px-4 py-5 sm:px-7 sm:py-7 md:px-9">
       <div className="mb-5">
         <p className="eyebrow text-clay">
           {activeWorkspace?.name || ""}{activeWorkspace?.jobName ? ` · ${activeWorkspace.jobName}` : ""}
@@ -832,7 +838,7 @@ export default function MockInterviewClient() {
           {results.map((result, idx) => (
             <div
               key={idx}
-              className="grid grid-cols-[100px_1fr_80px_60px] items-center gap-3.5 rounded-lg border border-border bg-background p-3.5"
+              className="flex flex-col gap-2 rounded-lg border border-border bg-background p-3.5 sm:grid sm:grid-cols-[100px_1fr_80px_60px] sm:items-center sm:gap-3.5"
             >
               <p className="eyebrow text-clay">{t(result.topic)}</p>
               <p className="text-[13px]">{t(result.question)}</p>

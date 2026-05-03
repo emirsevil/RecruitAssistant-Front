@@ -70,6 +70,11 @@ function calcTooltipPos(
           ? ["right", "bottom", "top", "left"]
           : ["left", "bottom", "top", "right"]
 
+  let bestDir = preferred
+  let maxSpace = -1
+  let bestTop = 0
+  let bestLeft = 0
+
   for (const dir of attempts) {
     let top = 0
     let left = 0
@@ -89,23 +94,44 @@ function calcTooltipPos(
     }
 
     // Clamp to viewport
-    left = Math.max(pad, Math.min(left, vw - tooltipW - pad))
-    top = Math.max(pad, Math.min(top, vh - tooltipH - pad))
+    const cLeft = Math.max(pad, Math.min(left, vw - tooltipW - pad))
+    const cTop = Math.max(pad, Math.min(top, vh - tooltipH - pad))
 
-    // Check if it fits reasonably
-    const fitsH = left >= pad && left + tooltipW <= vw - pad
-    const fitsV = top >= pad && top + tooltipH <= vh - pad
+    // Check if the clamped tooltip overlaps the target
+    // We add a tiny 2px buffer to consider it "overlapping" if it touches
+    const overlaps = !(
+      cLeft + tooltipW + 2 < targetRect.left ||
+      cLeft > targetRect.right + 2 ||
+      cTop + tooltipH + 2 < targetRect.top ||
+      cTop > targetRect.bottom + 2
+    )
 
-    if (fitsH && fitsV) {
-      return { top, left, effectivePlacement: dir }
+    if (!overlaps) {
+      // Perfect fit! It fits on screen and doesn't cover the target.
+      return { top: cTop, left: cLeft, effectivePlacement: dir }
+    }
+
+    // If it overlaps, calculate available space to pick the "least bad" option
+    let space = 0
+    if (dir === "top") space = targetRect.top
+    else if (dir === "bottom") space = vh - targetRect.bottom
+    else if (dir === "left") space = targetRect.left
+    else if (dir === "right") space = vw - targetRect.right
+
+    if (space > maxSpace) {
+      maxSpace = space
+      bestDir = dir
+      bestTop = cTop
+      bestLeft = cLeft
     }
   }
 
-  // Ultimate fallback — bottom of screen (mobile-friendly)
+  // Ultimate fallback: All directions overlap the target (screen is too small or target is huge)
+  // Use the direction that had the most available physical space
   return {
-    top: vh - tooltipH - pad,
-    left: Math.max(pad, (vw - tooltipW) / 2),
-    effectivePlacement: "bottom" as const,
+    top: bestTop,
+    left: bestLeft,
+    effectivePlacement: bestDir as any,
   }
 }
 
