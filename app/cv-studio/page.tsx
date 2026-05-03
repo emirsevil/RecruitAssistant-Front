@@ -175,7 +175,12 @@ type CVData = {
               summary: p.summary || prev.summary,
               education: p.education?.length ? p.education : prev.education,
               experience: p.experience?.length ? p.experience : prev.experience,
-              projects: p.projects?.length ? p.projects : prev.projects,
+              projects: p.projects?.length 
+                ? p.projects.map((proj: any) => ({
+                    ...proj,
+                    techStack: Array.isArray(proj.techStack) ? proj.techStack.join(", ") : (proj.techStack || "")
+                  })) 
+                : prev.projects,
               skills: p.skills?.length ? p.skills : prev.skills,
             }))
           }
@@ -266,10 +271,12 @@ type CVData = {
       name: p.title,
       description: p.description,
       date: p.date || null,
-      technologies: p.techStack
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean),
+      technologies: Array.isArray(p.techStack)
+        ? p.techStack
+        : (p.techStack || "")
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean),
     })),
     certifications: [],
   })
@@ -351,7 +358,10 @@ type CVData = {
         summary: parsed.summary ?? "",
         education: parsed.education ?? [],
         experience: parsed.experience ?? [],
-        projects: parsed.projects ?? [],
+        projects: (parsed.projects ?? []).map((proj: any) => ({
+          ...proj,
+          techStack: Array.isArray(proj.techStack) ? proj.techStack.join(", ") : (proj.techStack || "")
+        })),
         skills: parsed.skills ?? [],
         specialInstructions: prev.specialInstructions,
       }))
