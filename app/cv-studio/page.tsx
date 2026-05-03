@@ -14,7 +14,6 @@ import {
   FileText,
   Loader2,
   Plus,
-  RotateCcw,
   Sparkles,
   Trash2,
   Upload,
@@ -102,12 +101,23 @@ export default function CVStudioPage() {
   const [isCoverLetterGenerated, setIsCoverLetterGenerated] = useState(false)
   const [isCompiling, setIsCompiling] = useState(false)
 
+  const addEducation = () =>
+    setCvData({
+      ...cvData,
+      education: [
+        { degree: "", school: "", gpa: "", startDate: "", endDate: "" },
+        ...cvData.education,
+      ],
+    })
+  const removeEducation = (i: number) =>
+    setCvData({ ...cvData, education: cvData.education.filter((_, idx) => idx !== i) })
+
   const addExperience = () => {
     setCvData({
       ...cvData,
       experience: [
-        ...cvData.experience,
         { role: "", company: "", bullets: [""], startDate: "", endDate: "" },
+        ...cvData.experience,
       ],
     })
   }
@@ -118,8 +128,8 @@ export default function CVStudioPage() {
     setCvData({
       ...cvData,
       projects: [
-        ...cvData.projects,
         { title: "", techStack: "", date: "", description: "" },
+        ...cvData.projects,
       ],
     })
   const removeProject = (i: number) =>
@@ -290,10 +300,31 @@ export default function CVStudioPage() {
     return parts.join("\n\n")
   }
 
+  const stripLatexFences = (latex: string) =>
+    latex
+      // Strip a leading ```latex (or ```) line (with optional surrounding whitespace).
+      .replace(/^\s*```[a-zA-Z]*\s*\n/, "")
+      // Strip a trailing ``` (with optional surrounding whitespace).
+      .replace(/\n?\s*```\s*$/, "")
+      .trim()
+
+  // Latin Extended-A Turkish chars get silently dropped by pdfLaTeX with
+  // [utf8]{inputenc} + tgtermes/tgheros (font's T1 subset doesn't cover them).
+  // Translate to LaTeX escapes that always render. Mirrors the server-side
+  // _escape_problem_turkish_chars in services/ai_generator.py — keep in sync.
+  const escapeTurkishChars = (latex: string) =>
+    latex
+      .replace(/İ/g, "\\.{I}")
+      .replace(/Ş/g, "\\c{S}")
+      .replace(/ş/g, "\\c{s}")
+      .replace(/Ğ/g, "\\u{G}")
+      .replace(/ğ/g, "\\u{g}")
+      .replace(/ı/g, "\\i{}")
+
   const normalizeResumeSectionDividers = (latex: string) =>
     latex.replace(
       /(\\section\*\{[^{}]+\})\s*(?:\\vspace\{[^{}]+\}\s*)?\\hrule\s*(?:\\vspace\{[^{}]+\}\s*)?/g,
-      "$1\\vspace{-0.65em}\n\\hrule\n\\vspace{0.45em}\n"
+      "$1\\vspace{-0.65em}\n\\hrule\n\\vspace{0.2em}\n"
     )
 
   const compileLatexLocally = async (latex: string, isCoverLetter: boolean) => {
@@ -413,7 +444,9 @@ export default function CVStudioPage() {
         latex += decoder.decode(value, { stream: true })
         setGeneratedLatex(latex)
       }
+      latex = stripLatexFences(latex)
       latex = normalizeResumeSectionDividers(latex)
+      latex = escapeTurkishChars(latex)
       setGeneratedLatex(latex)
       await compileLatexLocally(latex, false)
       toast.success(
@@ -479,6 +512,9 @@ export default function CVStudioPage() {
         latex += decoder.decode(value, { stream: true })
         setGeneratedCoverLetterLatex(latex)
       }
+      latex = stripLatexFences(latex)
+      latex = escapeTurkishChars(latex)
+      setGeneratedCoverLetterLatex(latex)
       await compileLatexLocally(latex, true)
       toast.success(
         language === "tr" ? "Cover Letter hazır! 🎉" : "Your Cover Letter is ready! 🎉",
@@ -607,9 +643,15 @@ export default function CVStudioPage() {
           </Section>
 
           {/* Education */}
-          <Section title={t("Education")}>
+          <Section
+            title={t("Education")}
+            action={<AddButton onClick={addEducation} label={t("Add")} />}
+          >
             {cvData.education.map((edu, idx) => (
               <SubCard key={idx}>
+                {cvData.education.length > 1 && (
+                  <RemoveButton onClick={() => removeEducation(idx)} />
+                )}
                 <Field label={t("Degree")}>
                   <Input
                     value={edu.degree}
@@ -980,27 +1022,16 @@ export default function CVStudioPage() {
                         defaultLanguage="latex"
                         theme="vs-dark"
                         value={generatedLatex}
-                        onChange={(val) => setGeneratedLatex(val || "")}
                         options={{
                           minimap: { enabled: false },
                           wordWrap: "on",
                           padding: { top: 16 },
+                          readOnly: true,
+                          domReadOnly: true,
                         }}
                       />
                     </div>
                     <div className="mt-4 flex flex-col gap-2 xl:flex-row">
-                      <Button
-                        className="flex-1 gap-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
-                        disabled={isCompiling}
-                        onClick={() => compileLatexLocally(generatedLatex, false)}
-                      >
-                        {isCompiling ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <RotateCcw className="h-4 w-4" />
-                        )}
-                        {t("Re-compile PDF")}
-                      </Button>
                       <Button
                         variant="outline"
                         className="flex-1 gap-2 rounded-lg border-border"
@@ -1079,27 +1110,16 @@ export default function CVStudioPage() {
                         defaultLanguage="latex"
                         theme="vs-dark"
                         value={generatedCoverLetterLatex}
-                        onChange={(val) => setGeneratedCoverLetterLatex(val || "")}
                         options={{
                           minimap: { enabled: false },
                           wordWrap: "on",
                           padding: { top: 16 },
+                          readOnly: true,
+                          domReadOnly: true,
                         }}
                       />
                     </div>
                     <div className="mt-4 flex flex-col gap-2 xl:flex-row">
-                      <Button
-                        className="flex-1 gap-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
-                        disabled={isCompiling}
-                        onClick={() => compileLatexLocally(generatedCoverLetterLatex, true)}
-                      >
-                        {isCompiling ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <RotateCcw className="h-4 w-4" />
-                        )}
-                        {t("Re-compile PDF")}
-                      </Button>
                       <Button
                         variant="outline"
                         className="flex-1 gap-2 rounded-lg border-border"
