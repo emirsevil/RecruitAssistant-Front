@@ -1,14 +1,11 @@
 "use client"
 
-import dynamic from "next/dynamic"
 import type { Ref } from "react"
-import { Mic, Volume2 } from "lucide-react"
+import { Mic, Volume2, Phone } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import type { AvatarProvider } from "@/hooks/use-voice-interview"
 import type { LiveAvatarRoomStatus } from "@/hooks/use-liveavatar-room"
-
-const Avatar3D = dynamic(() => import("@/components/Avatar3D"), { ssr: false })
 
 interface TalkingInterviewerPanelProps {
   analyserNode: AnalyserNode | null
@@ -40,6 +37,68 @@ export function TalkingInterviewerPanel({
   interruptLabel,
 }: TalkingInterviewerPanelProps) {
   const isLiveAvatar = activeAvatarProvider === "liveavatar_full"
+  const isVoiceCall = activeAvatarProvider === "voice_call"
+
+  if (isVoiceCall) {
+    return (
+      <div className="flex h-full min-h-0 flex-col">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border-2 border-border bg-card shadow-sm">
+          <div className="relative min-h-0 flex-1 flex flex-col items-center justify-center gap-5 bg-secondary px-6 py-8">
+            {/* Pulsing avatar circle */}
+            <div className={`relative flex items-center justify-center ${isSpeaking ? "animate-pulse" : ""}`}>
+              <div className={`absolute h-28 w-28 rounded-full ${isSpeaking ? "bg-primary/20 animate-ping" : "bg-transparent"}`}
+                style={{ animationDuration: "2s" }}
+              />
+              <div className={`absolute h-24 w-24 rounded-full ${isSpeaking ? "bg-primary/10" : "bg-transparent"}`} />
+              <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-primary/80 to-primary shadow-lg shadow-primary/25">
+                {isSpeaking ? (
+                  <Volume2 className="h-8 w-8 text-primary-foreground animate-pulse" />
+                ) : (
+                  <Phone className="h-8 w-8 text-primary-foreground" />
+                )}
+              </div>
+            </div>
+
+            <div className="text-center">
+              <p className="text-sm font-medium text-foreground">{interviewerLabel}</p>
+              <div className="mt-2 flex items-center justify-center gap-1.5">
+                <span className={`h-2 w-2 rounded-full ${statusColor} ${statusPulse ? "animate-pulse" : ""}`} />
+                <span className="text-xs text-muted-foreground">{statusLabel}</span>
+              </div>
+            </div>
+
+            {/* Audio wave bars (visual feedback when AI speaks) */}
+            {isSpeaking && (
+              <div className="flex h-8 items-center justify-center gap-[3px]">
+                {Array.from({ length: 12 }).map((_, i) => (
+                  <span
+                    key={i}
+                    className="w-[3px] rounded-full bg-primary/80"
+                    style={{
+                      height: `${Math.max(12, Math.random() * 100)}%`,
+                      animation: `wave-bar 0.6s ease-in-out ${i * 0.05}s infinite alternate`,
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+
+            {showInterruptButton && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onInterrupt}
+                className="gap-1.5"
+              >
+                <Mic className="h-4 w-4" />
+                {interruptLabel}
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -59,9 +118,7 @@ export function TalkingInterviewerPanel({
                 </div>
               )}
             </>
-          ) : (
-            <Avatar3D analyserNode={analyserNode} isSpeaking={isSpeaking} />
-          )}
+          ) : null}
 
           <div className="absolute top-3 left-3 flex items-center gap-2">
             <div className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm bg-black/40">

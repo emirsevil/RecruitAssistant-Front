@@ -245,3 +245,33 @@
   }
 }
 
+/* Voice call wave bar animation */
+@keyframes wave-bar {
+  0% { height: 15%; }
+  100% { height: 85%; }
+}
+
+/* ── Custom scrollbar — theme-aware ────────────────────────────── */
+/* Thin, unobtrusive scrollbar that respects light/dark palette    */
+
+/* Webkit (Chrome, Edge, Safari) */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}

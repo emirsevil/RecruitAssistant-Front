@@ -37,7 +37,7 @@ export type SessionState =
   | "processing"
   | "evaluating"
   | "done"
-export type AvatarProvider = "rpm_cartesia" | "liveavatar_full"
+export type AvatarProvider = "rpm_cartesia" | "liveavatar_full" | "voice_call"
 type OutputMode = "cartesia_stream" | "liveavatar" | "browser_tts"
 
 interface LiveAvatarBootstrapResponse {
@@ -83,6 +83,7 @@ interface UseVoiceInterviewReturn {
     difficulty: string
     interviewType: string
     avatarProvider: AvatarProvider
+    durationLimit?: number
   }) => Promise<void>
   resumeSession: (config: { interviewId: number }) => Promise<void>
   toggleMic: () => void
@@ -108,8 +109,8 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
   const [micActive, setMicActive] = useState(false)
   const [pendingTranscript, setPendingTranscript] = useState("")
   const [isTranscribing, setIsTranscribing] = useState(false)
-  const [selectedAvatarProvider, setSelectedAvatarProvider] = useState<AvatarProvider>("rpm_cartesia")
-  const [activeAvatarProvider, setActiveAvatarProvider] = useState<AvatarProvider>("rpm_cartesia")
+  const [selectedAvatarProvider, setSelectedAvatarProvider] = useState<AvatarProvider>("voice_call")
+  const [activeAvatarProvider, setActiveAvatarProvider] = useState<AvatarProvider>("voice_call")
   const [isWrappingUp, setIsWrappingUp] = useState(false)
 
   const isWrappingUpRef = useRef(false)
@@ -132,7 +133,7 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
   const SAMPLE_RATE = 24000
 
   const sessionStateRef = useRef<SessionState>("idle")
-  const activeAvatarProviderRef = useRef<AvatarProvider>("rpm_cartesia")
+  const activeAvatarProviderRef = useRef<AvatarProvider>("voice_call")
   const activeOutputModeRef = useRef<OutputMode>("cartesia_stream")
   const currentUtteranceIdRef = useRef<string | null>(null)
   const browserSpeechUtteranceIdRef = useRef<string | null>(null)
@@ -542,8 +543,8 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
         setSessionState("idle")
         setInterviewId(null)
         interviewIdRef.current = null
-        setActiveAvatarProvider("rpm_cartesia")
-        activeAvatarProviderRef.current = "rpm_cartesia"
+        setActiveAvatarProvider("voice_call")
+        activeAvatarProviderRef.current = "voice_call"
         activeOutputModeRef.current = "cartesia_stream"
       }
     },
@@ -556,17 +557,22 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
 
       switch (msgType) {
         case "session_started": {
-          const provider = (data.avatar_provider || activeAvatarProviderRef.current) as AvatarProvider
+          // Backend returns rpm_cartesia but we may be in voice_call mode.
+          // Preserve the current UI provider if the backend provider matches the audio pipeline.
+          const backendProvider = (data.avatar_provider || activeAvatarProviderRef.current) as AvatarProvider
+          const uiProvider = backendProvider === "rpm_cartesia" && activeAvatarProviderRef.current === "voice_call"
+            ? "voice_call"
+            : backendProvider
           const outputMode = (data.output_mode ||
-            (provider === "liveavatar_full" ? "liveavatar" : "cartesia_stream")) as OutputMode
+            (uiProvider === "liveavatar_full" ? "liveavatar" : "cartesia_stream")) as OutputMode
           setQuestions(data.questions || [])
           setInterviewId(data.interview_id || null)
           interviewIdRef.current = data.interview_id || null
           setCurrentQuestionIndex(0)
-          setActiveAvatarProvider(provider)
-          activeAvatarProviderRef.current = provider
+          setActiveAvatarProvider(uiProvider)
+          activeAvatarProviderRef.current = uiProvider
           activeOutputModeRef.current = outputMode
-          if (provider === "liveavatar_full") {
+          if (uiProvider === "liveavatar_full") {
             liveAvatarSessionOwnedByBackendRef.current = true
             pendingLiveAvatarSessionIdRef.current = null
             pendingLiveAvatarWorkspaceIdRef.current = null
@@ -580,7 +586,11 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
         }
 
         case "ai_speaking": {
-          const provider = (data.avatar_provider || activeAvatarProviderRef.current) as AvatarProvider
+          const backendProv = (data.avatar_provider || activeAvatarProviderRef.current) as AvatarProvider
+          // Preserve voice_call UI mode when backend reports rpm_cartesia
+          const provider = backendProv === "rpm_cartesia" && activeAvatarProviderRef.current === "voice_call"
+            ? "voice_call"
+            : backendProv
           const outputMode = (data.output_mode ||
             (provider === "liveavatar_full" ? "liveavatar" : activeOutputModeRef.current || "cartesia_stream")) as OutputMode
           const transcript = data.transcript || ""
@@ -653,10 +663,12 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
 
         case "avatar_provider_switched": {
           liveAvatarFailurePendingRef.current = false
-          const provider = (data.avatar_provider || "rpm_cartesia") as AvatarProvider
-          setActiveAvatarProvider(provider)
-          activeAvatarProviderRef.current = provider
-          if (provider === "rpm_cartesia") {
+          const backendProv2 = (data.avatar_provider || "rpm_cartesia") as AvatarProvider
+          // When backend falls back to rpm_cartesia, use voice_call for the UI
+          const switchedProvider = backendProv2 === "rpm_cartesia" ? "voice_call" : backendProv2
+          setActiveAvatarProvider(switchedProvider)
+          activeAvatarProviderRef.current = switchedProvider
+          if (backendProv2 === "rpm_cartesia") {
             await disconnectLiveAvatar()
             liveAvatarSessionOwnedByBackendRef.current = false
             pendingLiveAvatarSessionIdRef.current = null
@@ -748,7 +760,7 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
   const handleWsMessage = useCallback(
     (event: MessageEvent) => {
       if (event.data instanceof ArrayBuffer || event.data instanceof Blob) {
-        if (!shouldPlayAudioRef.current || activeAvatarProviderRef.current !== "rpm_cartesia") return
+        if (!shouldPlayAudioRef.current || (activeAvatarProviderRef.current !== "rpm_cartesia" && activeAvatarProviderRef.current !== "voice_call")) return
         if (event.data instanceof Blob) {
           event.data.arrayBuffer().then(queueAudioChunk)
         } else {
@@ -774,6 +786,7 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
       difficulty: string
       interviewType: string
       avatarProvider: AvatarProvider
+      durationLimit?: number
     }) => {
       if (sessionStartInFlightRef.current || wsRef.current) {
         return
@@ -831,17 +844,20 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
             activeAvatarProviderRef.current = "liveavatar_full"
           } catch (bootstrapError) {
             console.error("LiveAvatar bootstrap error:", bootstrapError)
-            setError("LiveAvatar kullanılamadı. Klasik avatar moduna geri dönülüyor.")
-            effectiveProvider = "rpm_cartesia"
-            setActiveAvatarProvider("rpm_cartesia")
-            activeAvatarProviderRef.current = "rpm_cartesia"
+            setError("LiveAvatar kullanılamadı. Sesli görüşme moduna geri dönülüyor.")
+            effectiveProvider = "voice_call"
+            setActiveAvatarProvider("voice_call")
+            activeAvatarProviderRef.current = "voice_call"
             await disconnectLiveAvatar()
             await releaseBootstrapLiveAvatarSession("BOOTSTRAP_FAILED")
           }
         } else {
-          effectiveProvider = "rpm_cartesia"
-          setActiveAvatarProvider("rpm_cartesia")
-          activeAvatarProviderRef.current = "rpm_cartesia"
+          // voice_call or rpm_cartesia → both use the cartesia_stream audio pipeline
+          // but we keep voice_call as the provider for the UI rendering
+          const uiProvider = config.avatarProvider === "voice_call" ? "voice_call" : "rpm_cartesia"
+          effectiveProvider = uiProvider
+          setActiveAvatarProvider(uiProvider)
+          activeAvatarProviderRef.current = uiProvider
           await disconnectLiveAvatar()
         }
 
@@ -876,8 +892,11 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
               categories: config.categories,
               difficulty: config.difficulty,
               interview_type: config.interviewType,
-              avatar_provider: effectiveProvider,
+              // Backend only knows rpm_cartesia and liveavatar_full;
+              // voice_call is a UI-only concept that uses the same audio pipeline as rpm_cartesia
+              avatar_provider: effectiveProvider === "voice_call" ? "rpm_cartesia" : effectiveProvider,
               liveavatar_session_id: liveAvatarSessionId,
+              duration_limit: config.durationLimit,
             })
           )
         }

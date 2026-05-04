@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect, type CSSProperties } from "react"
+import { useState, useRef, useEffect, useCallback, type CSSProperties } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 
 import { PageContainer, PageHeader } from "@/components/page-container"
@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Progress } from "@/components/ui/progress"
 import { Textarea } from "@/components/ui/textarea"
-import { PlayCircle, Mic, MicOff, Send, ChevronRight, BarChart3, SkipForward, Phone, PhoneOff, Volume2, Loader2, CheckCircle2, Check, Tag } from "lucide-react"
+import { PlayCircle, Mic, MicOff, Send, ChevronRight, BarChart3, SkipForward, Phone, PhoneOff, Volume2, Loader2, CheckCircle2, Check, Tag, Clock } from "lucide-react"
 import Link from "next/link"
 import { useLanguage } from "@/lib/language-context"
 import { useVoiceInterview } from "@/hooks/use-voice-interview"
@@ -67,6 +67,9 @@ export default function MockInterviewClient() {
     }
   }
   const [difficulty, setDifficulty] = useState("junior")
+  const [durationMinutes, setDurationMinutes] = useState(10)
+  const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null)
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const [userAnswer, setUserAnswer] = useState("")
   const { t } = useLanguage()
 
@@ -90,6 +93,7 @@ export default function MockInterviewClient() {
 
   // Voice interview hook (sole pipeline)
   const voice = useVoiceInterview()
+  const sessionStateRef = useRef(voice.sessionState)
 
   // Live mic amplitude → wave bars only animate when the user actually speaks
   const micLevels = useMicLevel(voice.micActive, WAVE_BARS)
@@ -210,12 +214,14 @@ export default function MockInterviewClient() {
     }
 
     setState("active")
+    setRemainingSeconds(durationMinutes * 60)
     voice.startSession({
       workspaceId: Number(activeWorkspace.id),
       categories: selectedCategories.length > 0 ? selectedCategories : ["Genel"],
       difficulty,
       interviewType: interviewType,
       avatarProvider: voice.selectedAvatarProvider,
+      durationLimit: durationMinutes * 60,
     })
   }
 
@@ -231,6 +237,45 @@ export default function MockInterviewClient() {
       setState("completed")
     }
   }, [voice.sessionState])
+
+  // ─── Countdown Timer ───────────────────────────────────────────
+  // Keep sessionStateRef in sync so the interval callback always has the
+  // latest session state without needing to re-create the interval.
+  useEffect(() => {
+    sessionStateRef.current = voice.sessionState
+  }, [voice.sessionState])
+
+  useEffect(() => {
+    if (state !== "active" || remainingSeconds === null) {
+      if (timerRef.current) {
+        clearInterval(timerRef.current)
+        timerRef.current = null
+      }
+      return
+    }
+
+    timerRef.current = setInterval(() => {
+      // Only tick when it's the user's turn — pause during AI processing/speaking
+      if (sessionStateRef.current !== "listening") return
+
+      setRemainingSeconds((prev) => {
+        if (prev === null || prev <= 1) {
+          clearInterval(timerRef.current!)
+          timerRef.current = null
+          voice.endSession()
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current)
+        timerRef.current = null
+      }
+    }
+  }, [state, remainingSeconds === null])
 
   // Show voice errors
   useEffect(() => {
@@ -371,6 +416,29 @@ export default function MockInterviewClient() {
             </div>
           </div>
 
+          <div className="mb-5">
+            <p className="mb-2 text-[12px] font-semibold">{t("Session Duration")}</p>
+            <div className="flex flex-wrap gap-1.5">
+              {[1, 5, 10, 15, 20].map((mins) => (
+                <button
+                  key={mins}
+                  type="button"
+                  onClick={() => setDurationMinutes(mins)}
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[12px] font-medium transition-colors ${
+                    durationMinutes === mins
+                      ? "border-transparent bg-sage-soft text-sage"
+                      : "border-border bg-card text-foreground hover:border-primary/40"
+                  }`}
+                >
+                  {durationMinutes === mins && <Check className="h-3 w-3" />}
+                  <Clock className="h-3 w-3" />
+                  {mins} {t("min")}
+                  {mins === 1 && <span className="text-[10px] text-muted-foreground">({t("test")})</span>}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {activeWorkspace && (
             <div className="mb-5 rounded-lg border border-border bg-sage-soft px-4 py-3">
               <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-subtle">
@@ -437,14 +505,14 @@ export default function MockInterviewClient() {
               <Select
                 value={voice.selectedAvatarProvider}
                 onValueChange={(value) =>
-                  voice.setSelectedAvatarProvider(value as "rpm_cartesia" | "liveavatar_full")
+                  voice.setSelectedAvatarProvider(value as "voice_call" | "liveavatar_full")
                 }
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="rpm_cartesia">{t("Classic 3D Avatar (stable)")}</SelectItem>
+                  <SelectItem value="voice_call">{t("Voice Call (no avatar)")}</SelectItem>
                   <SelectItem value="liveavatar_full">{t("Photoreal LiveAvatar (beta)")}</SelectItem>
                 </SelectContent>
               </Select>
@@ -507,7 +575,10 @@ export default function MockInterviewClient() {
       done: { label: t("Done"), color: "bg-gray-500", pulse: false },
     }[voice.sessionState] || { label: "", color: "bg-gray-500", pulse: false }
 
-    const answerComposer = voice.isListening ? (
+    const isProcessingOrIdle = voice.sessionState === "processing" || voice.sessionState === "idle"
+    const isInputDisabled = isProcessingOrIdle || voice.sessionState === "ai_speaking" || voice.isTranscribing
+
+    const answerComposer = (
       <Card className="shrink-0">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
@@ -516,6 +587,24 @@ export default function MockInterviewClient() {
               <Badge variant="outline" className="gap-1 text-xs">
                 <Loader2 className="h-3 w-3 animate-spin" />
                 {t("Transcribing...")}
+              </Badge>
+            )}
+            {voice.sessionState === "processing" && (
+              <Badge variant="outline" className="gap-1 text-xs text-yellow-600">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                {t("Processing your answer...")}
+              </Badge>
+            )}
+            {voice.sessionState === "idle" && (
+              <Badge variant="outline" className="gap-1 text-xs">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                {t("Preparing interview...")}
+              </Badge>
+            )}
+            {voice.sessionState === "ai_speaking" && (
+              <Badge variant="outline" className="gap-1 text-xs text-green-600">
+                <Volume2 className="h-3 w-3" />
+                {t("AI is speaking...")}
               </Badge>
             )}
           </CardTitle>
@@ -540,11 +629,11 @@ export default function MockInterviewClient() {
             )}
 
             <Textarea
-              placeholder={t("Record with the microphone or type your answer here...")}
-              className="min-h-[110px] resize-none text-base lg:min-h-[120px]"
+              placeholder={isInputDisabled ? "" : t("Record with the microphone or type your answer here...")}
+              className="min-h-[80px] max-h-[180px] overflow-y-auto resize-none text-base"
               value={userAnswer}
               onChange={(e) => setUserAnswer(e.target.value)}
-              disabled={voice.isTranscribing}
+              disabled={isInputDisabled}
             />
 
             <div className="flex items-center justify-between gap-3">
@@ -554,7 +643,7 @@ export default function MockInterviewClient() {
                   variant={voice.micActive ? "destructive" : "outline"}
                   className="gap-1.5"
                   onClick={handleMicToggle}
-                  disabled={voice.isTranscribing}
+                  disabled={isInputDisabled}
                 >
                   {voice.micActive ? (
                     <>
@@ -587,7 +676,7 @@ export default function MockInterviewClient() {
                 size="sm"
                 className="gap-1.5"
                 onClick={handleSubmit}
-                disabled={!userAnswer.trim() || voice.micActive || voice.isTranscribing}
+                disabled={!userAnswer.trim() || voice.micActive || isInputDisabled}
               >
                 <Send className="h-4 w-4" />
                 {t("Submit")}
@@ -596,7 +685,7 @@ export default function MockInterviewClient() {
           </div>
         </CardContent>
       </Card>
-    ) : null
+    )
 
     return (
       <div className="flex h-[100dvh] flex-col overflow-hidden bg-background pt-14 lg:pt-0">
@@ -617,6 +706,29 @@ export default function MockInterviewClient() {
                      t("Disconnected")}
                   </Badge>
                   <Badge variant="outline">{t("Interview Session")}</Badge>
+                  {remainingSeconds !== null && (() => {
+                    const isPaused = voice.sessionState !== "listening"
+                    return (
+                      <Badge
+                        variant="outline"
+                        className={`gap-1 tabular-nums text-[11px] transition-opacity ${
+                          isPaused
+                            ? "opacity-50"
+                            : remainingSeconds <= 60
+                              ? "border-destructive/40 text-destructive animate-pulse"
+                              : remainingSeconds <= 120
+                                ? "border-yellow-500/40 text-yellow-600 dark:text-yellow-400"
+                                : ""
+                        }`}
+                        title={isPaused ? t("Timer paused — waiting for AI") : t("Time remaining")}
+                      >
+                        <Clock className="h-3 w-3" />
+                        {String(Math.floor(remainingSeconds / 60)).padStart(2, "0")}:
+                        {String(remainingSeconds % 60).padStart(2, "0")}
+                        {isPaused && <span className="text-[9px]">⏸</span>}
+                      </Badge>
+                    )
+                  })()}
                 </div>
                 <Button variant="destructive" size="sm" className="gap-1.5" onClick={voice.endSession}>
                   <PhoneOff className="h-4 w-4" />
@@ -674,28 +786,6 @@ export default function MockInterviewClient() {
               showInterruptButton={voice.isAiSpeaking && !voice.isWrappingUp}
               interruptLabel={t("Interrupt & Speak")}
             />
-
-            {voice.sessionState === "processing" && (
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />
-                    <p className="text-sm font-medium text-muted-foreground">{t("Processing your answer...")}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {voice.sessionState === "idle" && (
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <Loader2 className="h-5 w-5 text-muted-foreground animate-spin" />
-                    <p className="text-sm font-medium text-muted-foreground">{t("Preparing interview...")}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
           </div>
 
           {/* ── RIGHT: Conversation + Answer ── */}
