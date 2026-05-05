@@ -44,7 +44,7 @@ const SKILL_OPTIONS: SelectOption[] = SKILLS.map((s) => ({
   group: s.category,
 }))
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://recruitassistant-back-1.onrender.com"
 
 const DIFFICULTIES = ["Easy", "Medium", "Hard"] as const
 type Difficulty = (typeof DIFFICULTIES)[number]

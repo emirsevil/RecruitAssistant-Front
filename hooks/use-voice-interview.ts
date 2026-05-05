@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 
-import { LIVEAVATAR_ENABLED, apiUrl, wsUrl } from "@/lib/api-config"
+import { LIVEAVATAR_ENABLED, apiUrl, wsUrl as buildWsUrl } from "@/lib/api-config"
 import { type LiveAvatarEventPayload, useLiveAvatarRoom } from "@/hooks/use-liveavatar-room"
 
 export interface MockQuestion {
@@ -875,7 +875,7 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
           console.error("Failed to fetch WS ticket:", ticketError)
         }
 
-        const socketUrl = wsUrl(`/ws/voice-interview${ticket ? `?ticket=${ticket}` : ""}`)
+        const socketUrl = buildWsUrl(`/ws/voice-interview${ticket ? `?ticket=${ticket}` : ""}`)
         const ws = new WebSocket(socketUrl)
         wsRef.current = ws
         ws.binaryType = "arraybuffer"
@@ -951,7 +951,7 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
 
       let ticket = ""
       try {
-        const ticketRes = await fetch("http://localhost:8000/auth/ws-ticket", {
+        const ticketRes = await fetch(apiUrl("/auth/ws-ticket"), {
           method: "POST",
           credentials: "include",
         })
@@ -963,8 +963,10 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
         console.error("Failed to fetch WS ticket:", err)
       }
 
-      const wsUrl = `ws://localhost:8000/ws/voice-interview${ticket ? `?ticket=${ticket}` : ""}`
-      const ws = new WebSocket(wsUrl)
+      const voiceInterviewWs = buildWsUrl(
+        `/ws/voice-interview${ticket ? `?ticket=${ticket}` : ""}`,
+      )
+      const ws = new WebSocket(voiceInterviewWs)
       wsRef.current = ws
       ws.binaryType = "arraybuffer"
 

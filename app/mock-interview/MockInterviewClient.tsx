@@ -34,7 +34,7 @@ import {
 const WAVE_BARS = 20
 
 type InterviewState = "setup" | "active" | "evaluating" | "completed"
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://recruitassistant-back-1.onrender.com"
 
 
 const AVATAR_IDLE_FRAME = "/avatar/interviewer.png"

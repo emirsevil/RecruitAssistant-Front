@@ -31,7 +31,7 @@ import { useLanguage } from "@/lib/language-context"
 import { toast } from "sonner"
 import { SKILLS } from "@/lib/data/skills"
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://recruitassistant-back-1.onrender.com"
 
 export default function NewWorkspacePage() {
   const router = useRouter()

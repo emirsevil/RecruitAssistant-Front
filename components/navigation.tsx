@@ -192,7 +192,7 @@ export function Navigation() {
   const getAvatarUrl = (path: string | null | undefined) => {
     if (!path) return null;
     if (path.startsWith('http://') || path.startsWith('https://')) return path;
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://recruitassistant-back-1.onrender.com";
     return `${baseUrl.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
   }
 

@@ -36,7 +36,7 @@ export default function LoginPage() {
     try {
       await login(email, password)
       
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://recruitassistant-back-1.onrender.com"
       const res = await fetch(`${API_BASE_URL}/workspaces/`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },

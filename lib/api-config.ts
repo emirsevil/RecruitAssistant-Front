@@ -1,4 +1,5 @@
-const rawApiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+const rawApiBaseUrl =
+  process.env.NEXT_PUBLIC_API_URL || "https://recruitassistant-back-1.onrender.com"
 
 export const API_BASE_URL = rawApiBaseUrl.replace(/\/+$/, "")
 

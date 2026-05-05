@@ -26,7 +26,7 @@ export type WorkspaceDetailsUpdate = Partial<
   Pick<Workspace, "name" | "emoji" | "jobName" | "jobDescription">
 >
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://recruitassistant-back-1.onrender.com"
 
 interface WorkspaceContextType {
   workspaces: Workspace[]

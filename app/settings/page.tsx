@@ -54,7 +54,7 @@ export default function SettingsPage() {
   const handleDeleteAccount = async () => {
     setIsDeleting(true)
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://recruitassistant-back-1.onrender.com"
       const response = await fetch(`${baseUrl}/auth/account`, {
         method: "DELETE",
         credentials: "include",

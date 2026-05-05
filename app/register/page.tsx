@@ -52,7 +52,7 @@ export default function RegisterPage() {
     try {
       await register(formData.email, formData.password, formData.name)
       
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://recruitassistant-back-1.onrender.com"
       
       if (file) {
         // Login temporarily to get token for saving base CV

@@ -1,5 +1,7 @@
 import { useState, useCallback } from "react"
 
+import { apiUrl } from "@/lib/api-config"
+
 export interface QuizQuestion {
   id: number
   question: string
@@ -78,7 +80,7 @@ export function useQuizzes() {
     setIsLoading(true)
     setError(null)
     try {
-      const res = await fetch(`http://localhost:8000/workspaces/${workspaceId}/quizzes`, {
+      const res = await fetch(apiUrl(`/workspaces/${workspaceId}/quizzes`), {
         credentials: "include"
       })
       if (!res.ok) throw new Error("Failed to fetch quizzes")
@@ -95,7 +97,7 @@ export function useQuizzes() {
 
   const fetchUserScores = useCallback(async () => {
     try {
-      const res = await fetch(`http://localhost:8000/quizzes/scores/me`, {
+      const res = await fetch(apiUrl("/quizzes/scores/me"), {
         credentials: "include"
       })
       if (!res.ok) throw new Error("Failed to fetch scores")
@@ -112,7 +114,7 @@ export function useQuizzes() {
     setIsLoading(true)
     setError(null)
     try {
-      const res = await fetch("http://localhost:8000/quizzes/submit", {
+      const res = await fetch(apiUrl("/quizzes/submit"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(submission),
@@ -137,7 +139,7 @@ export function useQuizzes() {
 
   const checkCanStart = async (quizId: number) => {
     try {
-      const res = await fetch(`http://localhost:8000/quizzes/${quizId}/can-start`, {
+      const res = await fetch(apiUrl(`/quizzes/${quizId}/can-start`), {
         credentials: "include"
       })
       if (!res.ok) return { can_start: false }
@@ -153,7 +155,7 @@ export function useQuizzes() {
     setIsGenerating(true)
     setError(null)
     try {
-      const res = await fetch(`http://localhost:8000/workspaces/${workspaceId}/quizzes/generate-targeted`, {
+      const res = await fetch(apiUrl(`/workspaces/${workspaceId}/quizzes/generate-targeted`), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ selections, language }),
