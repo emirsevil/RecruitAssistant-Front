@@ -41,6 +41,7 @@ async function proxy(req: NextRequest, ctx: { params: Promise<{ path?: string[] 
     method: req.method,
     headers: forward,
     redirect: "follow",
+    cache: "no-store",
   }
 
   if (!["GET", "HEAD"].includes(req.method)) {
@@ -51,9 +52,12 @@ async function proxy(req: NextRequest, ctx: { params: Promise<{ path?: string[] 
 
   const isHead = req.method === "HEAD"
 
-  // Buffer full body for non-HEAD. Streaming fetch Response into NextResponse can truncate JSON.
-  const bodyBuf = isHead ? null : await upstream.arrayBuffer()
-  const res = new NextResponse(isHead ? null : bodyBuf, {
+  // Fully buffer before responding. Prefer text() for JSON APIs so UTF-8 decoding is explicit.
+  const bodyOut = isHead
+    ? null
+    : await upstream.text()
+
+  const res = new NextResponse(isHead ? null : bodyOut, {
     status: upstream.status,
     statusText: upstream.statusText,
   })

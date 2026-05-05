@@ -195,12 +195,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         credentials: "include", // Important to receive the cookie
       })
 
+      const raw = await response.text()
       if (!response.ok) {
-        const errData = await response.json()
-        throw new Error(errData.detail || "Login failed")
+        let detail = "Login failed"
+        try {
+          const errData = JSON.parse(raw) as { detail?: string }
+          detail = errData.detail || detail
+        } catch {
+          if (raw?.trim()) detail = raw.slice(0, 200)
+        }
+        throw new Error(detail)
       }
 
-      const data = await response.json()
+      let data: { user: User }
+      try {
+        data = JSON.parse(raw) as { user: User }
+      } catch {
+        throw new Error(
+          "Invalid or incomplete server response. Try again after refresh; if it persists, check the login API / network proxy.",
+        )
+      }
       setUser(data.user)
       lastActivityRef.current = Date.now() // Reset activity timer on login
       lastRefreshRef.current = Date.now() // Fresh tokens from login; defer periodic refresh
