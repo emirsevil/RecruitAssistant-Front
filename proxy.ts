@@ -45,10 +45,10 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url))
   }
 
-  // 3. Scenario: User IS authenticated and tries to access login/register/root
-  if (isAuthenticated && (path === "/login" || path === "/register" || path === "/")) {
-    return NextResponse.redirect(new URL("/dashboard", request.url))
-  }
+  // Do NOT redirect away from /login or /register when a cookie exists. A stale or
+  // invalid access_token still satisfies request.cookies.get() and would trap users
+  // on /dashboard with no way to open the login form. Actual session is verified in
+  // AuthProvider (/auth/me); login/register pages redirect client-side when user is set.
 
   return NextResponse.next()
 }

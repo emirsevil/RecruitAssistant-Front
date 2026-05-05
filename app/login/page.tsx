@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -21,7 +21,13 @@ export default function LoginPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { language, setLanguage, t } = useLanguage()
-  const { login } = useAuth()
+  const { login, user, isLoading: authLoading } = useAuth()
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.replace("/dashboard")
+    }
+  }, [authLoading, user, router])
   const [showPassword, setShowPassword] = useState(false)
   const isRegistered = searchParams.get("registered") === "true"
   const [email, setEmail] = useState("")

@@ -2,6 +2,8 @@
 
 import type React from "react"
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/lib/auth-context"
 import { useLanguage } from "@/lib/language-context"
 import { PageContainer } from "@/components/page-container"
 import { Logo } from "@/components/logo"
@@ -14,7 +16,15 @@ import { Monitor, Moon, Zap, Sun } from "lucide-react"
 
 export default function LandingPage() {
   const { t } = useLanguage()
+  const router = useRouter()
+  const { user, isLoading: authLoading } = useAuth()
   const [theme, setTheme] = useState("light")
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.replace("/dashboard")
+    }
+  }, [authLoading, user, router])
 
   useEffect(() => {
     if (typeof window === "undefined") return
