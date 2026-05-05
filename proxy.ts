@@ -3,7 +3,14 @@ import type { NextRequest } from "next/server"
 
 // ─── Configuration ──────────────────────────────────────────────────
 
-const PUBLIC_ROUTES = ["/", "/login", "/register", "/forgot-password", "/reset-password"]
+const PUBLIC_ROUTES = [
+  "/",
+  "/login",
+  "/register",
+  "/forgot-password",
+  "/reset-password",
+  "/onboarding",
+]
 const AUTH_COOKIE_NAME = "access_token"
 
 export function proxy(request: NextRequest) {
@@ -17,6 +24,7 @@ export function proxy(request: NextRequest) {
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api") ||
+    pathname.startsWith("/ra-api") ||
     pathname.includes(".")
   ) {
     return NextResponse.next()
