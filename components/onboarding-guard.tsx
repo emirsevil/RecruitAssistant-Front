@@ -15,25 +15,30 @@ export function OnboardingGuard({ children }: { children: React.ReactNode }) {
     // Wait for auth and workspace state to be ready
     if (authLoading || !isHydrated) return
 
-    const isPublicPage = ["/login", "/register", "/forgot-password", "/reset-password"].some(p => pathname.startsWith(p))
-    if (isPublicPage) return
+    const isAuthPublicPage = ["/login", "/register", "/forgot-password", "/reset-password"].some((p) =>
+      pathname.startsWith(p),
+    )
+    if (isAuthPublicPage) return
 
     if (!user) {
       if (pathname === "/") return // Home page is public-ish
+      // Onboarding: do not redirect to login on transient null (refresh / hydration).
+      // Unauthenticated users still hit API errors on submit; real guests rarely land here.
+      if (pathname.startsWith("/onboarding")) return
       router.push("/login")
       return
     }
 
     // User is logged in
     const hasWorkspaces = workspaces.length > 0
-    const isOnboarding = pathname === "/onboarding"
+    const isOnboarding = pathname.startsWith("/onboarding")
 
     if (!hasWorkspaces && !isOnboarding) {
       // No workspaces -> Force onboarding
       router.push("/onboarding")
     } else if (hasWorkspaces && isOnboarding) {
-      // Already has workspaces -> Prevent onboarding
-      router.push("/dashboard")
+      // Full navigation so proxy sees session cookies (same as post-login flow)
+      window.location.href = "/dashboard"
     }
   }, [user, workspaces, authLoading, isHydrated, pathname, router])
 

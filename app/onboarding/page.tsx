@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -29,7 +28,6 @@ export default function OnboardingPage() {
   const { user, updateProfile } = useAuth()
   const { createWorkspace, workspaces } = useWorkspace()
   const { t, language } = useLanguage()
-  const router = useRouter()
 
   const [formData, setFormData] = useState({
     university: "",
@@ -41,8 +39,10 @@ export default function OnboardingPage() {
   })
 
   useEffect(() => {
-    if (workspaces.length > 0) router.push("/dashboard")
-  }, [workspaces, router])
+    if (workspaces.length > 0) {
+      window.location.href = "/dashboard"
+    }
+  }, [workspaces])
 
   const totalSteps = 3
   const stepLabel = (n: number) =>
@@ -88,7 +88,7 @@ export default function OnboardingPage() {
           jobName: formData.jobName.trim() || undefined,
           jobDescription: formData.jobDescription.trim() || undefined,
         })
-        router.push("/dashboard")
+        window.location.href = "/dashboard"
       } catch {
         toast.error(t("Failed to create workspace"))
       } finally {
