@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react"
 import { useAuth } from "./auth-context"
-import { API_BASE_URL } from "@/lib/api-config"
+import { apiUrl } from "@/lib/api-config"
 
 export interface Workspace {
   id: string
@@ -115,7 +115,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
 
       setIsHydrated(false)
       try {
-        const response = await fetch(`${API_BASE_URL}/workspaces/`, {
+        const response = await fetch(apiUrl("/workspaces/"), {
           method: "GET",
           headers: { "Content-Type": "application/json" },
           credentials: "include", // Scoped by HttpOnly cookie
@@ -171,7 +171,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     const wsEmoji = emoji ?? getEmojiForIndex(workspaces.length)
     const wsColor = getColorForIndex(workspaces.length)
 
-    const response = await fetch(`${API_BASE_URL}/workspaces/`, {
+    const response = await fetch(apiUrl("/workspaces/"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -197,7 +197,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   }, [workspaces.length, mapApiToWorkspace, user])
 
   const renameWorkspace = useCallback(async (id: string, name: string) => {
-    const response = await fetch(`${API_BASE_URL}/workspaces/${id}`, {
+    const response = await fetch(apiUrl(`/workspaces/${id}`), {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -213,7 +213,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const updateWorkspace = useCallback(async (id: string, updates: WorkspaceDetailsUpdate) => {
-    const response = await fetch(`${API_BASE_URL}/workspaces/${id}`, {
+    const response = await fetch(apiUrl(`/workspaces/${id}`), {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -237,7 +237,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const deleteWorkspace = useCallback(async (id: string) => {
-    const response = await fetch(`${API_BASE_URL}/workspaces/${id}`, {
+    const response = await fetch(apiUrl(`/workspaces/${id}`), {
       method: "DELETE",
       credentials: "include",
     })
@@ -258,7 +258,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   }, [workspaces])
 
   const updateWorkspaceEmoji = useCallback(async (id: string, emoji: string) => {
-    const response = await fetch(`${API_BASE_URL}/workspaces/${id}`, {
+    const response = await fetch(apiUrl(`/workspaces/${id}`), {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       credentials: "include",

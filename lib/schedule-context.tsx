@@ -3,7 +3,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react"
 import { addDays, startOfWeek } from "date-fns"
 import { useAuth } from "./auth-context"
-import { API_BASE_URL } from "@/lib/api-config"
+import { apiUrl } from "@/lib/api-config"
 
 export type EventType = "interview" | "quiz" | "practice" | "other"
 
@@ -79,7 +79,7 @@ export function ScheduleProvider({ children }: { children: React.ReactNode }) {
             end: end.toISOString(),
         })
 
-        const response = await fetch(`${API_BASE_URL}/schedule/events?${params.toString()}`, {
+        const response = await fetch(apiUrl(`/schedule/events?${params.toString()}`), {
             credentials: "include",
         })
 
@@ -125,7 +125,7 @@ export function ScheduleProvider({ children }: { children: React.ReactNode }) {
     const addEvent = useCallback(async (event: CreateCalendarEventInput) => {
         if (!user) throw new Error("Authentication required")
 
-        const response = await fetch(`${API_BASE_URL}/schedule/events`, {
+        const response = await fetch(apiUrl("/schedule/events"), {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             credentials: "include",
@@ -149,7 +149,7 @@ export function ScheduleProvider({ children }: { children: React.ReactNode }) {
     }, [user])
 
     const removeEvent = useCallback(async (id: string) => {
-        const response = await fetch(`${API_BASE_URL}/schedule/events/${id}`, {
+        const response = await fetch(apiUrl(`/schedule/events/${id}`), {
             method: "DELETE",
             credentials: "include",
         })

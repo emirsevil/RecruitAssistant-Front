@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react"
 import { useRouter, usePathname } from "next/navigation"
 
-import { API_BASE_URL } from "@/lib/api-config"
+import { apiUrl } from "@/lib/api-config"
 
 interface User {
   id: number
@@ -75,7 +75,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const checkUser = useCallback(async () => {
     setIsLoading(true)
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/me`, {
+      const response = await fetch(apiUrl("/auth/me"), {
         method: "GET",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -102,7 +102,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // ── Silent token refresh ─────────────────────────────────────────
   const refreshTokens = useCallback(async (): Promise<boolean> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+      const response = await fetch(apiUrl("/auth/refresh"), {
         method: "POST",
         credentials: "include",
       })
@@ -152,7 +152,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Without this the cookie remains valid and a page refresh would
         // silently restore the session (causing workspace to re-appear).
         try {
-          await fetch(`${API_BASE_URL}/auth/logout`, {
+          await fetch(apiUrl("/auth/logout"), {
             method: "POST",
             credentials: "include",
           })
@@ -188,7 +188,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string, password: string) => {
     setIsLoading(true)
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      const response = await fetch(apiUrl("/auth/login"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -215,7 +215,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const register = async (email: string, password: string, fullName: string, education?: string) => {
     setIsLoading(true)
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/register`, {
+      const response = await fetch(apiUrl("/auth/register"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password, full_name: fullName, education }),
@@ -236,7 +236,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     setIsLoading(true)
     try {
-      await fetch(`${API_BASE_URL}/auth/logout`, {
+      await fetch(apiUrl("/auth/logout"), {
         method: "POST",
         credentials: "include",
       })
@@ -251,7 +251,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const updateProfile = useCallback(async (profileData: { full_name?: string; education?: string }) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/profile`, {
+      const response = await fetch(apiUrl("/auth/profile"), {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(profileData),

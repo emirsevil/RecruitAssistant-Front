@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react"
 
-import { API_BASE_URL } from "@/lib/api-config"
+import { apiUrl } from "@/lib/api-config"
 
 export interface DashboardStats {
   completed_interviews: number
@@ -63,8 +63,8 @@ export function useDashboard(workspaceId?: number | null) {
 
     try {
       const url = workspaceId
-        ? `${API_BASE_URL}/dashboard/summary?workspace_id=${workspaceId}`
-        : `${API_BASE_URL}/dashboard/summary`
+        ? apiUrl(`/dashboard/summary?workspace_id=${workspaceId}`)
+        : apiUrl("/dashboard/summary")
       const response = await fetch(url, {
         credentials: "include",
       })
@@ -100,7 +100,7 @@ export function useDashboard(workspaceId?: number | null) {
       practice_minutes_target: number
     }) => {
       try {
-        const response = await fetch(`${API_BASE_URL}/dashboard/goals`, {
+        const response = await fetch(apiUrl("/dashboard/goals"), {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(goals),

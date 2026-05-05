@@ -30,7 +30,7 @@ import { useWorkspace } from "@/lib/workspace-context"
 import { useLanguage } from "@/lib/language-context"
 import { toast } from "sonner"
 import { SKILLS } from "@/lib/data/skills"
-import { API_BASE_URL } from "@/lib/api-config"
+import { apiUrl } from "@/lib/api-config"
 
 export default function NewWorkspacePage() {
   const router = useRouter()
@@ -124,7 +124,7 @@ export default function NewWorkspacePage() {
     setIsSaving(true)
     try {
       const res = await fetch(
-        `${API_BASE_URL}/workspaces/${createdWorkspaceId}/categories`,
+        apiUrl(`/workspaces/${createdWorkspaceId}/categories`),
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },

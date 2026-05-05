@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react"
 
-import { API_BASE_URL } from "@/lib/api-config"
+import { apiUrl } from "@/lib/api-config"
 
 export type AnalyticsRange = "30d" | "90d" | "all"
 
@@ -94,7 +94,7 @@ export function useAnalytics({ workspaceId, range }: UseAnalyticsArgs) {
     setError(null)
     try {
       const res = await fetch(
-        `${API_BASE_URL}/analytics/summary?workspace_id=${workspaceId}&range=${range}`,
+        apiUrl(`/analytics/summary?workspace_id=${workspaceId}&range=${range}`),
         { credentials: "include" }
       )
       if (!res.ok) throw new Error(`Failed to fetch analytics (${res.status})`)

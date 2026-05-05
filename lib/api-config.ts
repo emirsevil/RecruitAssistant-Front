@@ -1,11 +1,10 @@
 /**
- * Browser API base. Default `/ra-api` is rewritten to the real backend (next.config.mjs)
- * so HttpOnly auth cookies are first-party on the app domain (required for proxy + dashboard).
+ * Browser API calls must use getApiBaseUrl() / apiUrl() so deployed sites always hit `/ra-api`
+ * (first-party cookies). Never rely on a build-inlined absolute backend URL in the client.
  *
- * Local dev: NEXT_PUBLIC_API_URL=http://127.0.0.1:8000
+ * Local dev (localhost / 127.0.0.1): uses NEXT_PUBLIC_API_URL or defaults from resolveServerApiBase.
  *
- * Production: any remote `http(s)://…` API URL is forced to `/ra-api` unless
- * `NEXT_PUBLIC_API_USE_DIRECT=true` (cookies never work reliably on cross-site fetch to API host).
+ * Opt out of production proxy (not recommended): NEXT_PUBLIC_API_USE_DIRECT=true
  */
 const BACKEND_PUBLIC_ORIGIN = (
   process.env.NEXT_PUBLIC_BACKEND_PUBLIC_ORIGIN ||
@@ -17,7 +16,6 @@ function isLocalApiHost(hostname: string): boolean {
   return h === "localhost" || h === "127.0.0.1" || h === "[::1]" || h.endsWith(".local")
 }
 
-/** Same hostname as configured backend (any path / casing). */
 function shouldForceSameOriginProxy(fromEnv: string): boolean {
   const trimmed = fromEnv.trim().replace(/\/+$/, "")
   if (!trimmed || trimmed === "/ra-api" || trimmed.startsWith("/ra-api/")) return false
@@ -32,7 +30,8 @@ function shouldForceSameOriginProxy(fromEnv: string): boolean {
   }
 }
 
-function resolveApiBaseUrl(): string {
+/** Node / build-time base (SSR, WS derivation). No `window`. */
+function resolveServerApiBase(): string {
   const fromEnv = (process.env.NEXT_PUBLIC_API_URL ?? "").trim().replace(/\/+$/, "")
   if (!fromEnv || fromEnv === "/ra-api" || fromEnv.startsWith("/ra-api/")) {
     return "/ra-api"
@@ -50,7 +49,7 @@ function resolveApiBaseUrl(): string {
           return "/ra-api"
         }
       } catch {
-        /* fall through */
+        /* ignore */
       }
     }
   }
@@ -62,32 +61,38 @@ function resolveApiBaseUrl(): string {
   return fromEnv
 }
 
-const rawApiBaseUrl = resolveApiBaseUrl()
+/**
+ * Call this when building fetch URLs in the browser. Forces `/ra-api` on any non-local host
+ * so mis-built chunks cannot point at recruitassistant-back-*.onrender.com.
+ */
+export function getApiBaseUrl(): string {
+  if (typeof window !== "undefined" && !isLocalApiHost(window.location.hostname)) {
+    return "/ra-api"
+  }
+  return resolveServerApiBase()
+}
 
-export const API_BASE_URL = rawApiBaseUrl.replace(/\/+$/, "") || "/ra-api"
+export function apiUrl(path: string) {
+  const base = getApiBaseUrl()
+  const p = path.startsWith("/") ? path : `/${path}`
+  return `${base}${p}`
+}
+
+const wsHttpBase = resolveServerApiBase()
 
 export const WS_BASE_URL = (() => {
-  const override = process.env.NEXT_PUBLIC_WS_URL
-  if (override) {
-    return override.replace(/\/+$/, "")
+  const override = process.env.NEXT_PUBLIC_WS_URL?.replace(/\/+$/, "")
+  if (override) return override
+  if (wsHttpBase.startsWith("https://")) {
+    return wsHttpBase.replace(/^https:\/\//, "wss://")
   }
-
-  if (API_BASE_URL.startsWith("https://")) {
-    return API_BASE_URL.replace(/^https:\/\//, "wss://")
+  if (wsHttpBase.startsWith("http://")) {
+    return wsHttpBase.replace(/^http:\/\//, "ws://")
   }
-  if (API_BASE_URL.startsWith("http://")) {
-    return API_BASE_URL.replace(/^http:\/\//, "ws://")
-  }
-
   return BACKEND_PUBLIC_ORIGIN.replace(/^https:\/\//, "wss://")
 })()
 
 export const LIVEAVATAR_ENABLED = process.env.NEXT_PUBLIC_ENABLE_LIVEAVATAR === "true"
-
-export function apiUrl(path: string) {
-  const p = path.startsWith("/") ? path : `/${path}`
-  return `${API_BASE_URL}${p}`
-}
 
 export function wsUrl(path: string) {
   return `${WS_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`
