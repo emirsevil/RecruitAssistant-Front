@@ -30,9 +30,9 @@ export function proxy(request: NextRequest) {
     return NextResponse.next()
   }
 
-  const isPublicRoute = PUBLIC_ROUTES.some(route => 
-    path === route || path === route + "/"
-  )
+  const isPublicRoute =
+    PUBLIC_ROUTES.some((route) => path === route || path === route + "/") ||
+    path.startsWith("/onboarding")
   const isAuthenticated = !!token
 
   // 1. Root and public routes should ALWAYS be accessible to guests

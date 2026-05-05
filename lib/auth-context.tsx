@@ -1,7 +1,7 @@
 "use client"
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 
 import { API_BASE_URL } from "@/lib/api-config"
 
@@ -39,6 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
+  const pathname = usePathname()
 
   // Track last user activity timestamp
   const lastActivityRef = useRef<number>(Date.now())
@@ -51,7 +52,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   useEffect(() => {
-    const events = ["mousemove", "keydown", "click", "scroll", "touchstart"]
+    // input/pointerdown: mobile typing in fields often skips keydown; avoids false inactivity logout
+    const events = ["mousemove", "keydown", "click", "scroll", "touchstart", "input", "pointerdown"]
     events.forEach(e => window.addEventListener(e, updateActivity, { passive: true }))
 
     // Reset activity when the user switches back to this tab — prevents
@@ -112,7 +114,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (response.status === 401) {
         setUser(null)
-        router.push("/login")
+        // Do not router.push here — OnboardingGuard handles /onboarding; avoids kicking users mid-form.
         return false
       }
 
@@ -121,7 +123,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error("Token refresh failed:", error)
       return false
     }
-  }, [router])
+  }, [])
 
   // ── Combined check loop (runs every 1 minute) ───────────────────
   useEffect(() => {
@@ -134,6 +136,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     const tick = async () => {
+      // Long onboarding forms: no inactivity kick / token refresh spam (prevents random /login)
+      if (pathname.startsWith("/onboarding")) {
+        return
+      }
+
       const now = Date.now()
       const timeSinceLastActivity = now - lastActivityRef.current
       const timeSinceLastRefresh = now - lastRefreshRef.current
@@ -175,7 +182,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         refreshTimerRef.current = null
       }
     }
-  }, [user, refreshTokens, router])
+  }, [user, refreshTokens, router, pathname])
 
   // ── Login ────────────────────────────────────────────────────────
   const login = async (email: string, password: string) => {
