@@ -163,8 +163,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    // Initial refresh on mount
-    refreshTokens()
+    // Do not call refresh here on mount. Right after login, cookies are already
+    // fresh; an immediate /auth/refresh can 401 (race or rotation) and clear
+    // the session before the user leaves the login flow.
 
     refreshTimerRef.current = setInterval(tick, CHECK_INTERVAL_MS)
 
@@ -195,6 +196,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const data = await response.json()
       setUser(data.user)
       lastActivityRef.current = Date.now() // Reset activity timer on login
+      lastRefreshRef.current = Date.now() // Fresh tokens from login; defer periodic refresh
     } catch (error) {
       throw error
     } finally {
