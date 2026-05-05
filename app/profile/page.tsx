@@ -20,8 +20,7 @@ import {
 import { useLanguage } from "@/lib/language-context"
 import { useAuth } from "@/lib/auth-context"
 import { useToast } from "@/hooks/use-toast"
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://recruitassistant-back-1.onrender.com"
+import { apiUrl } from "@/lib/api-config"
 
 export default function ProfilePage() {
   const { t } = useLanguage()
@@ -51,7 +50,7 @@ export default function ProfilePage() {
 
   const refreshBaseCvStatus = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/cv/base`, { credentials: "include" })
+      const res = await fetch(apiUrl("/api/cv/base"), { credentials: "include" })
       if (!res.ok) return
       const data = await res.json()
       setBaseCv({ exists: !!data.parsed_data, hasPdf: !!data.has_pdf })
@@ -65,13 +64,13 @@ export default function ProfilePage() {
   }, [])
 
   const handleViewPdf = () => {
-    window.open(`${API_BASE_URL}/api/cv/base/pdf`, "_blank")
+    window.open(apiUrl("/api/cv/base/pdf"), "_blank")
   }
 
   const handleDeleteCv = async () => {
     setIsDeletingCv(true)
     try {
-      const res = await fetch(`${API_BASE_URL}/api/cv/base`, {
+      const res = await fetch(apiUrl("/api/cv/base"), {
         method: "DELETE",
         credentials: "include",
       })
@@ -116,7 +115,7 @@ export default function ProfilePage() {
     
     setIsSaving(true)
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/profile`, {
+      const response = await fetch(apiUrl("/auth/profile"), {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -165,7 +164,7 @@ export default function ProfilePage() {
     formData.append("file", file);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/upload-profile-image`, {
+      const response = await fetch(apiUrl("/auth/upload-profile-image"), {
         method: "POST",
         body: formData,
         credentials: "include",
@@ -205,8 +204,7 @@ export default function ProfilePage() {
   const getAvatarUrl = (path: string | null | undefined) => {
     if (!path) return null;
     if (path.startsWith('http://') || path.startsWith('https://')) return path;
-    const baseUrl = API_BASE_URL;
-    return `${baseUrl.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
+    return apiUrl(path.replace(/^\//, ''));
   }
 
   return (
@@ -430,7 +428,7 @@ export default function ProfilePage() {
                           })
                         : null
 
-                      const saveRes = await fetch(`${API_BASE_URL}/api/cv/base`, {
+                      const saveRes = await fetch(apiUrl("/api/cv/base"), {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ parsed_data: parsedData, pdf_base64 }),

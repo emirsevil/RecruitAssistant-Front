@@ -61,6 +61,7 @@ import { useAuth } from "@/lib/auth-context"
 import { cn } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
 import { Logo } from "@/components/logo"
+import { apiUrl } from "@/lib/api-config"
 import { useEffect, useState } from "react"
 
 const navItems = [
@@ -190,13 +191,12 @@ export function Navigation() {
     .toUpperCase()
 
   const getAvatarUrl = (path: string | null | undefined) => {
-    if (!path) return null;
-    if (path.startsWith('http://') || path.startsWith('https://')) return path;
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://recruitassistant-back-1.onrender.com";
-    return `${baseUrl.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
+    if (!path) return null
+    if (path.startsWith("http://") || path.startsWith("https://")) return path
+    return apiUrl(path.replace(/^\//, ""))
   }
 
-  const avatarUrl = getAvatarUrl(user?.profile_image);
+  const avatarUrl = getAvatarUrl(user?.profile_image)
 
   /* ── Mobile top bar + drawer (< lg) ─────────────────────── */
   const [mobileOpen, setMobileOpen] = useState(false)

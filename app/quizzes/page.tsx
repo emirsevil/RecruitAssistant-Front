@@ -36,6 +36,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { apiUrl } from "@/lib/api-config"
 
 // Static at module load — the skills list doesn't change between renders.
 const SKILL_OPTIONS: SelectOption[] = SKILLS.map((s) => ({
@@ -43,8 +44,6 @@ const SKILL_OPTIONS: SelectOption[] = SKILLS.map((s) => ({
   label: s.name,
   group: s.category,
 }))
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://recruitassistant-back-1.onrender.com"
 
 const DIFFICULTIES = ["Easy", "Medium", "Hard"] as const
 type Difficulty = (typeof DIFFICULTIES)[number]
@@ -140,7 +139,7 @@ export default function QuizzesPage() {
     }
     let cancelled = false
     setIsExtractingCategories(true)
-    fetch(`${API_BASE}/workspaces/${activeWorkspace.id}/skills/extract`, {
+    fetch(apiUrl(`/workspaces/${activeWorkspace.id}/skills/extract`), {
       method: "POST",
       credentials: "include",
     })

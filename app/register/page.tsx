@@ -14,6 +14,7 @@ import { useLanguage } from "@/lib/language-context"
 import { useAuth } from "@/lib/auth-context"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Logo } from "@/components/logo"
+import { apiUrl } from "@/lib/api-config"
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -52,11 +53,9 @@ export default function RegisterPage() {
     try {
       await register(formData.email, formData.password, formData.name)
       
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://recruitassistant-back-1.onrender.com"
-      
       if (file) {
         // Login temporarily to get token for saving base CV
-        const loginRes = await fetch(`${API_BASE_URL}/auth/login`, {
+        const loginRes = await fetch(apiUrl("/auth/login"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: formData.email, password: formData.password }),
@@ -84,7 +83,7 @@ export default function RegisterPage() {
                 })
               : null
             // Save as base CV
-            await fetch(`${API_BASE_URL}/api/cv/base`, {
+            await fetch(apiUrl("/api/cv/base"), {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ parsed_data: parsedData, pdf_base64 }),
@@ -93,7 +92,7 @@ export default function RegisterPage() {
           }
           
           // Log out so they can log in via the login page
-          await fetch(`${API_BASE_URL}/auth/logout`, {
+          await fetch(apiUrl("/auth/logout"), {
             method: "POST",
             credentials: "include"
           })

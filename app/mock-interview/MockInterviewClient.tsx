@@ -34,8 +34,6 @@ import {
 const WAVE_BARS = 20
 
 type InterviewState = "setup" | "active" | "evaluating" | "completed"
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://recruitassistant-back-1.onrender.com"
-
 
 const AVATAR_IDLE_FRAME = "/avatar/interviewer.png"
 const AVATAR_FRAME_STYLE = {
@@ -105,7 +103,7 @@ export default function MockInterviewClient() {
   useEffect(() => {
     const existingId = searchParams.get("id")
     if (existingId) {
-      fetch(`${API_BASE_URL}/interviews/${existingId}`, {
+      fetch(apiUrl(`/interviews/${existingId}`), {
         credentials: "include"
       })
         .then((res) => {
@@ -156,7 +154,7 @@ export default function MockInterviewClient() {
       // Permanently discard the in-progress session so it doesn't come back
       // in the "ongoing interview" prompt next time the user opens the page.
       if (id) {
-        await fetch(`${API_BASE_URL}/interviews/${id}/discard`, {
+        await fetch(apiUrl(`/interviews/${id}/discard`), {
           method: "POST",
           credentials: "include",
         })

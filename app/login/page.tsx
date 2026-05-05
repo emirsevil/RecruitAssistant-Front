@@ -12,6 +12,7 @@ import { Eye, EyeOff, AlertCircle, CheckCircle, Globe } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useLanguage } from "@/lib/language-context"
 import { useAuth } from "@/lib/auth-context"
+import { apiUrl } from "@/lib/api-config"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Logo } from "@/components/logo"
 import { useSearchParams } from "next/navigation"
@@ -36,8 +37,7 @@ export default function LoginPage() {
     try {
       await login(email, password)
       
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://recruitassistant-back-1.onrender.com"
-      const res = await fetch(`${API_BASE_URL}/workspaces/`, {
+      const res = await fetch(apiUrl("/workspaces/"), {
         method: "GET",
         headers: { "Content-Type": "application/json" },
         credentials: "include"

@@ -23,6 +23,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { apiUrl } from "@/lib/api-config"
 
 export default function SettingsPage() {
   const { t, language } = useLanguage()
@@ -54,8 +55,7 @@ export default function SettingsPage() {
   const handleDeleteAccount = async () => {
     setIsDeleting(true)
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://recruitassistant-back-1.onrender.com"
-      const response = await fetch(`${baseUrl}/auth/account`, {
+      const response = await fetch(apiUrl("/auth/account"), {
         method: "DELETE",
         credentials: "include",
       })

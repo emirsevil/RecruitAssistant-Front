@@ -45,8 +45,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://recruitassistant-back-1.onrender.com"
+import { apiUrl } from "@/lib/api-config"
 
 export default function CVStudioPage() {
   const { t } = useLanguage()
@@ -156,10 +155,10 @@ export default function CVStudioPage() {
   useEffect(() => {
     const fetchInitialCV = async () => {
       try {
-        let url = `${API_BASE}/api/cv/base`
+        let url = apiUrl("/api/cv/base")
         // If workspace already has a generated CV, load that instead of base CV
         if (activeWorkspace?.generated_cv_id) {
-          url = `${API_BASE}/api/cv/${activeWorkspace.generated_cv_id}`
+          url = apiUrl(`/api/cv/${activeWorkspace.generated_cv_id}`)
         }
 
         const response = await fetch(url, {
@@ -198,7 +197,7 @@ export default function CVStudioPage() {
             setIsCompiling(true)
             setIsGenerated(true)
             setGeneratedLatex(data.latex_content)
-            fetch(`${API_BASE}/api/compile-latex`, {
+            fetch(apiUrl("/api/compile-latex"), {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
@@ -332,7 +331,7 @@ export default function CVStudioPage() {
     try {
       const workspaceId = activeWorkspace ? parseInt(activeWorkspace.id) : null
       const documentType = isCoverLetter ? "cover_letter" : "cv"
-      const response = await fetch(`${API_BASE}/api/compile-latex`, {
+      const response = await fetch(apiUrl("/api/compile-latex"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -419,7 +418,7 @@ export default function CVStudioPage() {
     setGeneratedLatex("")
     try {
       const targetJobContext = buildTargetJobContext()
-      const res = await fetch(`${API_BASE}/api/generate-cv`, {
+      const res = await fetch("/api/generate-cv", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -487,7 +486,7 @@ export default function CVStudioPage() {
         .filter(Boolean)
         .join("\n")
 
-      const res = await fetch(`${API_BASE}/api/generate-cover-letter`, {
+      const res = await fetch(apiUrl("/api/generate-cover-letter"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
