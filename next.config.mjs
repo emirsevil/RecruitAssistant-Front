@@ -1,7 +1,3 @@
-const backendProxyTarget = (
-  process.env.BACKEND_PROXY_URL || "https://recruitassistant-back-1.onrender.com"
-).replace(/\/$/, "")
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   typescript: {
@@ -12,14 +8,7 @@ const nextConfig = {
     unoptimized: true,
   },
   serverExternalPackages: ["pdf-parse", "mammoth"],
-  async rewrites() {
-    return [
-      {
-        source: "/ra-api/:path*",
-        destination: `${backendProxyTarget}/:path*`,
-      },
-    ]
-  },
+  // /ra-api → app/ra-api/[[...path]]/route.ts (server proxy; follows backend redirects without exposing API host to the browser)
 }
 
 export default nextConfig
