@@ -49,7 +49,11 @@ async function proxy(req: NextRequest, ctx: { params: Promise<{ path?: string[] 
 
   const upstream = await fetch(target.toString(), init)
 
-  const res = new NextResponse(upstream.body, {
+  const isHead = req.method === "HEAD"
+
+  // Buffer full body for non-HEAD. Streaming fetch Response into NextResponse can truncate JSON.
+  const bodyBuf = isHead ? null : await upstream.arrayBuffer()
+  const res = new NextResponse(isHead ? null : bodyBuf, {
     status: upstream.status,
     statusText: upstream.statusText,
   })
@@ -60,10 +64,19 @@ async function proxy(req: NextRequest, ctx: { params: Promise<{ path?: string[] 
     res.headers.append("set-cookie", c)
   }
 
+  const SKIP_RESPONSE = new Set([
+    ...HOP_BY_HOP,
+    "set-cookie",
+    "content-encoding",
+  ])
+
+  if (!isHead) {
+    SKIP_RESPONSE.add("content-length")
+  }
+
   upstream.headers.forEach((value, key) => {
     const k = key.toLowerCase()
-    if (HOP_BY_HOP.has(k)) return
-    if (k === "set-cookie") return
+    if (SKIP_RESPONSE.has(k)) return
     res.headers.set(key, value)
   })
 
