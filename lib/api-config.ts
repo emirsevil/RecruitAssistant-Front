@@ -13,13 +13,31 @@ const BACKEND_PUBLIC_ORIGIN = (
   "https://recruitassistant-back-1.onrender.com"
 ).replace(/\/+$/, "")
 
+/** True if env points at the same hostname as the deployed API (any path / casing / optional scheme). */
+function shouldForceSameOriginProxy(fromEnv: string): boolean {
+  const trimmed = fromEnv.trim().replace(/\/+$/, "")
+  if (!trimmed) return false
+  if (trimmed === "/ra-api" || trimmed.startsWith("/ra-api/")) return false
+  const candidateUrl = trimmed.includes("://") ? trimmed : `https://${trimmed}`
+  if (!/^https?:\/\//i.test(candidateUrl)) return false
+  try {
+    const a = new URL(candidateUrl)
+    const b = new URL(BACKEND_PUBLIC_ORIGIN)
+    return a.hostname.toLowerCase() === b.hostname.toLowerCase()
+  } catch {
+    return false
+  }
+}
+
 function resolveApiBaseUrl(): string {
   const fromEnv = (process.env.NEXT_PUBLIC_API_URL ?? "").trim().replace(/\/+$/, "")
   if (!fromEnv) {
     return "/ra-api"
   }
-  // Render/common mistake: point NEXT_PUBLIC_API_URL at API host → breaks same-site cookies
-  if (fromEnv === BACKEND_PUBLIC_ORIGIN) {
+  if (fromEnv === "/ra-api" || fromEnv.startsWith("/ra-api/")) {
+    return "/ra-api"
+  }
+  if (shouldForceSameOriginProxy(fromEnv)) {
     return "/ra-api"
   }
   return fromEnv
