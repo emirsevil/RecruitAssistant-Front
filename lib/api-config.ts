@@ -4,20 +4,23 @@
  *
  * Local dev: NEXT_PUBLIC_API_URL=http://127.0.0.1:8000
  *
- * If NEXT_PUBLIC_API_URL is set to the same host as the deployed backend, we ignore it and
- * use `/ra-api` anyway — otherwise cookies stay on the API host and GET /dashboard (front)
- * has no access_token (proxy redirects to /login).
+ * Production: any remote `http(s)://…` API URL is forced to `/ra-api` unless
+ * `NEXT_PUBLIC_API_USE_DIRECT=true` (cookies never work reliably on cross-site fetch to API host).
  */
 const BACKEND_PUBLIC_ORIGIN = (
   process.env.NEXT_PUBLIC_BACKEND_PUBLIC_ORIGIN ||
   "https://recruitassistant-back-1.onrender.com"
 ).replace(/\/+$/, "")
 
-/** True if env points at the same hostname as the deployed API (any path / casing / optional scheme). */
+function isLocalApiHost(hostname: string): boolean {
+  const h = hostname.toLowerCase()
+  return h === "localhost" || h === "127.0.0.1" || h === "[::1]" || h.endsWith(".local")
+}
+
+/** Same hostname as configured backend (any path / casing). */
 function shouldForceSameOriginProxy(fromEnv: string): boolean {
   const trimmed = fromEnv.trim().replace(/\/+$/, "")
-  if (!trimmed) return false
-  if (trimmed === "/ra-api" || trimmed.startsWith("/ra-api/")) return false
+  if (!trimmed || trimmed === "/ra-api" || trimmed.startsWith("/ra-api/")) return false
   const candidateUrl = trimmed.includes("://") ? trimmed : `https://${trimmed}`
   if (!/^https?:\/\//i.test(candidateUrl)) return false
   try {
@@ -31,15 +34,31 @@ function shouldForceSameOriginProxy(fromEnv: string): boolean {
 
 function resolveApiBaseUrl(): string {
   const fromEnv = (process.env.NEXT_PUBLIC_API_URL ?? "").trim().replace(/\/+$/, "")
-  if (!fromEnv) {
+  if (!fromEnv || fromEnv === "/ra-api" || fromEnv.startsWith("/ra-api/")) {
     return "/ra-api"
   }
-  if (fromEnv === "/ra-api" || fromEnv.startsWith("/ra-api/")) {
-    return "/ra-api"
+
+  const isProd = process.env.NODE_ENV === "production"
+  const allowDirectRemote = process.env.NEXT_PUBLIC_API_USE_DIRECT === "true"
+
+  if (isProd && !allowDirectRemote) {
+    const withScheme = fromEnv.includes("://") ? fromEnv : `https://${fromEnv}`
+    if (/^https?:\/\//i.test(withScheme)) {
+      try {
+        const { hostname } = new URL(withScheme)
+        if (!isLocalApiHost(hostname)) {
+          return "/ra-api"
+        }
+      } catch {
+        /* fall through */
+      }
+    }
   }
+
   if (shouldForceSameOriginProxy(fromEnv)) {
     return "/ra-api"
   }
+
   return fromEnv
 }
 
@@ -67,9 +86,6 @@ export const LIVEAVATAR_ENABLED = process.env.NEXT_PUBLIC_ENABLE_LIVEAVATAR === 
 
 export function apiUrl(path: string) {
   const p = path.startsWith("/") ? path : `/${path}`
-  if (API_BASE_URL.startsWith("http://") || API_BASE_URL.startsWith("https://")) {
-    return `${API_BASE_URL}${p}`
-  }
   return `${API_BASE_URL}${p}`
 }
 
