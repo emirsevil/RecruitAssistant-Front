@@ -173,6 +173,13 @@ HTML Rules:
 
 Return ONLY the raw JSON.`;
 
+function roleHeadlineFromJobDescription(jd: string | undefined): string {
+  if (!jd || typeof jd !== "string") return "Software Engineer"
+  const m = jd.match(/^Role:\s*(.+)$/im)
+  if (m?.[1]?.trim()) return m[1].trim().slice(0, 160)
+  return "Software Engineer"
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -185,8 +192,62 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Build the JSON structure expected by the prompt
-    const cvInput = {
+    const lang = body.output_language || body.language || "English";
+    const jobDescText =
+      typeof body.job_description === "string" ? body.job_description : "";
+
+    let cvInput: Record<string, unknown>;
+
+    if (body.candidate_profile && typeof body.candidate_profile === "object") {
+      const p = body.candidate_profile as Record<string, any>;
+      cvInput = {
+        header: {
+          name: p.full_name || "",
+          headline: roleHeadlineFromJobDescription(jobDescText),
+          location: p.location || "",
+          email: p.email || "",
+          phone: p.phone ?? "",
+          links: {
+            linkedin: p.linkedin ?? "",
+            github: p.github ?? "",
+            ...(typeof p.links === "object" && p.links ? p.links : {}),
+          },
+        },
+        summary: p.summary ?? "",
+        education: (p.education || []).map((edu: any) => ({
+          school: edu.institution || edu.school || "",
+          degree: edu.degree || "",
+          department: "",
+          dates: `${edu.start_date || edu.startDate || ""} - ${edu.end_date || edu.endDate || ""}`,
+          gpa: edu.gpa ?? "",
+        })),
+        experience: (p.experience || []).map((exp: any) => ({
+          company: exp.company || "",
+          role: exp.title || exp.role || "",
+          location: exp.location || "",
+          dates: `${exp.start_date || exp.startDate || ""} - ${exp.end_date || exp.endDate || ""}`,
+          bullets: exp.bullets || [],
+        })),
+        projects: (p.projects || []).map((proj: any) => ({
+          name: proj.name || proj.title || "",
+          stack: Array.isArray(proj.technologies)
+            ? proj.technologies.join(", ")
+            : proj.techStack || proj.stack || "",
+          date: proj.date || "",
+          link: proj.link || "",
+          bullets: Array.isArray(proj.description)
+            ? proj.description
+            : proj.description
+              ? [proj.description]
+              : [],
+        })),
+        skills: {
+          "Technical Skills": Array.isArray(p.skills) ? p.skills : [],
+        },
+        job_description: jobDescText || body.targetJob || "",
+      };
+    } else {
+    cvInput = {
       header: {
         name: body.name,
         headline: body.targetJob || "Software Engineer",
@@ -224,15 +285,17 @@ export async function POST(request: NextRequest) {
       skills: {
         "Technical Skills": body.skills || []
       },
-      job_description: body.targetJob
+      job_description: jobDescText || body.targetJob || ""
     };
+    }
 
     const userPrompt = `Here is the candidate profile and job description in JSON format:
 
 ${JSON.stringify(cvInput, null, 2)}
 
-Target Language: ${body.language || "English"}
-Generate the CV in ${body.language || "English"}.`;
+Target Language: ${lang}
+Generate the CV in ${lang}.
+${body.special_instructions ? `\n\nAdditional instructions from the user:\n${body.special_instructions}` : ""}`;
 
     // Call OpenAI API
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -296,9 +359,12 @@ Generate the CV in ${body.language || "English"}.`;
       output.latex = content; // Assume it dumped raw text if parse fails
     }
 
+    const latexOut = typeof output.latex === "string" ? output.latex : "";
+    const htmlOut = typeof output.html === "string" ? output.html : "";
+
     return NextResponse.json({
-      latex: output.latex,
-      html: output.html,
+      latex: latexOut,
+      html: htmlOut,
       success: true
     });
 
