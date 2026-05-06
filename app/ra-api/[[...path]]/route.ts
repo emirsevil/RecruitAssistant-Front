@@ -52,10 +52,8 @@ async function proxy(req: NextRequest, ctx: { params: Promise<{ path?: string[] 
 
   const isHead = req.method === "HEAD"
 
-  // Fully buffer before responding. Prefer text() for JSON APIs so UTF-8 decoding is explicit.
-  const bodyOut = isHead
-    ? null
-    : await upstream.text()
+  // Buffer as raw bytes so PDFs and other binaries are not corrupted by UTF-8 text decoding.
+  const bodyOut = isHead ? null : await upstream.arrayBuffer()
 
   const res = new NextResponse(isHead ? null : bodyOut, {
     status: upstream.status,
