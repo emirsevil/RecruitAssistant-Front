@@ -46,6 +46,7 @@ import {
 } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { apiUrl } from "@/lib/api-config"
+import { coerceLatexFromStoredContent } from "@/lib/cv-latex"
 
 export default function CVStudioPage() {
   const { t } = useLanguage()
@@ -194,14 +195,15 @@ export default function CVStudioPage() {
             }))
           }
           if (data.latex_content) {
+            const polished = polishLatexForCompile(data.latex_content, false)
             setIsCompiling(true)
             setIsGenerated(true)
-            setGeneratedLatex(data.latex_content)
+            setGeneratedLatex(polished)
             fetch(apiUrl("/api/compile-latex"), {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
-                latex_content: data.latex_content,
+                latex_content: polished,
                 workspace_id: null, // null so we don't overwrite DB unnecessarily
                 document_type: "cv"
               }),
@@ -326,16 +328,25 @@ export default function CVStudioPage() {
       "$1\\vspace{-0.65em}\n\\hrule\n\\vspace{0.2em}\n"
     )
 
+  /** Coerce mistaken JSON storage, strip fences, normalize sections (CV), escape Turkish. */
+  const polishLatexForCompile = (latex: string, isCoverLetter: boolean) => {
+    let x = coerceLatexFromStoredContent(latex)
+    x = stripLatexFences(x)
+    if (!isCoverLetter) x = normalizeResumeSectionDividers(x)
+    return escapeTurkishChars(x)
+  }
+
   const compileLatexLocally = async (latex: string, isCoverLetter: boolean) => {
     setIsCompiling(true)
     try {
       const workspaceId = activeWorkspace ? parseInt(activeWorkspace.id) : null
       const documentType = isCoverLetter ? "cover_letter" : "cv"
+      const cleaned = polishLatexForCompile(latex, isCoverLetter)
       const response = await fetch(apiUrl("/api/compile-latex"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          latex_content: latex,
+          latex_content: cleaned,
           workspace_id: workspaceId,
           document_type: documentType,
           cv_data: isCoverLetter ? undefined : cvData,
@@ -433,19 +444,13 @@ export default function CVStudioPage() {
         const data = await res.json()
         throw new Error(data.error || t("Failed to generate CV"))
       }
-      if (!res.body) throw new Error("ReadableStream not supported")
-      const reader = res.body.getReader()
-      const decoder = new TextDecoder()
-      let latex = ""
-      while (true) {
-        const { value, done } = await reader.read()
-        if (done) break
-        latex += decoder.decode(value, { stream: true })
-        setGeneratedLatex(latex)
+      // /api/generate-cv returns JSON { latex, html, success } — not a raw LaTeX stream.
+      const payload = await res.json()
+      let latex = typeof payload.latex === "string" ? payload.latex : ""
+      if (!latex.trim()) {
+        throw new Error(t("Failed to generate CV"))
       }
-      latex = stripLatexFences(latex)
-      latex = normalizeResumeSectionDividers(latex)
-      latex = escapeTurkishChars(latex)
+      latex = polishLatexForCompile(latex, false)
       setGeneratedLatex(latex)
       await compileLatexLocally(latex, false)
       toast.success(
@@ -501,18 +506,23 @@ export default function CVStudioPage() {
         const data = await res.json()
         throw new Error(data.error || t("Failed to generate Cover Letter"))
       }
-      if (!res.body) throw new Error("ReadableStream not supported")
-      const reader = res.body.getReader()
-      const decoder = new TextDecoder()
+      const raw = await res.text()
       let latex = ""
-      while (true) {
-        const { value, done } = await reader.read()
-        if (done) break
-        latex += decoder.decode(value, { stream: true })
-        setGeneratedCoverLetterLatex(latex)
+      try {
+        const payload = JSON.parse(raw) as Record<string, unknown>
+        latex =
+          (typeof payload.latex === "string" && payload.latex) ||
+          (typeof payload.cover_letter === "string" && payload.cover_letter) ||
+          (typeof payload.cover_letter_latex === "string" && payload.cover_letter_latex) ||
+          (typeof payload.content === "string" && payload.content) ||
+          ""
+      } catch {
+        latex = raw
       }
-      latex = stripLatexFences(latex)
-      latex = escapeTurkishChars(latex)
+      latex = polishLatexForCompile(latex.trim(), true)
+      if (!latex.trim()) {
+        throw new Error(t("Failed to generate Cover Letter"))
+      }
       setGeneratedCoverLetterLatex(latex)
       await compileLatexLocally(latex, true)
       toast.success(
