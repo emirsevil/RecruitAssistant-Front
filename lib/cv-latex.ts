@@ -31,3 +31,38 @@ export function coerceLatexFromStoredContent(raw: string, depth = 0): string {
 
   return s
 }
+
+/**
+ * Server uses Tectonic on Linux: no “Times New Roman” system fonts.
+ * `fontspec` + \\setmainfont often fails there (undefined macros or missing fonts).
+ * Rewrite to classic pdfLaTeX-style stack so compile-latex succeeds unchanged backend.
+ */
+export function rewriteFontspecForTectonic(latex: string): string {
+  const hasFontspec =
+    /\\usepackage\s*(\[[^\]]*\])?\s*\{\s*fontspec\s*\}/.test(latex) ||
+    /\\setmainfont\s*(\[[^\]]*\])?\s*\{/.test(latex) ||
+    /\\setsansfont\s*(\[[^\]]*\])?\s*\{/.test(latex) ||
+    /\\setmonofont\s*(\[[^\]]*\])?\s*\{/.test(latex)
+
+  if (!hasFontspec) return latex
+
+  let s = latex
+  s = s.replace(/\\usepackage\s*(\[[^\]]*\])?\s*\{\s*fontspec\s*\}\s*/g, "")
+  s = s.replace(/\\setmainfont\s*(\[[^\]]*\])?\s*\{[^}]*\}\s*/g, "")
+  s = s.replace(/\\setsansfont\s*(\[[^\]]*\])?\s*\{[^}]*\}\s*/g, "")
+  s = s.replace(/\\setmonofont\s*(\[[^\]]*\])?\s*\{[^}]*\}\s*/g, "")
+  s = s.replace(/\\defaultfontfeatures\s*(\[[^\]]*\])?\s*\{[^}]*\}\s*/g, "")
+
+  if (/\\usepackage\s*(\[[^\]]*\])?\s*\{\s*mathptmx\s*\}/.test(s)) return s
+
+  const insert =
+    "\\usepackage[T1]{fontenc}\n" +
+    "\\usepackage[utf8]{inputenc}\n" +
+    "\\usepackage{mathptmx}\n"
+
+  if (/\\documentclass[^\n]*\n/.test(s)) {
+    return s.replace(/(\\documentclass[^\n]*\n)/, `$1${insert}`)
+  }
+
+  return s.replace(/(\\documentclass(?:\[[^\]]*\])?\{[^}]+\})/, `$1\n${insert}`)
+}

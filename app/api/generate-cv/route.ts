@@ -26,6 +26,7 @@ You may rephrase, reorder, compress, or prioritize — never add.
 
 OUTPUT MUST BE VALID LaTeX
 The output must compile with pdflatex without modification.
+Do NOT use fontspec, unicode-math, or \\setmainfont — the PDF server uses Tectonic without host system fonts. For Times-like serif use: \\usepackage[T1]{fontenc}, \\usepackage[utf8]{inputenc}, \\usepackage{mathptmx}.
 Escape all LaTeX special characters: # $ % & _ { } ~ ^ \.
 Do not include Markdown.
 Do not include explanations, comments, or natural language outside LaTeX.
