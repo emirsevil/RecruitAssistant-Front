@@ -68,6 +68,28 @@ export interface TargetedQuizRequest {
   language: string
 }
 
+function isQuizGroup(x: unknown): x is QuizGroup {
+  if (!x || typeof x !== "object") return false
+  const g = x as Record<string, unknown>
+  return typeof g.id === "number" && typeof g.title === "string" && Array.isArray(g.questions)
+}
+
+/** Backend may return a bare array or a wrapped object. */
+function extractQuizList(data: unknown): QuizGroup[] {
+  if (data == null) return []
+  if (Array.isArray(data)) {
+    return data.filter(isQuizGroup)
+  }
+  if (typeof data === "object") {
+    const o = data as Record<string, unknown>
+    for (const key of ["quizzes", "items", "data", "results"]) {
+      const v = o[key]
+      if (Array.isArray(v)) return extractQuizList(v)
+    }
+  }
+  return []
+}
+
 export function useQuizzes() {
   const [quizGroups, setQuizGroups] = useState<QuizGroup[]>([])
   const [userScores, setUserScores] = useState<QuizScore[]>([])
@@ -84,9 +106,16 @@ export function useQuizzes() {
         credentials: "include"
       })
       if (!res.ok) throw new Error("Failed to fetch quizzes")
-      const data = await res.json()
-      setQuizGroups(data)
-      return data
+      const raw = await res.text()
+      let parsed: unknown = []
+      try {
+        parsed = raw ? JSON.parse(raw) : []
+      } catch {
+        throw new Error("Invalid quizzes response")
+      }
+      const list = extractQuizList(parsed)
+      setQuizGroups(list)
+      return list
     } catch (e: any) {
       setError(e.message)
       return []
@@ -151,7 +180,11 @@ export function useQuizzes() {
 
 
 
-  const generateTargetedQuizzes = async (workspaceId: string | number, selections: SkillSelection[], language: string = "tr") => {
+  const generateTargetedQuizzes = async (
+    workspaceId: string | number,
+    selections: SkillSelection[],
+    language: string = "tr"
+  ): Promise<QuizGroup[]> => {
     setIsGenerating(true)
     setError(null)
     try {
@@ -162,13 +195,19 @@ export function useQuizzes() {
         credentials: "include",
       })
       if (!res.ok) throw new Error("Failed to generate quizzes")
-      const data = await res.json()
-      // Refresh quizzes after generation
+      const raw = await res.text()
+      let parsed: unknown = []
+      try {
+        parsed = raw ? JSON.parse(raw) : []
+      } catch {
+        throw new Error("Invalid response from quiz generator")
+      }
+      const created = extractQuizList(parsed)
       await fetchWorkspaceQuizzes(workspaceId)
-      return data
+      return created
     } catch (e: any) {
-      setError(e.message)
-      return null
+      setError(e?.message ?? "Failed to generate quizzes")
+      throw e
     } finally {
       setIsGenerating(false)
     }

@@ -189,14 +189,22 @@ export default function QuizzesPage() {
         selections,
         language === "tr" ? "tr" : "en"
       )
-      if (result) {
+      if (result.length > 0) {
         const label = Array.from(diffs).join(", ")
         toast.success(
           language === "tr"
             ? `${cat} için ${label} test hazırlandı`
             : `${cat} ${label} quiz ready`
         )
+      } else {
+        toast.error(
+          language === "tr"
+            ? "Test üretilemedi. Sunucudaki AI anahtarı (Gemini) eksik veya hatalı; quiz üretimi backend’de yapılıyor — Render’da ilgili ortam değişkenini düzeltmen gerekir."
+            : "No quizzes were created. Quiz generation runs on the server and needs a valid Gemini API key — fix the backend env vars on Render (this cannot be fixed from the frontend alone)."
+        )
       }
+    } catch (e: any) {
+      toast.error(e?.message || (language === "tr" ? "Test üretilemedi." : "Could not generate quizzes."))
     } finally {
       setGeneratingFor(null)
     }
