@@ -18,15 +18,25 @@ const HOP_BY_HOP = new Set([
   "upgrade",
 ])
 
+const RA_API_PREFIX = "/ra-api"
+
+/** Keeps trailing slashes; joining route segments drops them and can trigger /x → /x/ 307 + 401 on APIs like /workspaces/. */
+function backendPathnameFromRequest(req: NextRequest): string {
+  const p = req.nextUrl.pathname
+  if (!p.startsWith(RA_API_PREFIX)) return "/"
+  let rest = p.slice(RA_API_PREFIX.length)
+  if (!rest) rest = "/"
+  else if (!rest.startsWith("/")) rest = `/${rest}`
+  return rest
+}
+
 /**
  * Server-side BFF proxy: browser only talks to the app origin. Cookies stay first-party.
- * Uses redirect: "follow" so FastAPI/Starlette slash redirects stay on the server and never
+ * Uses redirect: "follow" so upstream redirects stay on the server and never
  * rewrite the browser to recruitassistant-back-*.onrender.com (which would drop cookies).
  */
-async function proxy(req: NextRequest, ctx: { params: Promise<{ path?: string[] }> }) {
-  const { path: segments } = await ctx.params
-  const subpath = segments?.join("/") ?? ""
-  const pathname = subpath ? `/${subpath}` : "/"
+async function proxy(req: NextRequest, _ctx: { params: Promise<{ path?: string[] }> }) {
+  const pathname = backendPathnameFromRequest(req)
   const target = new URL(`${pathname}${req.nextUrl.search}`, `${BACKEND_ORIGIN}/`)
 
   const forward = new Headers()
