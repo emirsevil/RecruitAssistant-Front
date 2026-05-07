@@ -38,6 +38,9 @@ function backendPathnameFromRequest(req: NextRequest): string {
  */
 const FASTAPI_SLASH_COLLECTION = new Set(["/workspaces", "/interviews"])
 
+/** Fetch/Response forbids a message body for these statuses; empty ArrayBuffer still throws. */
+const RESPONSE_MUST_NOT_HAVE_BODY = new Set([204, 205, 304])
+
 function coerceFastApiCollectionSlashes(pathname: string): string {
   if (FASTAPI_SLASH_COLLECTION.has(pathname)) return `${pathname}/`
   return pathname
@@ -84,11 +87,12 @@ async function proxy(req: NextRequest, _ctx: { params: Promise<{ path?: string[]
   const upstream = await fetch(target.toString(), init)
 
   const isHead = req.method === "HEAD"
+  const skipReadBody = isHead || RESPONSE_MUST_NOT_HAVE_BODY.has(upstream.status)
 
   // Buffer as raw bytes so PDFs and other binaries are not corrupted by UTF-8 text decoding.
-  const bodyOut = isHead ? null : await upstream.arrayBuffer()
+  const bodyOut = skipReadBody ? null : await upstream.arrayBuffer()
 
-  const res = new NextResponse(isHead ? null : bodyOut, {
+  const res = new NextResponse(bodyOut, {
     status: upstream.status,
     statusText: upstream.statusText,
   })
