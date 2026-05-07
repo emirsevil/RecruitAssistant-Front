@@ -56,9 +56,10 @@ export function useInterviewHistory(workspaceId?: number) {
     setError(null)
 
     try {
-      const url = wsId
-        ? apiUrl(`/interviews/?workspace_id=${wsId}`)
-        : apiUrl("/interviews/")
+      const url =
+        wsId != null
+          ? apiUrl(`/interviews?workspace_id=${wsId}`)
+          : apiUrl("/interviews")
 
       const res = await fetch(url, {
         credentials: "include",
