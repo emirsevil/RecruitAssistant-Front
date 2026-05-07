@@ -50,6 +50,20 @@ export const COMPANIES: Company[] = [
   { name: "Mobiroller", category: "Turkish Tech" },
   { name: "Vivense", category: "Turkish Tech" },
   { name: "Doğan Online", category: "Turkish Tech" },
+  { name: "HubX", category: "Turkish Tech" },
+  { name: "Jotform", category: "Turkish Tech" },
+  { name: "Codeway", category: "Turkish Tech" },
+  { name: "Midas", category: "Turkish Tech" },
+  { name: "Akdoğan Tech", category: "Turkish Tech" },
+  { name: "Commencis", category: "Turkish Tech" },
+  { name: "Bilkent Cyberpark", category: "Turkish Tech" },
+  { name: "DataBoss Analytics & Security", category: "Turkish Tech" },
+  { name: "Deeployed", category: "Turkish Tech" },
+  { name: "IOTIQ", category: "Turkish Tech" },
+  { name: "MobileAction", category: "Turkish Tech" },
+  { name: "OPLOG", category: "Turkish Tech" },
+  { name: "TeklifimGelsin", category: "Turkish Tech" },
+  { name: "VLMedia", category: "Turkish Tech" },
 
   // ─── Turkish Bank & Finance ─────────────────────────────
   { name: "Garanti BBVA", category: "Turkish Bank & Finance" },
@@ -74,6 +88,7 @@ export const COMPANIES: Company[] = [
   { name: "Garanti BBVA Teknoloji", category: "Turkish Bank & Finance" },
   { name: "Akbank LAB", category: "Turkish Bank & Finance" },
   { name: "İşbank Teknoloji", category: "Turkish Bank & Finance" },
+  { name: "IBTECH", category: "Turkish Bank & Finance" },
 
   // ─── Turkish Conglomerate ───────────────────────────────
   { name: "Koç Holding", category: "Turkish Conglomerate" },
@@ -97,6 +112,8 @@ export const COMPANIES: Company[] = [
   { name: "Baykar", category: "Turkish Conglomerate" },
   { name: "Türk Hava Yolları (THY)", category: "Turkish Conglomerate" },
   { name: "Pegasus Hava Yolları", category: "Turkish Conglomerate" },
+  { name: "MilSOFT Forte", category: "Turkish Conglomerate" },
+  { name: "TÜBİTAK BİLGEM", category: "Turkish Conglomerate" },
 
   // ─── Turkish Telco & Energy ─────────────────────────────
   { name: "Turkcell", category: "Turkish Telco & Energy" },
