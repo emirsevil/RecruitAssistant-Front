@@ -185,8 +185,18 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       }),
     })
 
-    if (!response.ok) throw new Error("Failed to create workspace")
-    
+    if (!response.ok) {
+      let msg = "Failed to create workspace"
+      try {
+        const errBody = await response.json()
+        if (typeof errBody?.detail === "string") msg = errBody.detail
+        else if (Array.isArray(errBody?.detail)) msg = errBody.detail.map((x: { msg?: string }) => x?.msg).filter(Boolean).join(", ") || msg
+      } catch {
+        /* ignore */
+      }
+      throw new Error(msg)
+    }
+
     const data = await response.json()
     const newWorkspace = mapApiToWorkspace(data)
     const suggestedCategories: string[] = data.suggested_categories || []

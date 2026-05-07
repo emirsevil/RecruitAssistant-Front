@@ -89,8 +89,8 @@ export default function OnboardingPage() {
           jobDescription: formData.jobDescription.trim() || undefined,
         })
         window.location.href = "/dashboard"
-      } catch {
-        toast.error(t("Failed to create workspace"))
+      } catch (err: unknown) {
+        toast.error(err instanceof Error ? err.message : t("Failed to create workspace"))
       } finally {
         setIsUpdating(false)
       }

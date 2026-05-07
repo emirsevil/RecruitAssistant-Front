@@ -20,7 +20,7 @@ const HOP_BY_HOP = new Set([
 
 const RA_API_PREFIX = "/ra-api"
 
-/** Keeps trailing slashes; joining route segments drops them and can trigger /x → /x/ 307 + 401 on APIs like /workspaces/. */
+/** Path under /ra-api as sent by Next (trailing slash often stripped). */
 function backendPathnameFromRequest(req: NextRequest): string {
   const p = req.nextUrl.pathname
   if (!p.startsWith(RA_API_PREFIX)) return "/"
@@ -31,12 +31,21 @@ function backendPathnameFromRequest(req: NextRequest): string {
 }
 
 /**
+ * Next strips `/ra-api/workspaces/` → `/ra-api/workspaces`. FastAPI 307s to `/workspaces/`;
+ * Node fetch redirect-follow can drop cookies on that hop → `Not authenticated`. One shot.
+ */
+function coerceFastApiCollectionSlashes(pathname: string): string {
+  if (pathname === "/workspaces") return "/workspaces/"
+  return pathname
+}
+
+/**
  * Server-side BFF proxy: browser only talks to the app origin. Cookies stay first-party.
  * Uses redirect: "follow" so upstream redirects stay on the server and never
  * rewrite the browser to recruitassistant-back-*.onrender.com (which would drop cookies).
  */
 async function proxy(req: NextRequest, _ctx: { params: Promise<{ path?: string[] }> }) {
-  const pathname = backendPathnameFromRequest(req)
+  const pathname = coerceFastApiCollectionSlashes(backendPathnameFromRequest(req))
   const target = new URL(`${pathname}${req.nextUrl.search}`, `${BACKEND_ORIGIN}/`)
 
   const forward = new Headers()
