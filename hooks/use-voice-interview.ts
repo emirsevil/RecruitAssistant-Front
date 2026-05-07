@@ -730,7 +730,9 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
           break
 
         case "error":
-          setError(data.message || "Bilinmeyen hata")
+          // Surface the backend-defined code (e.g. DEMO_INTERVIEW_LIMIT_REACHED)
+          // through the error string so consumers can translate it via t().
+          setError(typeof data.code === "string" && data.code ? data.code : (data.message || "Bilinmeyen hata"))
           setMicActive(false)
           if (!data.recoverable) {
             setSessionState(interviewIdRef.current ? "listening" : "idle")

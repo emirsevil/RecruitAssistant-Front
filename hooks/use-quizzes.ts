@@ -194,7 +194,14 @@ export function useQuizzes() {
         body: JSON.stringify({ selections, language }),
         credentials: "include",
       })
-      if (!res.ok) throw new Error("Failed to generate quizzes")
+      if (!res.ok) {
+        let detail = ""
+        try {
+          const errBody = await res.json()
+          if (typeof errBody?.detail === "string") detail = errBody.detail
+        } catch { /* ignore */ }
+        throw new Error(detail || "Failed to generate quizzes")
+      }
       const raw = await res.text()
       let parsed: unknown = []
       try {

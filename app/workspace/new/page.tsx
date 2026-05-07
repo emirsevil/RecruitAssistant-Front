@@ -93,7 +93,8 @@ export default function NewWorkspacePage() {
       setStep(2)
     } catch (error) {
       console.error("Failed to create workspace:", error)
-      toast.error(t("Failed to create workspace"))
+      const code = error instanceof Error ? error.message : ""
+      toast.error(code.startsWith("DEMO_") ? t(code) : t("Failed to create workspace"))
     } finally {
       setIsCreating(false)
     }

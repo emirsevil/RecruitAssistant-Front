@@ -298,9 +298,10 @@ export default function MockInterviewClient() {
   // Show voice errors
   useEffect(() => {
     if (voice.error) {
+      const isCode = voice.error.startsWith("DEMO_") || voice.error === "MISSING_CV"
       toast({
         title: t("Error"),
-        description: voice.error,
+        description: isCode ? t(voice.error) : voice.error,
         variant: "destructive",
       })
     }

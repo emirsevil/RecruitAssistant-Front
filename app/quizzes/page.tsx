@@ -204,7 +204,12 @@ export default function QuizzesPage() {
         )
       }
     } catch (e: any) {
-      toast.error(e?.message || (language === "tr" ? "Test üretilemedi." : "Could not generate quizzes."))
+      const code = typeof e?.message === "string" ? e.message : ""
+      if (code.startsWith("DEMO_")) {
+        toast.error(t(code))
+      } else {
+        toast.error(e?.message || (language === "tr" ? "Test üretilemedi." : "Could not generate quizzes."))
+      }
     } finally {
       setGeneratingFor(null)
     }
