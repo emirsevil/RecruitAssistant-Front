@@ -612,7 +612,7 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
               timestamp: Date.now(),
             },
           ])
-          if (data.question_index !== undefined) {
+          if (data.question_index !== undefined && !isWrapUpTurn) {
             setCurrentQuestionIndex(data.question_index)
           }
 

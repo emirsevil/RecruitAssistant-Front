@@ -44,16 +44,16 @@ export function TalkingInterviewerPanel({
   if (isAvatarInitializing) {
     return (
       <div className="flex h-full min-h-0 flex-col">
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border-2 border-primary/10 bg-card shadow-sm">
-          <div className="relative min-h-0 flex-1 bg-gradient-to-b from-slate-800 via-slate-850 to-slate-900 flex items-center justify-center">
-            <div className="flex flex-col items-center gap-4 text-white text-center px-6">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border-2 border-border bg-card shadow-sm">
+          <div className="relative min-h-0 flex-1 flex items-center justify-center bg-secondary px-6 py-8">
+            <div className="flex flex-col items-center gap-4 text-center">
               <div
-                className="h-14 w-14 rounded-full border-4 border-white/15 border-t-white/70 animate-spin"
+                className="h-14 w-14 rounded-full border-4 border-border border-t-primary animate-spin"
                 style={{ animationDuration: "0.9s" }}
               />
               <div>
-                <p className="text-sm font-medium">Connecting Avatar...</p>
-                <p className="text-xs text-white/50 mt-1">This may take a few seconds</p>
+                <p className="text-sm font-medium text-foreground">Connecting Avatar...</p>
+                <p className="text-xs text-muted-foreground mt-1">This may take a few seconds</p>
               </div>
             </div>
           </div>

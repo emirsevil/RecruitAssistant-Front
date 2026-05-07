@@ -65,7 +65,7 @@ export default function MockInterviewClient() {
     }
   }
   const [difficulty, setDifficulty] = useState("junior")
-  const [durationMinutes, setDurationMinutes] = useState(10)
+  const durationMinutes = 5
   const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const [userAnswer, setUserAnswer] = useState("")
@@ -414,28 +414,6 @@ export default function MockInterviewClient() {
             </div>
           </div>
 
-          <div className="mb-5">
-            <p className="mb-2 text-[12px] font-semibold">{t("Session Duration")}</p>
-            <div className="flex flex-wrap gap-1.5">
-              {[1, 5, 10, 15, 20].map((mins) => (
-                <button
-                  key={mins}
-                  type="button"
-                  onClick={() => setDurationMinutes(mins)}
-                  className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[12px] font-medium transition-colors ${
-                    durationMinutes === mins
-                      ? "border-transparent bg-sage-soft text-sage"
-                      : "border-border bg-card text-foreground hover:border-primary/40"
-                  }`}
-                >
-                  {durationMinutes === mins && <Check className="h-3 w-3" />}
-                  <Clock className="h-3 w-3" />
-                  {mins} {t("min")}
-                  {mins === 1 && <span className="text-[10px] text-muted-foreground">({t("test")})</span>}
-                </button>
-              ))}
-            </div>
-          </div>
 
           {activeWorkspace && (
             <div className="mb-5 rounded-lg border border-border bg-sage-soft px-4 py-3">
