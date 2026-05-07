@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { Eye, EyeOff, AlertCircle, CheckCircle, Globe } from "lucide-react"
+import { Eye, EyeOff, AlertCircle, CheckCircle, Globe, Sparkles, MapPin } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useLanguage } from "@/lib/language-context"
 import { useAuth } from "@/lib/auth-context"
@@ -154,11 +154,35 @@ export default function LoginPage() {
 
             <Separator />
 
-            <div className="text-center text-sm text-muted-foreground">
-              {t("Don't have an account?")}{" "}
-              <Link href="/register" className="text-primary hover:underline font-medium">
-                {t("Sign up")}
-              </Link>
+            {/* CS Fair info box — pointing users to the on-site booth */}
+            <div className="relative overflow-hidden rounded-xl border border-primary/20 bg-gradient-to-br from-primary/[0.06] via-background to-primary/[0.04] p-4">
+              <div
+                className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-primary/15 blur-2xl"
+                aria-hidden
+              />
+              <div className="relative flex items-start gap-3">
+                <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <Sparkles className="h-4 w-4" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[13px] font-semibold leading-snug">
+                    {language === "tr"
+                      ? "Hesabın yok mu?"
+                      : "Don't have an account?"}
+                  </p>
+                  <p className="mt-1 text-[12.5px] leading-relaxed text-muted-foreground">
+                    {language === "tr"
+                      ? "RecruitAssistant standımıza uğra, hesabını orada açalım."
+                      : "Stop by the RecruitAssistant booth at the CS fair and we'll set you up."}
+                  </p>
+                  <p className="mt-2 inline-flex items-center gap-1 text-[11.5px] font-medium text-primary">
+                    <MapPin className="h-3 w-3" />
+                    {language === "tr"
+                      ? "RecruitAssistant Standı"
+                      : "RecruitAssistant Booth"}
+                  </p>
+                </div>
+              </div>
             </div>
           </form>
           </CardContent>

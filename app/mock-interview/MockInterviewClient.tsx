@@ -100,6 +100,29 @@ export default function MockInterviewClient() {
   const [alreadyCompleted, setAlreadyCompleted] = useState(false)
   const [completedInterviewId, setCompletedInterviewId] = useState<number | null>(null)
 
+  // ── DEMO MODE: 1 interview per workspace ──────────────────────
+  // Block the prepare/start UI as soon as the user lands on the page
+  // if they've already used their interview (in any status).
+  const [demoLimitReached, setDemoLimitReached] = useState(false)
+
+  useEffect(() => {
+    if (!activeWorkspace) return
+    let cancelled = false
+    fetch(apiUrl(`/interviews?workspace_id=${activeWorkspace.id}`), {
+      credentials: "include",
+    })
+      .then((res) => (res.ok ? res.json() : []))
+      .then((rows: unknown) => {
+        if (cancelled) return
+        const hasAny = Array.isArray(rows) && rows.length > 0
+        setDemoLimitReached(hasAny)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [activeWorkspace?.id])
+
   useEffect(() => {
     const existingId = searchParams.get("id")
     if (existingId) {
@@ -345,6 +368,42 @@ export default function MockInterviewClient() {
     if (!userAnswer.trim()) return
     voice.submitTextAnswer(userAnswer.trim())
     setUserAnswer("")
+  }
+
+  // ─── Demo Limit Guard (1 interview per workspace) ───────────────
+  // Show a notice and block the setup UI when the user has already used
+  // their one allowed interview in this workspace.
+  if (demoLimitReached && state === "setup") {
+    return (
+      <div className="flex min-h-[70vh] items-center justify-center px-7 py-7 md:px-9">
+        <div className="flex max-w-md flex-col items-center gap-5 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-clay-soft">
+            <Phone className="h-7 w-7 text-clay" />
+          </div>
+          <div>
+            <h2 className="serif-headline text-[28px] font-normal leading-tight">
+              {t("DEMO_INTERVIEW_LIMIT_REACHED")}
+            </h2>
+            <p className="mt-2 text-[14px] text-muted-foreground">
+              {t("This is a limited demo. You can review your previous interview from the history page.")}
+            </p>
+          </div>
+          <div className="flex flex-col gap-2.5 sm:flex-row">
+            <Link href="/interview-history">
+              <Button className="gap-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90">
+                <BarChart3 className="h-4 w-4" />
+                {t("View Results")}
+              </Button>
+            </Link>
+            <Link href="/dashboard">
+              <Button variant="outline" className="gap-2 rounded-lg border-border">
+                {t("Back to Dashboard")}
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   // ─── Already Completed Guard ────────────────────────────────────
