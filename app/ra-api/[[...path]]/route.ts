@@ -31,10 +31,12 @@ function backendPathnameFromRequest(req: NextRequest): string {
 }
 
 /**
- * Next strips `/ra-api/foo/` → `/ra-api/foo`. FastAPI often registers `GET /foo/` only; a 307/308 chain
- * plus Node fetch redirect-follow can drop cookies → 401. Coerce collection roots to slash form.
+ * Next strips `/ra-api/foo/` → `/ra-api/foo`. Some FastAPI routers register only `GET /foo/`; a 307 chain
+ * plus Node fetch redirect-follow can drop cookies → 401.
+ * Do NOT add `/schedule/events`: backend routes are `/schedule/events` (no trailing slash); forcing `/events/`
+ * triggers a redirect back and can strip auth on POST.
  */
-const FASTAPI_SLASH_COLLECTION = new Set(["/workspaces", "/interviews", "/schedule/events"])
+const FASTAPI_SLASH_COLLECTION = new Set(["/workspaces", "/interviews"])
 
 function coerceFastApiCollectionSlashes(pathname: string): string {
   if (FASTAPI_SLASH_COLLECTION.has(pathname)) return `${pathname}/`
