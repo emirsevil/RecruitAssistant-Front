@@ -15,7 +15,6 @@ import {
   ChevronRight,
   FileQuestion,
   FileText,
-  Flame,
   Loader2,
   MessageSquare,
   Minus,
@@ -31,7 +30,6 @@ import { useAuth } from "@/lib/auth-context"
 import { useLanguage } from "@/lib/language-context"
 import { useWorkspace } from "@/lib/workspace-context"
 import { useDashboard } from "@/hooks/use-dashboard"
-import { RingProgress } from "@/components/calm/ring-progress"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
@@ -77,9 +75,6 @@ export default function DashboardPage() {
   }, [tr_])
 
   const stats = data?.stats
-  const readiness = stats
-    ? Math.round(((stats.avg_hr_score || 0) + (stats.avg_technical_score || 0)) / 2)
-    : 0
 
   const weekly = data?.weekly_goals ?? {
     interviews_target: 4,
@@ -145,20 +140,13 @@ export default function DashboardPage() {
       </div>
 
       {/* ── KPI Strip ────────────────────────────────────────── */}
-      <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
         <KpiCard
           icon={<MessageSquare className="h-4 w-4" />}
           label={tr_ ? "Tamamlanan mülakat" : "Interviews completed"}
           value={stats?.completed_interviews ?? 0}
           isLoading={!stats && isLoading}
           accent="sage"
-        />
-        <KpiCard
-          icon={<Flame className="h-4 w-4" />}
-          label={tr_ ? "Bu hafta" : "This week"}
-          value={stats?.completed_interviews_this_week ?? 0}
-          isLoading={!stats && isLoading}
-          accent="clay"
         />
         <KpiCard
           icon={<Trophy className="h-4 w-4" />}
@@ -249,84 +237,44 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.6fr_1fr]">
         {/* ── Left column ──────────────────────────────── */}
         <div className="flex flex-col gap-4">
-          {/* Readiness + Weekly Goals */}
-          <section className="rounded-2xl border border-border bg-card p-6">
-            <div className="flex flex-col gap-6 md:flex-row md:items-stretch md:gap-7">
-              {/* Readiness ring */}
-              <div
-                data-tour="dashboard-readiness"
-                className="flex flex-shrink-0 items-center gap-4 md:flex-col md:items-start md:justify-center md:border-r md:border-border md:pr-7"
-              >
-                <RingProgress value={readiness} size={104} />
-                <div>
-                  <p className="eyebrow">{tr_ ? "Hazırlığın" : "Readiness"}</p>
-                  <p className="serif-headline mt-1 text-[40px] leading-none tabular-nums">
-                    {readiness}
-                    <span className="text-[18px] text-subtle">%</span>
-                  </p>
-                  <p className="mt-1 text-[11px] text-muted-foreground">
-                    {tr_ ? "HR + Teknik ortalaması" : "HR + Technical avg."}
-                  </p>
-                </div>
-              </div>
+          {/* Weekly Goals — interactive editing */}
+          <section data-tour="dashboard-goals" className="rounded-2xl border border-border bg-card p-6">
+            <header className="mb-4 flex items-center justify-between">
+              <h2 className="font-serif text-[19px] font-medium tracking-tight">
+                <Target className="mr-1.5 inline h-4 w-4 text-muted-foreground" />
+                {tr_ ? "Bu haftaki hedefler" : "This week's goals"}
+              </h2>
+            </header>
 
-              {/* Weekly goals — interactive editing */}
-              <div className="flex-1">
-                <header className="mb-4 flex items-center justify-between">
-                  <div>
-                    <p className="eyebrow flex items-center gap-1.5">
-                      <Target className="h-3 w-3" />
-                      {tr_ ? "Bu haftaki hedefler" : "This week's goals"}
-                    </p>
-                  </div>
-                </header>
-
-                <div className="flex flex-col gap-3">
-                  <GoalRow
-                    label={tr_ ? "Mülakatlar" : "Interviews"}
-                    reachedLabel={tr_ ? "Tamam" : "Hit"}
-                    actual={weekly.interviews_actual}
-                    target={weekly.interviews_target}
-                    accent="sage"
-                    onChangeTarget={(next) =>
-                      updateGoals({
-                        interviews_target: next,
-                        quizzes_target: weekly.quizzes_target,
-                        practice_minutes_target: weekly.practice_minutes_target,
-                      })
-                    }
-                  />
-                  <GoalRow
-                    label={tr_ ? "Testler" : "Quizzes"}
-                    reachedLabel={tr_ ? "Tamam" : "Hit"}
-                    actual={weekly.quizzes_actual}
-                    target={weekly.quizzes_target}
-                    accent="clay"
-                    onChangeTarget={(next) =>
-                      updateGoals({
-                        interviews_target: weekly.interviews_target,
-                        quizzes_target: next,
-                        practice_minutes_target: weekly.practice_minutes_target,
-                      })
-                    }
-                  />
-                  <GoalRow
-                    label={tr_ ? "Pratik dakika" : "Practice minutes"}
-                    reachedLabel={tr_ ? "Tamam" : "Hit"}
-                    actual={weekly.practice_minutes_actual}
-                    target={weekly.practice_minutes_target}
-                    accent="plum"
-                    step={30}
-                    onChangeTarget={(next) =>
-                      updateGoals({
-                        interviews_target: weekly.interviews_target,
-                        quizzes_target: weekly.quizzes_target,
-                        practice_minutes_target: next,
-                      })
-                    }
-                  />
-                </div>
-              </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <GoalRow
+                label={tr_ ? "Mülakatlar" : "Interviews"}
+                reachedLabel={tr_ ? "Tamam" : "Hit"}
+                actual={weekly.interviews_actual}
+                target={weekly.interviews_target}
+                accent="sage"
+                onChangeTarget={(next) =>
+                  updateGoals({
+                    interviews_target: next,
+                    quizzes_target: weekly.quizzes_target,
+                    practice_minutes_target: weekly.practice_minutes_target,
+                  })
+                }
+              />
+              <GoalRow
+                label={tr_ ? "Testler" : "Quizzes"}
+                reachedLabel={tr_ ? "Tamam" : "Hit"}
+                actual={weekly.quizzes_actual}
+                target={weekly.quizzes_target}
+                accent="clay"
+                onChangeTarget={(next) =>
+                  updateGoals({
+                    interviews_target: weekly.interviews_target,
+                    quizzes_target: next,
+                    practice_minutes_target: weekly.practice_minutes_target,
+                  })
+                }
+              />
             </div>
           </section>
 

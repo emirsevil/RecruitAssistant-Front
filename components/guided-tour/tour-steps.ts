@@ -25,20 +25,20 @@ export const TOUR_STEPS: TourStep[] = [
     title: "Welcome to RecruitAssistant!",
     titleTr: "RecruitAssistant'a Hoş Geldiniz!",
     description:
-      "This is your Dashboard — the main hub. Here you'll see your readiness score, weekly goals, personalized recommendations, and upcoming events all in one place.",
+      "This is your Dashboard — the main hub. Here you'll see your interview stats, weekly goals, personalized recommendations, and upcoming events all in one place.",
     descriptionTr:
-      "Burası Dashboard'unuz — ana merkeziniz. Hazırlık puanınızı, haftalık hedeflerinizi, size özel önerileri ve yaklaşan etkinlikleri tek bir yerde göreceksiniz.",
+      "Burası Dashboard'unuz — ana merkeziniz. Mülakat istatistiklerinizi, haftalık hedeflerinizi, size özel önerileri ve yaklaşan etkinlikleri tek bir yerde göreceksiniz.",
     placement: "bottom",
   },
   {
     route: "/dashboard",
-    target: "dashboard-readiness",
-    title: "Your Readiness Score",
-    titleTr: "Hazırlık Puanınız",
+    target: "dashboard-goals",
+    title: "Your Weekly Goals",
+    titleTr: "Haftalık Hedefleriniz",
     description:
-      "This card shows your overall readiness percentage, calculated from your interview scores, quiz performance, and CV quality. Watch it grow as you practice!",
+      "Track your weekly interview and quiz targets here. Click any number to adjust your target — progress fills as you complete sessions during the week.",
     descriptionTr:
-      "Bu kart, mülakat puanlarınız, quiz performansınız ve CV kalitenizden hesaplanan genel hazırlık yüzdenizi gösterir. Pratik yaptıkça yükselişini izleyin!",
+      "Haftalık mülakat ve quiz hedeflerinizi buradan takip edin. Hedefi değiştirmek için sayıya tıklayın — hafta boyunca tamamladıkça ilerleme dolar.",
     placement: "bottom",
   },
   {
