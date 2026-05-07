@@ -8,10 +8,8 @@ import { enUS, tr } from "date-fns/locale"
 import {
   ArrowRight,
   Calendar,
-  Check,
   FileQuestion,
   FileText,
-  Flame,
   MessageSquare,
 } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
@@ -41,7 +39,6 @@ export default function DashboardPage() {
   const [mounted, setMounted] = useState(false)
   const [greeting, setGreeting] = useState("")
   const [today, setToday] = useState("")
-  const [todayIdx, setTodayIdx] = useState(-1)
 
   useEffect(() => {
     setMounted(true)
@@ -59,7 +56,6 @@ export default function DashboardPage() {
         year: "numeric",
       })
     )
-    setTodayIdx((new Date().getDay() + 6) % 7)
   }, [language])
 
   const readiness = data
@@ -76,14 +72,9 @@ export default function DashboardPage() {
     practice_minutes_actual: 0,
   }
 
-  const weeklyActive = weekly.interviews_actual + weekly.quizzes_actual
-
   const skills = data?.skill_scores?.slice(0, 5) ?? []
 
   const upcoming = data?.upcoming_events?.slice(0, 3) ?? []
-
-  const dayLetters =
-    language === "tr" ? ["P", "S", "Ç", "P", "C", "C", "P"] : ["M", "T", "W", "T", "F", "S", "S"]
 
   return (
     <div className="px-4 py-5 sm:px-7 sm:py-7 md:px-9">
@@ -107,12 +98,6 @@ export default function DashboardPage() {
             )}
           </h1>
         </div>
-        {weeklyActive > 0 && (
-          <div className="inline-flex items-center gap-2 rounded-full bg-clay-soft px-3 py-1.5 text-[12px] font-semibold text-clay">
-            <Flame className="h-3.5 w-3.5" />
-            {weeklyActive} {language === "tr" ? "bu hafta" : "this week"}
-          </div>
-        )}
       </div>
 
       {/* Hero readiness band */}
@@ -274,39 +259,6 @@ export default function DashboardPage() {
                 ))}
               </div>
             )}
-          </section>
-
-          {/* Streak calendar */}
-          <section className="rounded-2xl border border-border bg-card p-6">
-            <h2 className="mb-3.5 font-serif text-[19px] font-medium tracking-tight">
-              {language === "tr" ? "Bu hafta" : "This week"}
-            </h2>
-            <div className="grid grid-cols-7 gap-1.5">
-              {dayLetters.map((d, i) => {
-                const filled = i < todayIdx
-                const isToday = i === todayIdx
-                return (
-                  <div key={i} className="flex flex-col items-center gap-1.5">
-                    <span className="text-[10px] text-subtle">{d}</span>
-                    <div
-                      className={cn(
-                        "flex h-8 w-8 items-center justify-center rounded-lg text-[11px] font-semibold",
-                        filled && "bg-sage text-white",
-                        isToday && "border-2 border-clay",
-                        !filled && !isToday && "bg-secondary text-subtle"
-                      )}
-                    >
-                      {filled && <Check className="h-3.5 w-3.5" />}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-            <p className="mt-3.5 text-center text-[12px] text-muted-foreground">
-              {language === "tr"
-                ? "Devam et — küçük adımlar büyük fark yaratır."
-                : "Keep it up — small daily reps compound."}
-            </p>
           </section>
         </div>
       </div>
