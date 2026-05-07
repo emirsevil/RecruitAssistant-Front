@@ -176,6 +176,26 @@ export default function MockInterviewClient() {
     resolve(false)
   }
 
+  const handleEndInterviewConfirm = async () => {
+    setEndConfirmOpen(false)
+    const id = voice.interviewId
+    try {
+      if (id) {
+        await fetch(apiUrl(`/interviews/${id}/discard`), {
+          method: "POST",
+          credentials: "include",
+        })
+      }
+      voice.disconnect()
+    } catch (err) {
+      console.error("Discard on end failed:", err)
+    } finally {
+      setState("setup")
+      router.replace("/mock-interview", { scroll: false })
+    }
+  }
+
+  const [endConfirmOpen, setEndConfirmOpen] = useState(false)
   const [missingCvOpen, setMissingCvOpen] = useState(false)
   const [isCheckingCv, setIsCheckingCv] = useState(false)
 
@@ -664,7 +684,29 @@ export default function MockInterviewClient() {
     )
 
     return (
-      <div className="flex h-[100dvh] flex-col overflow-hidden bg-background pt-14 lg:pt-0">
+      <div className="flex min-h-[100dvh] flex-col bg-background pt-14 lg:h-[100dvh] lg:overflow-hidden lg:pt-0">
+        <Dialog open={endConfirmOpen} onOpenChange={setEndConfirmOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-destructive">{t("End Interview?")}</DialogTitle>
+              <DialogDescription className="pt-2 text-[14px] leading-relaxed">
+                {t("This will discard the current session. Your progress will not be saved.")}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="gap-2 sm:gap-2">
+              <Button variant="outline" onClick={() => setEndConfirmOpen(false)}>
+                {t("Continue")}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleEndInterviewConfirm}
+                className="border-destructive/40 text-destructive hover:bg-red-600 hover:text-white hover:border-red-600"
+              >
+                {t("End & Discard")}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
         <main className="flex min-h-0 flex-1 flex-col p-3 sm:p-4 md:p-6">
           <div className="mx-auto flex w-full max-w-6xl min-h-0 flex-1 flex-col space-y-4">
             {/* ── Top Bar ── */}
@@ -706,7 +748,7 @@ export default function MockInterviewClient() {
                     )
                   })()}
                 </div>
-                <Button variant="destructive" size="sm" className="gap-1.5" onClick={voice.endSession}>
+                <Button variant="destructive" size="sm" className="gap-1.5" onClick={() => setEndConfirmOpen(true)}>
                   <PhoneOff className="h-4 w-4" />
                   {t("End Interview")}
                 </Button>
@@ -736,7 +778,7 @@ export default function MockInterviewClient() {
 
             <div className="grid min-h-0 flex-1 gap-4 grid-cols-1 lg:grid-cols-[1.6fr_1fr]">
           {/* ── LEFT: Avatar (large) + session state ── */}
-          <div className="flex min-h-0 flex-col gap-4 max-h-[55vh] lg:max-h-none lg:h-full">
+          <div className="flex flex-col gap-4 lg:min-h-0 lg:h-full">
             {activeQuestion && (
               <Card className="shrink-0 py-3 gap-0">
                 <CardContent className="py-0">
@@ -748,25 +790,27 @@ export default function MockInterviewClient() {
               </Card>
             )}
 
-            <TalkingInterviewerPanel
-              analyserNode={voice.analyserNode}
-              isSpeaking={voice.isAiSpeaking}
-              activeAvatarProvider={voice.activeAvatarProvider}
-              isAvatarInitializing={voice.isAvatarInitializing}
-              liveAvatarStatus={voice.liveAvatarStatus}
-              liveAvatarVideoRef={voice.liveAvatarVideoRef}
-              statusLabel={statusConfig.label}
-              statusColor={statusConfig.color}
-              statusPulse={statusConfig.pulse}
-              onInterrupt={voice.interrupt}
-              interviewerLabel={t("AI Interviewer")}
-              showInterruptButton={voice.isAiSpeaking && !voice.isWrappingUp}
-              interruptLabel={t("Interrupt & Speak")}
-            />
+            <div className="min-h-[260px] lg:flex-1 lg:min-h-0">
+              <TalkingInterviewerPanel
+                analyserNode={voice.analyserNode}
+                isSpeaking={voice.isAiSpeaking}
+                activeAvatarProvider={voice.activeAvatarProvider}
+                isAvatarInitializing={voice.isAvatarInitializing}
+                liveAvatarStatus={voice.liveAvatarStatus}
+                liveAvatarVideoRef={voice.liveAvatarVideoRef}
+                statusLabel={statusConfig.label}
+                statusColor={statusConfig.color}
+                statusPulse={statusConfig.pulse}
+                onInterrupt={voice.interrupt}
+                interviewerLabel={t("AI Interviewer")}
+                showInterruptButton={voice.isAiSpeaking && !voice.isWrappingUp}
+                interruptLabel={t("Interrupt & Speak")}
+              />
+            </div>
           </div>
 
           {/* ── RIGHT: Conversation + Answer ── */}
-          <div className="flex min-h-0 flex-col gap-4 lg:h-full lg:overflow-hidden">
+          <div className="flex flex-col gap-4 lg:min-h-0 lg:h-full lg:overflow-hidden">
             <Card className="flex min-h-0 flex-col overflow-hidden lg:flex-1">
               <CardHeader className="pb-2"><CardTitle className="text-base">{t("Conversation")}</CardTitle></CardHeader>
               <CardContent className="flex min-h-0 flex-1 overflow-hidden p-0">
