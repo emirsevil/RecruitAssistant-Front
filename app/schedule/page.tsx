@@ -17,6 +17,7 @@ import { CalendarEvent, EventType, useSchedule } from "@/lib/schedule-context"
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, MessageSquare, Brain, Trash2 } from "lucide-react"
 import { useLanguage } from "@/lib/language-context"
 import { cn } from "@/lib/utils"
+import { toast } from "sonner"
 
 
 
@@ -221,6 +222,7 @@ export default function SchedulePage() {
 
             setIsAddDialogOpen(false)
             setNewEvent({ title: "", type: "practice", startTime: "10:00", endTime: "11:00" })
+            toast.success(language === "tr" ? "Etkinlik kaydedildi" : "Event scheduled")
         } catch (e: any) {
             setFormError(e.message || t("Failed to schedule event"))
         } finally {
@@ -412,7 +414,20 @@ export default function SchedulePage() {
                                                                     key={event.id}
                                                                     event={event}
                                                                     style={layout}
-                                                                    onDelete={() => removeEvent(event.id).catch(console.error)}
+                                                                    onDelete={async () => {
+                                                                        try {
+                                                                            await removeEvent(event.id)
+                                                                            toast.success(
+                                                                                language === "tr" ? "Etkinlik silindi" : "Event removed",
+                                                                            )
+                                                                        } catch (e: unknown) {
+                                                                            const msg =
+                                                                                e instanceof Error
+                                                                                    ? e.message
+                                                                                    : t("Failed to delete event")
+                                                                            toast.error(msg)
+                                                                        }
+                                                                    }}
                                                                 />
                                                             )
                                                         })}

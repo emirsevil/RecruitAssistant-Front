@@ -1,6 +1,6 @@
 "use client"
 
-import React, { createContext, useCallback, useContext, useEffect, useState } from "react"
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react"
 import { addDays, startOfWeek } from "date-fns"
 import { useAuth } from "./auth-context"
 import { apiUrl } from "@/lib/api-config"
@@ -70,6 +70,8 @@ export function ScheduleProvider({ children }: { children: React.ReactNode }) {
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const { user, isLoading: isAuthLoading } = useAuth()
+    /** Last range passed to fetchEvents — used to refresh after POST/DELETE without stale UI */
+    const lastRangeRef = useRef<{ start: Date; end: Date } | null>(null)
 
     const getEventsForRange = useCallback(async (start: Date, end: Date) => {
         if (!user) return []
@@ -92,6 +94,7 @@ export function ScheduleProvider({ children }: { children: React.ReactNode }) {
     }, [user])
 
     const fetchEvents = useCallback(async (start: Date, end: Date) => {
+        lastRangeRef.current = { start, end }
         setIsLoading(true)
         setError(null)
 
@@ -140,13 +143,25 @@ export function ScheduleProvider({ children }: { children: React.ReactNode }) {
 
         if (!response.ok) {
             const data = await response.json().catch(() => null)
-            throw new Error(data?.detail || "Failed to create scheduled event")
+            const detail = data?.detail
+            throw new Error(
+                typeof detail === "string"
+                    ? detail
+                    : Array.isArray(detail)
+                      ? detail.map((x: { msg?: string }) => x.msg).filter(Boolean).join(", ") || "Failed to create scheduled event"
+                      : "Failed to create scheduled event",
+            )
         }
 
         const created = mapApiEvent(await response.json())
-        setEvents((prev) => [...prev, created].sort((a, b) => a.startTime.getTime() - b.startTime.getTime()))
+        if (lastRangeRef.current) {
+            const refreshed = await getEventsForRange(lastRangeRef.current.start, lastRangeRef.current.end)
+            setEvents(refreshed)
+        } else {
+            setEvents((prev) => [...prev, created].sort((a, b) => a.startTime.getTime() - b.startTime.getTime()))
+        }
         return created
-    }, [user])
+    }, [user, getEventsForRange])
 
     const removeEvent = useCallback(async (id: string) => {
         const response = await fetch(apiUrl(`/schedule/events/${id}`), {
@@ -156,11 +171,21 @@ export function ScheduleProvider({ children }: { children: React.ReactNode }) {
 
         if (!response.ok) {
             const data = await response.json().catch(() => null)
-            throw new Error(data?.detail || "Failed to delete scheduled event")
+            const detail = data?.detail
+            throw new Error(
+                typeof detail === "string"
+                    ? detail
+                    : `Failed to delete scheduled event (${response.status})`,
+            )
         }
 
-        setEvents((prev) => prev.filter((e) => e.id !== id))
-    }, [])
+        if (lastRangeRef.current) {
+            const refreshed = await getEventsForRange(lastRangeRef.current.start, lastRangeRef.current.end)
+            setEvents(refreshed)
+        } else {
+            setEvents((prev) => prev.filter((e) => e.id !== id))
+        }
+    }, [getEventsForRange])
 
     return (
         <ScheduleContext.Provider value={{ events, isLoading, error, fetchEvents, getEventsForRange, addEvent, removeEvent }}>
