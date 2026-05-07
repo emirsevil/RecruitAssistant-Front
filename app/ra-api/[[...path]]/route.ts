@@ -56,9 +56,18 @@ async function proxy(req: NextRequest, _ctx: { params: Promise<{ path?: string[]
   req.headers.forEach((value, key) => {
     const k = key.toLowerCase()
     if (k === "host") return
+    if (k === "cookie") return // rebuilt below — some runtimes omit raw Cookie on the header bag
     if (HOP_BY_HOP.has(k)) return
     forward.set(key, value)
   })
+
+  const rawCookie = req.headers.get("cookie")
+  const fromJar =
+    typeof req.cookies?.getAll === "function"
+      ? req.cookies.getAll().map((c) => `${c.name}=${c.value}`).join("; ")
+      : ""
+  const cookieHeader = rawCookie?.length ? rawCookie : fromJar
+  if (cookieHeader) forward.set("Cookie", cookieHeader)
 
   const init: RequestInit = {
     method: req.method,
@@ -69,6 +78,7 @@ async function proxy(req: NextRequest, _ctx: { params: Promise<{ path?: string[]
 
   if (!["GET", "HEAD"].includes(req.method)) {
     init.body = await req.arrayBuffer()
+    forward.delete("content-length")
   }
 
   const upstream = await fetch(target.toString(), init)
