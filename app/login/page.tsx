@@ -59,7 +59,7 @@ export default function LoginPage() {
       
       window.location.href = "/dashboard"
     } catch (err: any) {
-      setError(err.message || "Giriş yapılamadı. Lütfen bilgilerinizi kontrol edin.")
+      setError(err.message || t("Login failed. Please check your credentials."))
     } finally {
       setIsLoading(false)
     }
@@ -71,7 +71,7 @@ export default function LoginPage() {
         <Select value={language} onValueChange={(val) => setLanguage(val as 'en' | 'tr')}>
           <SelectTrigger className="w-[130px] bg-background/50 backdrop-blur-sm border-primary/20 hover:border-primary/50 transition-colors">
             <Globe className="w-4 h-4 mr-2" />
-            <SelectValue placeholder="Language" />
+            <SelectValue placeholder={t("language")} />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="tr">Türkçe</SelectItem>

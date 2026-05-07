@@ -435,6 +435,7 @@ function KpiCard({
   isLoading?: boolean
   accent: "sage" | "clay" | "plum"
 }) {
+  const { t } = useLanguage()
   const accentMap = {
     sage: "bg-sage-soft text-sage",
     clay: "bg-clay-soft text-clay",
@@ -468,7 +469,7 @@ function KpiCard({
                     "ml-auto inline-flex items-center text-[11px] font-semibold",
                     trend > 0 ? "text-sage" : "text-clay"
                   )}
-                  title={trend > 0 ? "Trending up" : "Trending down"}
+                  title={trend > 0 ? t("Trending up") : t("Trending down")}
                 >
                   {trend > 0 ? (
                     <ArrowUpRight className="h-3 w-3" />
@@ -557,6 +558,7 @@ function GoalRow({
   step?: number
   onChangeTarget: (next: number) => Promise<boolean> | void
 }) {
+  const { t } = useLanguage()
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(target)
   const [saving, setSaving] = useState(false)
@@ -607,7 +609,7 @@ function GoalRow({
               type="button"
               onClick={() => setDraft((d) => Math.max(step, d - step))}
               className="flex h-6 w-6 items-center justify-center rounded-md border border-border hover:bg-secondary"
-              aria-label="decrement"
+              aria-label={t("Decrease target")}
             >
               <Minus className="h-3 w-3" />
             </button>
@@ -616,7 +618,7 @@ function GoalRow({
               type="button"
               onClick={() => setDraft((d) => d + step)}
               className="flex h-6 w-6 items-center justify-center rounded-md border border-border hover:bg-secondary"
-              aria-label="increment"
+              aria-label={t("Increase target")}
             >
               <Plus className="h-3 w-3" />
             </button>
@@ -625,7 +627,7 @@ function GoalRow({
               onClick={save}
               disabled={saving}
               className="ml-1 flex h-6 w-6 items-center justify-center rounded-md bg-sage text-white hover:bg-sage/90"
-              aria-label="save"
+              aria-label={t("Save target")}
             >
               {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
             </button>
@@ -633,7 +635,7 @@ function GoalRow({
               type="button"
               onClick={() => setEditing(false)}
               className="flex h-6 w-6 items-center justify-center rounded-md border border-border hover:bg-secondary"
-              aria-label="cancel"
+              aria-label={t("Cancel edit")}
             >
               <X className="h-3 w-3" />
             </button>
@@ -643,7 +645,7 @@ function GoalRow({
             type="button"
             onClick={() => setEditing(true)}
             className="group flex items-center gap-1.5 rounded-md px-1.5 py-1 hover:bg-secondary"
-            title="Edit target"
+            title={t("Edit target")}
           >
             <span className="font-serif text-[14px] tabular-nums">
               {actual}
