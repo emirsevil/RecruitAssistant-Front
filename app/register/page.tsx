@@ -107,7 +107,7 @@ export default function RegisterPage() {
       
       router.push("/login?registered=true")
     } catch (err: any) {
-      setError(err.message || "Kayıt işlemi başarısız oldu.")
+      setError(err.message || t("Registration failed. Please try again."))
     } finally {
       setIsLoading(false)
     }

@@ -196,6 +196,28 @@
     font-family: var(--font-sans);
     overflow-x: hidden;
   }
+  /* Restore the native "I am clickable" pointer cursor that Tailwind preflight
+   * removes. Covers every native button, role="button", file-input pseudo,
+   * and any `<a>` with an href — without touching individual components. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  a[href],
+  summary,
+  label[for],
+  select:not(:disabled),
+  input[type="file"]:not(:disabled),
+  input[type="file"]:not(:disabled)::file-selector-button,
+  input[type="submit"]:not(:disabled),
+  input[type="reset"]:not(:disabled),
+  input[type="button"]:not(:disabled),
+  input[type="checkbox"]:not(:disabled),
+  input[type="radio"]:not(:disabled) {
+    cursor: pointer;
+  }
+  button:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
 }
 
 /* Calm Study utilities */

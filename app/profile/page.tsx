@@ -179,7 +179,7 @@ export default function ProfilePage() {
           description: t("Your profile photo has been successfully updated."),
         });
       } else {
-        throw new Error("Upload failed");
+        throw new Error(t("Failed to upload photo"));
       }
     } catch (err: any) {
       toast({
@@ -287,12 +287,12 @@ export default function ProfilePage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="professional_title">{t("Professional Title")}</Label>
-                <Input 
-                  id="professional_title" 
-                  value={profile.professional_title} 
-                  onChange={(e) => handleChange("professional_title", e.target.value)} 
+                <Input
+                  id="professional_title"
+                  value={profile.professional_title}
+                  onChange={(e) => handleChange("professional_title", e.target.value)}
                   disabled={isSaving}
-                  placeholder="e.g., Software Engineer"
+                  placeholder={t("e.g., Software Engineer")}
                 />
               </div>
             </div>
@@ -337,7 +337,7 @@ export default function ProfilePage() {
                 id="education"
                 value={profile.education}
                 onChange={(e) => handleChange("education", e.target.value)}
-                placeholder="e.g., B.S. Computer Science, Stanford University"
+                placeholder={t("e.g., B.S. Computer Science, Stanford University")}
                 disabled={isSaving}
               />
             </div>
@@ -349,7 +349,7 @@ export default function ProfilePage() {
                 rows={2}
                 value={profile.skills}
                 onChange={(e) => handleChange("skills", e.target.value)}
-                placeholder="List your key skills (comma separated)"
+                placeholder={t("List your key skills (comma separated)")}
                 disabled={isSaving}
               />
             </div>

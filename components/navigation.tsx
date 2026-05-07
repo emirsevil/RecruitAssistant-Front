@@ -224,7 +224,7 @@ export function Navigation() {
     <header className="fixed inset-x-0 top-0 z-40 flex h-14 items-center justify-between border-b border-border bg-sidebar px-4 lg:hidden">
       <button
         type="button"
-        aria-label="Open menu"
+        aria-label={t("Open menu")}
         data-tour="nav-sidebar"
         onClick={() => setMobileOpen(true)}
         className="flex h-9 w-9 items-center justify-center rounded-lg text-foreground hover:bg-secondary"
@@ -255,8 +255,8 @@ export function Navigation() {
     <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
       <SheetContent side="left" className="w-[272px] p-0 bg-sidebar border-border overflow-y-auto">
         <SheetHeader className="sr-only">
-          <SheetTitle>Navigation</SheetTitle>
-          <SheetDescription>Main navigation menu</SheetDescription>
+          <SheetTitle>{t("Navigation")}</SheetTitle>
+          <SheetDescription>{t("Main navigation menu")}</SheetDescription>
         </SheetHeader>
         <div className="flex flex-col gap-1 px-3.5 py-5 min-h-full">
           {/* Logo */}
@@ -364,7 +364,7 @@ export function Navigation() {
           <div className="flex items-center gap-1 px-1 pb-2">
             <button
               type="button"
-              aria-label="Toggle theme"
+              aria-label={t("Toggle theme")}
               onClick={toggleDark}
               className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground"
             >
@@ -372,7 +372,7 @@ export function Navigation() {
             </button>
             <DropdownMenu>
               <DropdownMenuTrigger
-                aria-label="Switch language"
+                aria-label={t("Switch language")}
                 className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground"
               >
                 <Globe className="h-4 w-4" />
@@ -589,7 +589,7 @@ export function Navigation() {
       <div className="flex items-center gap-1 px-1 pb-2">
         <button
           type="button"
-          aria-label="Toggle theme"
+          aria-label={t("Toggle theme")}
           onClick={toggleDark}
           className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground"
         >
@@ -597,7 +597,7 @@ export function Navigation() {
         </button>
         <DropdownMenu>
           <DropdownMenuTrigger
-            aria-label="Switch language"
+            aria-label={t("Switch language")}
             className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground"
           >
             <Globe className="h-4 w-4" />
