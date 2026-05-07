@@ -64,7 +64,12 @@ export default function NewWorkspacePage() {
 
   // Step 1: Create workspace
   const handleCreateWorkspace = async () => {
-    const name = values.workspaceName.trim()
+    const company = values.company.trim()
+    const name = values.workspaceName.trim() || company
+    if (!company) {
+      toast.error(language === "tr" ? "Lütfen bir şirket seçin" : "Please select a company")
+      return
+    }
     if (!name) return
 
     if (values.jobDescription.trim().length < 50) {
@@ -160,14 +165,14 @@ export default function NewWorkspacePage() {
               <CardDescription>{t("newWorkspacePageDesc")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <WorkspaceForm idPrefix="new-ws" value={values} onChange={setValues} />
+              <WorkspaceForm idPrefix="new-ws" value={values} onChange={setValues} showCompany />
               <div className="flex justify-end gap-2">
                 <Button variant="outline" asChild>
                   <Link href="/dashboard">{t("cancel")}</Link>
                 </Button>
                 <Button
                   onClick={handleCreateWorkspace}
-                  disabled={!values.workspaceName.trim() || isCreating}
+                  disabled={!values.company.trim() || isCreating}
                   className="min-w-[120px]"
                 >
                   {isCreating ? (

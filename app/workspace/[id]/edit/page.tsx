@@ -31,6 +31,7 @@ export default function EditWorkspacePage() {
     if (!workspace) return
     setValues({
       workspaceName: workspace.name,
+      company: "",
       selectedEmoji: workspace.emoji,
       jobName: workspace.jobName ?? "",
       jobDescription: workspace.jobDescription ?? "",
