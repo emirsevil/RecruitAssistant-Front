@@ -72,6 +72,7 @@ interface UseVoiceInterviewReturn {
   isTranscribing: boolean
   selectedAvatarProvider: AvatarProvider
   activeAvatarProvider: AvatarProvider
+  isAvatarInitializing: boolean
   setSelectedAvatarProvider: (provider: AvatarProvider) => void
   isLiveAvatarEnabled: boolean
   liveAvatarStatus: ReturnType<typeof useLiveAvatarRoom>["status"]
@@ -111,6 +112,7 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
   const [isTranscribing, setIsTranscribing] = useState(false)
   const [selectedAvatarProvider, setSelectedAvatarProvider] = useState<AvatarProvider>("voice_call")
   const [activeAvatarProvider, setActiveAvatarProvider] = useState<AvatarProvider>("voice_call")
+  const [isAvatarInitializing, setIsAvatarInitializing] = useState(false)
   const [isWrappingUp, setIsWrappingUp] = useState(false)
 
   const isWrappingUpRef = useRef(false)
@@ -818,6 +820,7 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
 
       try {
         if (effectiveProvider === "liveavatar_full" && LIVEAVATAR_ENABLED) {
+          setIsAvatarInitializing(true)
           try {
             const bootstrapRes = await fetch(apiUrl("/voice-interview/liveavatar/bootstrap"), {
               method: "POST",
@@ -850,6 +853,8 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
             activeAvatarProviderRef.current = "voice_call"
             await disconnectLiveAvatar()
             await releaseBootstrapLiveAvatarSession("BOOTSTRAP_FAILED")
+          } finally {
+            setIsAvatarInitializing(false)
           }
         } else {
           // voice_call or rpm_cartesia → both use the cartesia_stream audio pipeline
@@ -926,6 +931,7 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
         console.error("Failed to start interview session:", sessionStartError)
         sessionStartInFlightRef.current = false
         setConnectionStatus("disconnected")
+        setIsAvatarInitializing(false)
         setError("Mülakat oturumu başlatılamadı.")
         await disconnectLiveAvatar()
         await releaseBootstrapLiveAvatarSession("SESSION_START_FAILED")
@@ -1272,6 +1278,7 @@ export function useVoiceInterview(): UseVoiceInterviewReturn {
     isTranscribing,
     selectedAvatarProvider,
     activeAvatarProvider,
+    isAvatarInitializing,
     setSelectedAvatarProvider,
     isLiveAvatarEnabled: LIVEAVATAR_ENABLED,
     liveAvatarStatus,

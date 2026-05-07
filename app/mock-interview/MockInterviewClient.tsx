@@ -774,6 +774,7 @@ export default function MockInterviewClient() {
               analyserNode={voice.analyserNode}
               isSpeaking={voice.isAiSpeaking}
               activeAvatarProvider={voice.activeAvatarProvider}
+              isAvatarInitializing={voice.isAvatarInitializing}
               liveAvatarStatus={voice.liveAvatarStatus}
               liveAvatarVideoRef={voice.liveAvatarVideoRef}
               statusLabel={statusConfig.label}
