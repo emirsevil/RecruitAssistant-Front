@@ -46,7 +46,7 @@ import {
 } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { apiUrl } from "@/lib/api-config"
-import { coerceLatexFromStoredContent, rewriteFontspecForTectonic } from "@/lib/cv-latex"
+import { coerceLatexFromStoredContent, rewriteFontspecForTectonic, sanitizeLatexForTectonic } from "@/lib/cv-latex"
 
 export default function CVStudioPage() {
   const { t } = useLanguage()
@@ -332,6 +332,7 @@ export default function CVStudioPage() {
   const polishLatexForCompile = (latex: string, isCoverLetter: boolean) => {
     let x = coerceLatexFromStoredContent(latex)
     x = stripLatexFences(x)
+    x = sanitizeLatexForTectonic(x)
     x = rewriteFontspecForTectonic(x)
     if (!isCoverLetter) x = normalizeResumeSectionDividers(x)
     return escapeTurkishChars(x)
