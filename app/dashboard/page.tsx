@@ -11,6 +11,7 @@ import {
   FileQuestion,
   FileText,
   MessageSquare,
+  Sparkles,
 } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { useLanguage } from "@/lib/language-context"
@@ -61,7 +62,6 @@ export default function DashboardPage() {
   const readiness = data
     ? Math.round((data.stats.avg_hr_score + data.stats.avg_technical_score) / 2) || 0
     : 0
-  const trend = data?.stats?.avg_hr_score_trend ?? 0
 
   const weekly = data?.weekly_goals ?? {
     interviews_target: 4,
@@ -110,19 +110,6 @@ export default function DashboardPage() {
               {readiness}
               <span className="text-[18px] text-subtle">%</span>
             </p>
-            <p className="mt-1 text-[12px] text-muted-foreground">
-              {language === "tr" ? "Genel hazırlık" : "Overall readiness"}
-              {trend !== 0 && (
-                <>
-                  {" "}
-                  ·{" "}
-                  <span className="font-semibold text-sage">
-                    {trend > 0 ? "+" : ""}
-                    {trend}%
-                  </span>
-                </>
-              )}
-            </p>
           </div>
         </div>
 
@@ -139,13 +126,7 @@ export default function DashboardPage() {
           target={weekly.quizzes_target}
           accent="clay"
         />
-        <GoalCard
-          label={language === "tr" ? "Pratik süresi" : "Practice time"}
-          done={weekly.practice_minutes_actual}
-          target={weekly.practice_minutes_target}
-          unit="m"
-          accent="plum"
-        />
+        <WeeklyFocusCard language={language} />
       </div>
 
       {/* Two-col main */}
@@ -270,6 +251,46 @@ export default function DashboardPage() {
       )}
 
     </div>
+  )
+}
+
+function WeeklyFocusCard({ language }: { language: string }) {
+  const tr = language === "tr"
+  return (
+    <Link
+      href="/mock-interview"
+      className={cn(
+        "group relative flex min-h-[144px] flex-col justify-between overflow-hidden rounded-2xl border border-border bg-card p-5",
+        "transition-all duration-200 hover:border-plum/40 hover:shadow-[0_0_0_1px_rgba(147,112,219,0.12),0_12px_40px_-16px_rgba(0,0,0,0.45)]"
+      )}
+    >
+      <div
+        className="pointer-events-none absolute -right-8 -top-10 h-28 w-28 rounded-full bg-plum/25 blur-2xl"
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none absolute -bottom-6 -left-6 h-24 w-24 rounded-full bg-sage/20 blur-2xl"
+        aria-hidden
+      />
+      <div className="relative">
+        <p className="eyebrow flex items-center gap-1.5 text-plum">
+          <Sparkles className="h-3.5 w-3.5 text-plum" />
+          {tr ? "Bugünün dokunuşu" : "Today's edge"}
+        </p>
+        <p className="mt-2 font-serif text-[17px] font-medium leading-snug tracking-tight text-foreground">
+          {tr ? "Kısa bir tur skoru yükseltir" : "One sharp session moves the needle"}
+        </p>
+        <p className="mt-1.5 text-[12px] leading-relaxed text-muted-foreground">
+          {tr
+            ? "Canlı mülakat veya hızlı test — hazırlık yüzden fazlası."
+            : "Live mock interview or a quick quiz — more than your score."}
+        </p>
+      </div>
+      <span className="relative mt-3 inline-flex items-center gap-1 text-[12px] font-semibold text-sage transition-all group-hover:gap-1.5">
+        {tr ? "Mülakata git" : "Start a round"}
+        <ArrowRight className="h-3.5 w-3.5" />
+      </span>
+    </Link>
   )
 }
 
