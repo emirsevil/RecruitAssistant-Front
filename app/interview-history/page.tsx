@@ -285,19 +285,20 @@ function InterviewDetailView({
             </span>
           </div>
           <div className="flex flex-col gap-1.5 text-[12.5px] leading-snug">
-            {(strengths.length > 0
-              ? strengths
-              : [
-                  language === "tr"
-                    ? "Cevapların net ve yapılandırılmıştı."
-                    : "Answers stayed structured and on point.",
-                ]
-            ).map((s, i) => (
-              <div key={i} className="flex gap-2">
-                <span className="mt-0.5 text-sage">·</span>
-                <span>{s}</span>
-              </div>
-            ))}
+            {strengths.length > 0 ? (
+              strengths.map((s, i) => (
+                <div key={i} className="flex gap-2">
+                  <span className="mt-0.5 text-sage">·</span>
+                  <span>{s}</span>
+                </div>
+              ))
+            ) : (
+              <p className="text-[12.5px] leading-snug text-muted-foreground">
+                {language === "tr"
+                  ? "Bu oturum için güçlü yön özeti yok."
+                  : "No strengths summary for this session."}
+              </p>
+            )}
           </div>
         </div>
 
@@ -309,19 +310,20 @@ function InterviewDetailView({
             </span>
           </div>
           <div className="flex flex-col gap-1.5 text-[12.5px] leading-snug">
-            {(improvements.length > 0
-              ? improvements
-              : [
-                  language === "tr"
-                    ? "Etkini sayılarla destekleyebilirsin."
-                    : "Quantify your impact more often.",
-                ]
-            ).map((s, i) => (
-              <div key={i} className="flex gap-2">
-                <span className="mt-0.5 text-clay">·</span>
-                <span>{s}</span>
-              </div>
-            ))}
+            {improvements.length > 0 ? (
+              improvements.map((s, i) => (
+                <div key={i} className="flex gap-2">
+                  <span className="mt-0.5 text-clay">·</span>
+                  <span>{s}</span>
+                </div>
+              ))
+            ) : (
+              <p className="text-[12.5px] leading-snug text-muted-foreground">
+                {language === "tr"
+                  ? "Bu oturum için gelişim notu yok."
+                  : "No improvement notes for this session."}
+              </p>
+            )}
           </div>
         </div>
       </div>
