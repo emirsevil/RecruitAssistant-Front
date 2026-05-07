@@ -282,12 +282,20 @@ function ScoreTimeseries({
           {t("Interview and quiz scores in the selected window")} · {bucketLabel}
         </CardDescription>
       </CardHeader>
-      <CardContent>
-          <ResponsiveContainer width="100%" height={320}>
-            <LineChart data={series} margin={{ left: -12, right: 16, bottom: 16 }}>
+      <CardContent className="pt-2">
+          <ResponsiveContainer width="100%" height={360}>
+            <LineChart data={series} margin={{ left: 4, right: 12, top: 8, bottom: 56 }}>
               <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-              <XAxis dataKey="bucket" tick={{ fontSize: 10 }} interval="preserveStartEnd" angle={-45} textAnchor="end" />
-              <YAxis domain={[0, 100]} tick={{ fontSize: 10 }} />
+              <XAxis
+                dataKey="bucket"
+                tick={{ fontSize: 9 }}
+                interval="preserveStartEnd"
+                angle={-35}
+                textAnchor="end"
+                height={52}
+                tickMargin={10}
+              />
+              <YAxis domain={[0, 100]} tick={{ fontSize: 10 }} width={36} />
             <Tooltip
               contentStyle={{
                 borderRadius: "8px",
@@ -295,7 +303,11 @@ function ScoreTimeseries({
                 fontSize: "12px",
               }}
             />
-            <Legend wrapperStyle={{ fontSize: "12px" }} />
+            <Legend
+              verticalAlign="top"
+              align="center"
+              wrapperStyle={{ fontSize: "12px", paddingBottom: 6, top: -6, position: "relative" }}
+            />
             <Line
               type="monotone"
               dataKey="interview_hr"
@@ -515,15 +527,17 @@ function ModeSplitSection({
 }) {
   const total = split.voice.count + split.text.count
   const data = [
-    { name: t("Voice"), value: split.voice.count, fill: "#8884d8" },
-    { name: t("Text"), value: split.text.count, fill: "#82ca9d" },
+    { name: t("With avatar"), value: split.voice.count, fill: "#8884d8" },
+    { name: t("Without avatar"), value: split.text.count, fill: "#82ca9d" },
   ]
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t("Voice vs text")}</CardTitle>
-        <CardDescription>{t("Mix and average score per interview mode")}</CardDescription>
+        <CardTitle>{t("Avatar vs no avatar")}</CardTitle>
+        <CardDescription>
+          {t("Mix of mock interviews with on-screen avatar vs text-only, and average scores per mode.")}
+        </CardDescription>
       </CardHeader>
       <CardContent>
         {total === 0 ? (
@@ -557,13 +571,13 @@ function ModeSplitSection({
             </ResponsiveContainer>
             <div className="space-y-3 flex flex-col justify-center">
               <ModeStat
-                label={t("Voice")}
+                label={t("With avatar")}
                 color="#8884d8"
                 count={split.voice.count}
                 avg={split.voice.avg_score}
               />
               <ModeStat
-                label={t("Text")}
+                label={t("Without avatar")}
                 color="#82ca9d"
                 count={split.text.count}
                 avg={split.text.avg_score}

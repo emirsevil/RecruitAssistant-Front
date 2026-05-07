@@ -649,6 +649,18 @@ const translations: Translations = {
         "Loading...": "Loading...",
         "Your account has been created successfully! You can now log in.": "Your account has been created successfully! You can now log in.",
         "CV Language": "CV Language",
+
+        // Analytics (labels used on /analytics)
+        "Score over time": "Score over time",
+        "Interview and quiz scores in the selected window": "Interview and quiz scores in the selected window",
+        "each dot = 1 day": "each dot = 1 day",
+        "each dot = 1 ISO week": "each dot = 1 ISO week",
+        "No completed attempts yet in this window.": "No completed attempts yet in this window.",
+        "Avatar vs no avatar": "Avatar vs no avatar",
+        "Mix of mock interviews with on-screen avatar vs text-only, and average scores per mode.":
+            "Mix of mock interviews with on-screen avatar vs text-only, and average scores per mode.",
+        "With avatar": "With avatar",
+        "Without avatar": "Without avatar",
     },
     tr: {
         // Navigation
@@ -1355,6 +1367,11 @@ const translations: Translations = {
         "Uploaded": "Yüklendi",
         "Uploading...": "Yükleniyor...",
         "Voice vs text": "Ses ve metin",
+        "Avatar vs no avatar": "Avatarlı ve avatarsız",
+        "Mix of mock interviews with on-screen avatar vs text-only, and average scores per mode.":
+            "Ekranda avatarlı ve yalnızca metin (avatarsız) mülakatların payı ve mod başına ortalama puanlar.",
+        "With avatar": "Avatarlı",
+        "Without avatar": "Avatarsız",
         "Warning": "Uyarı",
         "We analyzed your Job Description. Review and confirm the categories for your workspace.": "İş Tanımınızı analiz ettik. Çalışma alanınız için kategorileri inceleyin ve onaylayın.",
         "We will use this as your Base CV to pre-fill information.": "Bilgileri önceden doldurmak için bunu Temel CV'niz olarak kullanacağız.",
