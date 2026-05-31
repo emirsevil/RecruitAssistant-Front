@@ -69,34 +69,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [updateActivity])
 
-  // ── Check current user (from existing cookie) ────────────────────
-  const checkUser = useCallback(async () => {
-    setIsLoading(true)
-    try {
-      const response = await fetch(`${API_BASE_URL}/auth/me`, {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-      })
-
-      if (response.ok) {
-        const userData = await response.json()
-        setUser(userData)
-      } else {
-        setUser(null)
-      }
-    } catch (error) {
-      console.error("Failed to check auth status:", error)
-      setUser(null)
-    } finally {
-      setIsLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    checkUser()
-  }, [checkUser])
-
   // ── Silent token refresh ─────────────────────────────────────────
   const refreshTokens = useCallback(async (): Promise<boolean> => {
     try {
@@ -112,7 +84,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (response.status === 401) {
         setUser(null)
-        router.push("/login")
+        const isPublicPage = typeof window !== "undefined" && ["/login", "/register", "/forgot-password", "/reset-password"].some(p => window.location.pathname.startsWith(p))
+        if (!isPublicPage) {
+          window.location.href = "/login"
+        }
         return false
       }
 
@@ -122,6 +97,50 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return false
     }
   }, [router])
+
+  // ── Check current user (from existing cookie) ────────────────────
+  const checkUser = useCallback(async () => {
+    setIsLoading(true)
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/me`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      })
+
+      if (response.ok) {
+        const userData = await response.json()
+        setUser(userData)
+      } else if (response.status === 401) {
+        // Access token is expired, try to refresh!
+        const refreshed = await refreshTokens()
+        if (refreshed) {
+          const secondResponse = await fetch(`${API_BASE_URL}/auth/me`, {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+          })
+          if (secondResponse.ok) {
+            const userData = await secondResponse.json()
+            setUser(userData)
+            return
+          }
+        }
+        setUser(null)
+      } else {
+        setUser(null)
+      }
+    } catch (error) {
+      console.error("Failed to check auth status:", error)
+      setUser(null)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [refreshTokens])
+
+  useEffect(() => {
+    checkUser()
+  }, [checkUser])
 
   // ── Combined check loop (runs every 1 minute) ───────────────────
   useEffect(() => {
@@ -153,7 +172,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Best-effort — proceed with local logout even if the request fails
         }
         setUser(null)
-        router.push("/login")
+        window.location.href = "/login"
         return
       }
 
@@ -162,9 +181,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await refreshTokens()
       }
     }
-
-    // Initial refresh on mount
-    refreshTokens()
 
     refreshTimerRef.current = setInterval(tick, CHECK_INTERVAL_MS)
 
@@ -175,6 +191,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
   }, [user, refreshTokens, router])
+
+  // ── Error Parser ──────────────────────────────────────────────────
+  const parseErrorDetail = (errData: any, fallback: string): string => {
+    if (!errData) return fallback
+    if (errData.detail) {
+      if (typeof errData.detail === "string") {
+        return errData.detail
+      }
+      if (Array.isArray(errData.detail)) {
+        return errData.detail
+          .map((err: any) => {
+            const msg = err.msg || ""
+            if (msg.includes("value is not a valid email")) {
+              return "Geçerli bir e-posta adresi giriniz."
+            }
+            return msg || "Geçersiz değer"
+          })
+          .join(", ")
+      }
+    }
+    return errData.message || fallback
+  }
 
   // ── Login ────────────────────────────────────────────────────────
   const login = async (email: string, password: string) => {
@@ -189,7 +227,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (!response.ok) {
         const errData = await response.json()
-        throw new Error(errData.detail || "Login failed")
+        throw new Error(parseErrorDetail(errData, "Login failed"))
       }
 
       const data = await response.json()
@@ -214,7 +252,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (!response.ok) {
         const errData = await response.json()
-        throw new Error(errData.detail || "Registration failed")
+        throw new Error(parseErrorDetail(errData, "Registration failed"))
       }
     } catch (error) {
       throw error
@@ -232,7 +270,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         credentials: "include",
       })
       setUser(null)
-      router.push("/login")
+      window.location.href = "/login"
     } catch (error) {
       console.error("Logout failed:", error)
     } finally {
