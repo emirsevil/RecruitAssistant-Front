@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Progress } from "@/components/ui/progress"
 import { Textarea } from "@/components/ui/textarea"
-import { PlayCircle, Mic, MicOff, Send, ChevronRight, BarChart3, SkipForward, Phone, PhoneOff, Volume2, Loader2, CheckCircle2, Check, Tag, Clock } from "lucide-react"
+import { PlayCircle, Mic, MicOff, Send, ChevronRight, BarChart3, SkipForward, Phone, PhoneOff, Volume2, Loader2, CheckCircle2, Check, Tag, Clock, FileQuestion } from "lucide-react"
 import Link from "next/link"
 import { useLanguage } from "@/lib/language-context"
 import { useVoiceInterview } from "@/hooks/use-voice-interview"
@@ -898,16 +898,33 @@ export default function MockInterviewClient() {
               onClick={() => {
                 voice.disconnect()
                 setState("setup")
-                // Strip ?id=… from the URL so the in-progress probe re-runs
-                // cleanly and we never carry the just-finished interview's id forward.
                 router.replace("/mock-interview", { scroll: false })
               }}
             >
               <PlayCircle className="h-3.5 w-3.5" />
               {t("Start Another Interview")}
             </Button>
+            
+            {results.length > 0 && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="justify-start gap-2 border-sage text-sage hover:bg-sage-soft"
+                onClick={() => {
+                  // Find weakest topic
+                  const weakest = [...results].sort((a, b) => a.score - b.score)[0]
+                  if (weakest) {
+                    router.push(`/quizzes?topic=${encodeURIComponent(weakest.topic)}`)
+                  }
+                }}
+              >
+                <FileQuestion className="h-3.5 w-3.5" />
+                {t("Practice Weak Area Quiz")}
+              </Button>
+            )}
+
             <Link href="/dashboard">
-              <Button size="sm" variant="outline" className="w-full justify-start gap-2 border-border">
+              <Button size="sm" variant="outline" className="w-full justify-start gap-2 border-border mt-2">
                 {t("Return to Dashboard")}
               </Button>
             </Link>

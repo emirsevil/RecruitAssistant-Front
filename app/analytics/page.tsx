@@ -167,6 +167,45 @@ export default function AnalyticsPage() {
             t={t}
           />
 
+          <div className="grid gap-6 lg:grid-cols-2 mb-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("Skills to focus on")}</CardTitle>
+                <CardDescription>
+                  {t("Your weakest topics based on recent mock interviews")}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {data.topic_breakdown.length === 0 ? (
+                  <div className="py-8 text-center text-sm text-muted-foreground">
+                    {t("Take a baseline quiz so we can surface focus areas.")}
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-3.5">
+                    {/* Sort ascending by score to show weakest skills first */}
+                    {[...data.topic_breakdown]
+                      .sort((a, b) => a.avg_score - b.avg_score)
+                      .slice(0, 5)
+                      .map((s) => (
+                        <div key={s.topic} className="grid grid-cols-[minmax(80px,1fr)_2fr_36px] items-center gap-3.5">
+                          <span className="truncate text-[13px] font-medium">{t(s.topic)}</span>
+                          <div className="h-1.5 overflow-hidden rounded-full bg-secondary">
+                            <div
+                              className={`h-full rounded-full ${s.avg_score < 65 ? "bg-clay" : s.avg_score < 80 ? "bg-[var(--gold)]" : "bg-sage"}`}
+                              style={{ width: `${s.avg_score}%` }}
+                            />
+                          </div>
+                          <span className="text-right text-[12px] tabular-nums text-muted-foreground">
+                            {Math.round(s.avg_score)}%
+                          </span>
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
           <div className="grid gap-6 lg:grid-cols-2">
             {/* C. Topic breakdown */}
             <TopicBreakdown rows={data.topic_breakdown} t={t} />

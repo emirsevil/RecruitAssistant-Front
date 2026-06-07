@@ -9,6 +9,7 @@ import { LanguageProvider } from "@/lib/language-context"
 import { WorkspaceProvider } from "@/lib/workspace-context"
 import { AuthProvider } from "@/lib/auth-context"
 import { InterviewLockProvider } from "@/lib/interview-lock-context"
+import { SimulationProvider } from "@/lib/simulation-context"
 import { LayoutWrapper } from "@/components/layout-wrapper"
 import { Toaster } from "sonner"
 
@@ -62,6 +63,7 @@ export default function RootLayout({
         <LanguageProvider>
           <AuthProvider>
             <WorkspaceProvider>
+              <SimulationProvider>
               <Suspense fallback={null}>
                 <OnboardingGuard>
                   <ScheduleProvider>
@@ -77,6 +79,7 @@ export default function RootLayout({
                   </ScheduleProvider>
                 </OnboardingGuard>
               </Suspense>
+              </SimulationProvider>
             </WorkspaceProvider>
           </AuthProvider>
         </LanguageProvider>

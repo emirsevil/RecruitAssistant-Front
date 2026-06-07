@@ -18,7 +18,9 @@ import { useAuth } from "@/lib/auth-context"
 import { useLanguage } from "@/lib/language-context"
 import { useWorkspace } from "@/lib/workspace-context"
 import { useDashboard } from "@/hooks/use-dashboard"
+import { useSimulation } from "@/lib/simulation-context"
 import { RingProgress } from "@/components/calm/ring-progress"
+import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
 export default function DashboardPage() {
@@ -26,6 +28,7 @@ export default function DashboardPage() {
   const { user } = useAuth()
   const { workspaces, isHydrated, activeWorkspace } = useWorkspace()
   const { data, isLoading } = useDashboard(activeWorkspace ? Number(activeWorkspace.id) : null)
+  const { status: simStatus } = useSimulation()
   const { t, language } = useLanguage()
   const dateLocale = language === "tr" ? tr : enUS
 
@@ -34,6 +37,17 @@ export default function DashboardPage() {
       router.replace("/onboarding")
     }
   }, [isHydrated, workspaces.length, router, user])
+
+  // Auto-redirect to active stage if incomplete
+  useEffect(() => {
+    if (simStatus) {
+      if (simStatus.stage === "cv_preparation") {
+        router.replace("/cv-studio")
+      } else if (simStatus.stage === "interview_cycle") {
+        router.replace("/mock-interview")
+      }
+    }
+  }, [simStatus, router])
 
   const firstName = (user?.full_name || user?.email || "").split(" ")[0] || ""
 
@@ -115,208 +129,68 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* Hero readiness band */}
-      <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr_1fr]">
-        <div data-tour="dashboard-readiness" className="flex items-center gap-5 rounded-2xl border border-border bg-card p-5 sm:col-span-2 lg:col-span-1">
-          <RingProgress value={readiness} size={92} />
-          <div>
-            <p className="eyebrow">{language === "tr" ? "Hazırlığın" : "Your readiness"}</p>
-            <p className="serif-headline mt-1.5 text-[36px] leading-none tabular-nums">
-              {readiness}
-              <span className="text-[18px] text-subtle">%</span>
-            </p>
-            <p className="mt-1 text-[12px] text-muted-foreground">
-              {language === "tr" ? "Genel hazırlık" : "Overall readiness"}
-              {trend !== 0 && (
-                <>
-                  {" "}
-                  ·{" "}
-                  <span className="font-semibold text-sage">
-                    {trend > 0 ? "+" : ""}
-                    {trend}%
-                  </span>
-                </>
-              )}
+      {simStatus && (
+        <div className="mb-5 rounded-2xl border border-sage/30 bg-sage-soft p-5 sm:p-6 lg:col-span-1 flex flex-col sm:flex-row items-center justify-between gap-5">
+          <div className="flex-1">
+            <p className="eyebrow text-sage mb-1">{language === "tr" ? "Mülakat Simülasyonu" : "Interview Simulation"}</p>
+            <h2 className="serif-headline text-[24px] tracking-tight">
+              {simStatus.stage === "cv_preparation" 
+                ? (language === "tr" ? "Aşama 1: CV Hazırlığı" : "Stage 1: CV Preparation")
+                : simStatus.stage === "interview_cycle" 
+                ? (language === "tr" ? "Aşama 2: Mülakat Döngüsü" : "Stage 2: Interview Cycle")
+                : (language === "tr" ? "Simülasyon Tamamlandı" : "Simulation Completed")}
+            </h2>
+            <p className="mt-2 text-sm text-sage/80 max-w-xl">
+              {simStatus.stage === "cv_preparation" 
+                ? (language === "tr" ? "Gerçek bir işe alım sürecindeymiş gibi CV ve niyet mektubunuzu oluşturarak başlayın." : "Start by creating your CV and cover letter as if you are in a real hiring process.")
+                : simStatus.stage === "interview_cycle"
+                ? (language === "tr" ? "Pratik yapın, mülakatlara katılın ve gerçek mülakatınız sonrası deneyiminizi bizimle paylaşın." : "Practice, attend mock interviews, and share your real interview feedback with us.")
+                : (language === "tr" ? "Tebrikler! Mülakat simülasyonunu tamamladınız. Dashboard'u özgürce kullanabilirsiniz." : "Congratulations! You have completed the interview simulation. You can use the dashboard freely.")}
             </p>
           </div>
-        </div>
-
-
-        <GoalCard
-          label={language === "tr" ? "Mülakatlar" : "Interviews"}
-          done={weekly.interviews_actual}
-          target={weekly.interviews_target}
-          accent="sage"
-        />
-        <GoalCard
-          label={language === "tr" ? "Testler" : "Quizzes"}
-          done={weekly.quizzes_actual}
-          target={weekly.quizzes_target}
-          accent="clay"
-        />
-        <GoalCard
-          label={language === "tr" ? "Pratik süresi" : "Practice time"}
-          done={weekly.practice_minutes_actual}
-          target={weekly.practice_minutes_target}
-          unit="m"
-          accent="plum"
-        />
-      </div>
-
-      {/* Two-col main */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.6fr_1fr]">
-        <div className="flex flex-col gap-4">
-          {/* Next actions */}
-          <section data-tour="dashboard-actions" className="rounded-2xl border border-border bg-card p-6">
-            <header className="mb-4 flex items-baseline justify-between">
-              <h2 className="font-serif text-[19px] font-medium tracking-tight">
-                {language === "tr" ? "Sıradaki adımlar" : "Next actions"}
-              </h2>
-              <span className="text-[11px] text-subtle">
-                3 {language === "tr" ? "öneri" : "suggestions"}
-              </span>
-            </header>
-            <div className="flex flex-col gap-2.5">
-              <ActionRow
-                primary
-                icon={<MessageSquare className="h-[18px] w-[18px]" />}
-                accent="sage"
-                title={language === "tr" ? "Mock mülakat yap" : "Run a mock interview"}
-                sub={
-                  language === "tr"
-                    ? "Bugün için planlanan System Design oturumu"
-                    : "Your System Design round is queued for today"
-                }
-                cta={language === "tr" ? "Şimdi başla" : "Start now"}
-                href="/mock-interview"
-              />
-              <ActionRow
-                icon={<FileQuestion className="h-[18px] w-[18px]" />}
-                accent="clay"
-                title={language === "tr" ? "Test çöz" : "Take a quiz"}
-                sub={
-                  language === "tr"
-                    ? "PostgreSQL · 12 soru · ortalama 4 dk"
-                    : "PostgreSQL · 12 questions · ~4 min"
-                }
-                cta={language === "tr" ? "Aç" : "Open"}
-                href="/quizzes"
-              />
-              <ActionRow
-                icon={<FileText className="h-[18px] w-[18px]" />}
-                accent="plum"
-                title={language === "tr" ? "CV'yi geliştir" : "Polish your CV"}
-                sub={
-                  language === "tr"
-                    ? "Bu çalışma alanı için CV'nizi güncelleyin"
-                    : "Update your CV for this workspace"
-                }
-                cta={language === "tr" ? "Aç" : "Open"}
-                href="/cv-studio"
-              />
-            </div>
-          </section>
-
-          {/* Skills focus */}
-          <section className="rounded-2xl border border-border bg-card p-6">
-            <h2 className="mb-3.5 font-serif text-[19px] font-medium tracking-tight">
-              {language === "tr" ? "Odaklanılacak yetenekler" : "Skills to focus on"}
-            </h2>
-            {skills.length === 0 ? (
-              <p className="py-4 text-center text-sm text-muted-foreground">
-                {language === "tr"
-                  ? "Önce bir test çözerek odak alanını belirleyelim."
-                  : "Take a baseline quiz so we can surface focus areas."}
+          <div className="flex items-center gap-4">
+            <div className="text-center">
+              <p className="text-[28px] font-semibold text-sage leading-none tabular-nums">
+                {simStatus.total_interviews}
               </p>
-            ) : (
-              <div className="flex flex-col gap-2.5">
-                {skills.map((s) => (
-                  <SkillRow key={s.id} name={t(s.skill_name)} score={s.score} />
-                ))}
-              </div>
-            )}
-          </section>
-        </div>
-
-        {/* Right rail */}
-        <div className="flex flex-col gap-4">
-          <section className="rounded-2xl border border-border bg-card p-6">
-            <header className="mb-3.5 flex items-baseline justify-between">
-              <h2 className="font-serif text-[19px] font-medium tracking-tight">
-                {language === "tr" ? "Yaklaşan" : "Upcoming"}
-              </h2>
-              <span className="text-[11px] text-subtle">
-                {language === "tr" ? "Bugün / yarın" : "Today / tomorrow"}
-              </span>
-            </header>
-
-            {upcoming.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-border py-6 text-center">
-                <Calendar className="h-5 w-5 text-subtle" />
-                <p className="text-[12px] text-muted-foreground">
-                  {language === "tr"
-                    ? "Planlanmış etkinlik yok."
-                    : "No upcoming events."}
-                </p>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-2.5">
-                {upcoming.map((u, i) => (
-                  <UpcomingRow
-                    key={u.id}
-                    title={t(u.title)}
-                    type={u.event_type}
-                    when={format(new Date(u.start_time), "MMM d, HH:mm", { locale: dateLocale })}
-                    primary={i === 0}
-                    href={u.event_type === "interview" ? "/mock-interview" : u.event_type === "quiz" ? "/quizzes" : "/schedule"}
-                    ctaLabel={language === "tr" ? "Başla" : "Start"}
-                  />
-                ))}
-              </div>
-            )}
-          </section>
-
-          {/* Streak calendar */}
-          <section className="rounded-2xl border border-border bg-card p-6">
-            <h2 className="mb-3.5 font-serif text-[19px] font-medium tracking-tight">
-              {language === "tr" ? "Bu hafta" : "This week"}
-            </h2>
-            <div className="grid grid-cols-7 gap-1.5">
-              {dayLetters.map((d, i) => {
-                const filled = i < todayIdx
-                const isToday = i === todayIdx
-                return (
-                  <div key={i} className="flex flex-col items-center gap-1.5">
-                    <span className="text-[10px] text-subtle">{d}</span>
-                    <div
-                      className={cn(
-                        "flex h-8 w-8 items-center justify-center rounded-lg text-[11px] font-semibold",
-                        filled && "bg-sage text-white",
-                        isToday && "border-2 border-clay",
-                        !filled && !isToday && "bg-secondary text-subtle"
-                      )}
-                    >
-                      {filled && <Check className="h-3.5 w-3.5" />}
-                    </div>
-                  </div>
-                )
-              })}
+              <p className="text-[11px] font-medium uppercase tracking-wider text-sage/70 mt-1">
+                {language === "tr" ? "Mock Mülakat" : "Mock Intvs"}
+              </p>
             </div>
-            <p className="mt-3.5 text-center text-[12px] text-muted-foreground">
-              {language === "tr"
-                ? "Devam et — küçük adımlar büyük fark yaratır."
-                : "Keep it up — small daily reps compound."}
-            </p>
-          </section>
+            <div className="w-px h-10 bg-sage/20" />
+            <div className="text-center">
+              <p className="text-[28px] font-semibold text-sage leading-none tabular-nums">
+                {simStatus.total_feedbacks}
+              </p>
+              <p className="text-[11px] font-medium uppercase tracking-wider text-sage/70 mt-1">
+                {language === "tr" ? "Gerçek Geri Bildirim" : "Real Feedbacks"}
+              </p>
+            </div>
+            {simStatus.stage === "cv_preparation" && (
+              <Button
+                onClick={() => router.push("/cv-studio")}
+                className="bg-sage text-white hover:bg-sage/90 ml-2"
+              >
+                {language === "tr" ? "CV Studio'ya Git" : "Go to CV Studio"}
+              </Button>
+            )}
+            {simStatus.stage === "interview_cycle" && (
+              <Button
+                onClick={() => router.push("/interview-feedback")}
+                className="bg-sage text-white hover:bg-sage/90 ml-2"
+              >
+                {language === "tr" ? "Gerçek Mülakat Geri Bildirimi Ekle" : "Add Real Interview Feedback"}
+              </Button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {isLoading && !data && (
         <p className="mt-6 text-center text-xs text-muted-foreground">
           {language === "tr" ? "Yükleniyor..." : "Loading..."}
         </p>
       )}
-
     </div>
   )
 }

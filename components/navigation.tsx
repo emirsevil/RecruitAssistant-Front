@@ -62,15 +62,14 @@ import { cn } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
 import { Logo } from "@/components/logo"
 import { useEffect, useState } from "react"
+import { useSimulation } from "@/lib/simulation-context"
 
 const navItems = [
-  { href: "/dashboard", label: "dashboard", icon: LayoutDashboard },
-  { href: "/cv-studio", label: "cvStudio", icon: FileText },
-  { href: "/quizzes", label: "quizzes", icon: FileQuestion },
-  { href: "/mock-interview", label: "mockInterview", icon: MessageSquare },
-  { href: "/interview-history", label: "interviewHistory", icon: ClipboardList },
-  { href: "/schedule", label: "schedule", icon: Calendar },
-  { href: "/analytics", label: "analytics", icon: BarChart3 },
+  { href: "/dashboard", label: "dashboard", icon: LayoutDashboard, requiresInterview: false },
+  { href: "/quizzes", label: "quizzes", icon: FileQuestion, requiresInterview: true },
+  { href: "/interview-history", label: "interviewHistory", icon: ClipboardList, requiresInterview: true },
+  { href: "/schedule", label: "schedule", icon: Calendar, requiresInterview: false },
+  { href: "/analytics", label: "analytics", icon: BarChart3, requiresInterview: false },
 ] as const
 
 export function Navigation() {
@@ -78,6 +77,8 @@ export function Navigation() {
   const { t, language, setLanguage } = useLanguage()
   const { user, logout } = useAuth()
   const { activeWorkspace, workspaces, setActiveWorkspace, deleteWorkspace, renameWorkspace } = useWorkspace()
+  const { status: simStatus } = useSimulation()
+  const canAccessInterviews = simStatus?.can_access_interviews ?? false
   const [workspaceMenuOpen, setWorkspaceMenuOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
   const { toast } = useToast()
@@ -339,7 +340,27 @@ export function Navigation() {
             {navItems.map((item) => {
               const isActive = pathname === item.href
               const Icon = item.icon
-              return (
+              const isLocked = item.requiresInterview && !canAccessInterviews
+              return isLocked ? (
+                <button
+                  key={item.href}
+                  type="button"
+                  onClick={() => {
+                    toast({
+                      title: language === "tr" ? "Kilitli aşama" : "Stage locked",
+                      description: language === "tr"
+                        ? "Önce CV aşamanızı tamamlayın veya atlayın."
+                        : "Complete or skip the CV stage first.",
+                    })
+                    setMobileOpen(false)
+                  }}
+                  className="flex items-center gap-2.5 rounded-lg px-2.5 py-2.5 text-[14px] font-medium text-muted-foreground/50 cursor-not-allowed"
+                >
+                  <Icon className="h-4 w-4" />
+                  {t(item.label)}
+                  <span className="ml-auto text-[10px] opacity-60">🔒</span>
+                </button>
+              ) : (
                 <Link
                   key={item.href}
                   href={item.href}
@@ -565,7 +586,26 @@ export function Navigation() {
         {navItems.map((item) => {
           const isActive = pathname === item.href
           const Icon = item.icon
-          return (
+          const isLocked = item.requiresInterview && !canAccessInterviews
+          return isLocked ? (
+            <button
+              key={item.href}
+              type="button"
+              onClick={() => {
+                toast({
+                  title: language === "tr" ? "Kilitli aşama" : "Stage locked",
+                  description: language === "tr"
+                    ? "Önce CV aşamanızı tamamlayın veya atlayın."
+                    : "Complete or skip the CV stage first.",
+                })
+              }}
+              className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-medium text-muted-foreground/50 cursor-not-allowed"
+            >
+              <Icon className="h-4 w-4" />
+              {t(item.label)}
+              <span className="ml-auto text-[10px] opacity-60">🔒</span>
+            </button>
+          ) : (
             <Link
               key={item.href}
               href={item.href}

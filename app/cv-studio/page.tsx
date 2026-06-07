@@ -21,6 +21,8 @@ import {
 } from "lucide-react"
 import { useLanguage } from "@/lib/language-context"
 import { useWorkspace } from "@/lib/workspace-context"
+import { useSimulation } from "@/lib/simulation-context"
+import { useRouter } from "next/navigation"
 import { SKILLS } from "@/lib/data/skills"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import {
@@ -51,6 +53,8 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
 export default function CVStudioPage() {
   const { t } = useLanguage()
   const { activeWorkspace } = useWorkspace()
+  const { status: simStatus, completeCvStage, skipCvStage, markCvCompleted, markCoverLetterCompleted } = useSimulation()
+  const router = useRouter()
   const [language, setLanguage] = useState("en")
   type CVData = {
     name: string
@@ -449,6 +453,7 @@ export default function CVStudioPage() {
       latex = escapeTurkishChars(latex)
       setGeneratedLatex(latex)
       await compileLatexLocally(latex, false)
+      await markCvCompleted()
       toast.success(
         language === "tr" ? "CV'niz hazır! 🎉" : "Your CV is ready! 🎉",
         { description: language === "tr" ? "Aşağıdan indirebilirsiniz." : "You can download it below." }
@@ -516,6 +521,7 @@ export default function CVStudioPage() {
       latex = escapeTurkishChars(latex)
       setGeneratedCoverLetterLatex(latex)
       await compileLatexLocally(latex, true)
+      await markCoverLetterCompleted()
       toast.success(
         language === "tr" ? "Cover Letter hazır! 🎉" : "Your Cover Letter is ready! 🎉",
         { description: language === "tr" ? "Aşağıdan indirebilirsiniz." : "You can download it below." }
@@ -564,6 +570,44 @@ export default function CVStudioPage() {
 
   return (
     <div className="px-4 py-5 sm:px-7 sm:py-7 md:px-9">
+      {simStatus?.stage === "cv_preparation" && (
+        <div className="mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-xl border border-sage/30 bg-sage-soft p-4">
+          <div>
+            <h3 className="font-semibold text-sage">
+              {language === "tr" ? "CV Aşamasını Tamamla" : "Complete CV Stage"}
+            </h3>
+            <p className="text-[13px] text-sage/80 mt-1">
+              {language === "tr"
+                ? "Mülakat simülasyonuna geçmek için CV'nizi ve Cover Letter'ınızı oluşturun. İsterseniz bu aşamayı atlayabilirsiniz."
+                : "Generate your CV and Cover Letter to proceed to the interview simulation. You can also skip this stage."}
+            </p>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                await skipCvStage()
+                router.push("/dashboard")
+              }}
+              className="border-sage/30 text-sage hover:bg-sage/10"
+            >
+              {language === "tr" ? "Atla" : "Skip"}
+            </Button>
+            <Button
+              size="sm"
+              onClick={async () => {
+                await completeCvStage()
+                router.push("/dashboard")
+              }}
+              className="bg-sage text-white hover:bg-sage/90"
+            >
+              {language === "tr" ? "Aşamayı Tamamla" : "Complete Stage"}
+            </Button>
+          </div>
+        </div>
+      )}
+
       <div data-tour="cv-header" className="mb-7">
         <p className="eyebrow text-clay">{t("cvStudio")}</p>
         <h1 className="serif-headline mt-1 text-[24px] sm:text-[32px] font-normal leading-tight tracking-tight">

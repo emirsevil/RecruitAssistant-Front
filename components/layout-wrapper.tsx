@@ -2,6 +2,8 @@
 
 import { usePathname } from "next/navigation"
 import { Navigation } from "@/components/navigation"
+import { SimulationTopBar } from "@/components/simulation-top-bar"
+import { RealInterviewPrompt } from "@/components/real-interview-prompt"
 import { cn } from "@/lib/utils"
 
 export function LayoutWrapper({ children }: { children: React.ReactNode }) {
@@ -20,11 +22,15 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
       <Navigation />
       <main
         className={cn(
-          "min-w-0 flex-1",
+          "min-w-0 flex-1 flex flex-col",
           !isPublicPage && "pt-14 lg:pt-0 lg:pl-[232px]"
         )}
       >
-        {children}
+        {!isPublicPage && <SimulationTopBar />}
+        <div className="flex-1">
+          {children}
+        </div>
+        {!isPublicPage && <RealInterviewPrompt />}
       </main>
     </div>
   )
