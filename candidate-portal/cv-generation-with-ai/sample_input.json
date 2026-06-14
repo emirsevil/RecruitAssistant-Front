@@ -1,0 +1,96 @@
+{
+    "header": {
+        "name": "Jane Doe",
+        "headline": "Backend Software Engineer",
+        "location": "San Francisco, CA",
+        "email": "jane.doe@example.com",
+        "phone": "+1 (555) 123-4567",
+        "links": {
+            "linkedin": "https://linkedin.com/in/janedoe",
+            "github": "https://github.com/janedoe",
+            "portfolio": "https://janedoe.com"
+        }
+    },
+    "summary": "Backend-focused software engineer with hands-on experience building and optimizing RESTful APIs in Python. Strong background in relational databases, backend system design, and cloud-based deployments.",
+    "education": [
+        {
+            "school": "University of Tech",
+            "degree": "B.S.",
+            "department": "Computer Science, College of Engineering",
+            "dates": "2018 - 2022",
+            "gpa": "3.8/4.0"
+        }
+    ],
+    "experience": [
+        {
+            "company": "Tech Corp",
+            "role": "Junior Backend Engineer",
+            "location": "New York, NY",
+            "dates": "June 2022 - Present",
+            "bullets": [
+                "Designed and implemented RESTful APIs for a payments platform using Python and Flask.",
+                "Optimized PostgreSQL queries by introducing indexing and query refactoring to improve response times.",
+                "Collaborated with frontend engineers to integrate backend services into customer-facing payment workflows.",
+                "Wrote unit tests and performed code reviews to maintain clean and testable backend code."
+            ]
+        },
+        {
+            "company": "Startup Inc",
+            "role": "Software Engineering Intern",
+            "location": "Remote",
+            "dates": "Summer 2021",
+            "bullets": [
+                "Developed internal dashboard components using React to monitor backend service health.",
+                "Assisted in debugging and maintaining legacy backend services written in Python.",
+                "Worked closely with senior engineers to understand API design and database schema decisions."
+            ]
+        }
+    ],
+    "projects": [
+        {
+            "name": "Personal Blog Engine",
+            "stack": "Django, PostgreSQL, Docker, AWS",
+            "link": "https://github.com/janedoe/blog",
+            "bullets": [
+                "Built a backend-driven blog engine using Django with a PostgreSQL database.",
+                "Designed REST APIs to manage posts, users, and authentication.",
+                "Containerized the application with Docker and deployed it on AWS."
+            ]
+        },
+        {
+            "name": "Payment Processing Prototype",
+            "stack": "Flask, PostgreSQL",
+            "link": "",
+            "bullets": [
+                "Implemented a prototype payment processing backend to simulate transaction workflows.",
+                "Focused on database consistency and error handling for financial operations."
+            ]
+        }
+    ],
+    "skills": {
+        "Languages": [
+            "Python",
+            "SQL",
+            "JavaScript",
+            "C++"
+        ],
+        "Frameworks": [
+            "Flask",
+            "Django",
+            "React"
+        ],
+        "Data": [
+            "PostgreSQL",
+            "Redis"
+        ],
+        "Cloud": [
+            "AWS",
+            "Docker"
+        ],
+        "Tools": [
+            "Git",
+            "Jira"
+        ]
+    },
+    "job_description": "We are looking for a Backend Engineer to join our Payments team.\n\nThe ideal candidate has strong experience with Python and relational databases (PostgreSQL). You will be building high-performance APIs and optimizing data pipelines.\n\nKnowledge of Cloud platforms like AWS is a plus.\n\nResponsibilities:\n- Design and implement RESTful APIs.\n- Optimize database performance.\n- Write clean, testable code."
+}
