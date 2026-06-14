@@ -14,6 +14,7 @@ interface User {
   professional_title: string | null
   skills: string | null
   profile_image: string | null
+  is_searchable: boolean
 }
 
 interface AuthContextType {

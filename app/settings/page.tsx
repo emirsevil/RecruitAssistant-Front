@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Moon, Sun, Monitor, Bell, Lock, Palette, RotateCcw, Loader2, AlertTriangle } from "lucide-react"
+import { Moon, Sun, Monitor, Bell, Lock, Palette, RotateCcw, Loader2, AlertTriangle, Eye } from "lucide-react"
 import { useLanguage } from "@/lib/language-context"
 import { useTour } from "@/components/guided-tour/TourProvider"
 import { useAuth } from "@/lib/auth-context"
@@ -28,12 +28,14 @@ export default function SettingsPage() {
   const { t, language } = useLanguage()
   const router = useRouter()
   const { startTour } = useTour()
-  const { logout } = useAuth()
+  const { logout, user, updateProfile } = useAuth()
   const { toast } = useToast()
   
   const [theme, setTheme] = useState("system")
   const [isDeleting, setIsDeleting] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [isSearchable, setIsSearchable] = useState(user?.is_searchable ?? false)
+  const [isTogglingSearch, setIsTogglingSearch] = useState(false)
 
   const handleThemeChange = (value: string) => {
     setTheme(value)
@@ -147,6 +149,60 @@ export default function SettingsPage() {
                 {t("Change Password")}
               </Button>
               <p className="text-sm text-muted-foreground">{t("Update your password to keep your account secure")}</p>
+
+              <Separator />
+
+              {/* Profile Visibility Toggle */}
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <Eye className="h-4 w-4 text-primary" />
+                    <h4 className="text-sm font-medium">{language === "tr" ? "Profil Görünürlüğü" : "Profile Visibility"}</h4>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {language === "tr"
+                      ? "Şirketlerin yetenek aramasında profilinizi keşfetmesine izin verin"
+                      : "Allow companies to discover your profile in their talent search"}
+                  </p>
+                </div>
+                <Switch
+                  checked={isSearchable}
+                  disabled={isTogglingSearch}
+                  onCheckedChange={async (checked) => {
+                    setIsTogglingSearch(true)
+                    try {
+                      const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+                      const response = await fetch(`${baseUrl}/auth/profile`, {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ is_searchable: checked }),
+                        credentials: "include",
+                      })
+                      if (response.ok) {
+                        setIsSearchable(checked)
+                        toast({
+                          title: checked
+                            ? (language === "tr" ? "Profil görünür" : "Profile visible")
+                            : (language === "tr" ? "Profil gizli" : "Profile hidden"),
+                          description: checked
+                            ? (language === "tr" ? "Şirketler artık profilinizi görebilir" : "Companies can now discover your profile")
+                            : (language === "tr" ? "Profiliniz artık aramadan gizli" : "Your profile is now hidden from search"),
+                        })
+                      } else {
+                        throw new Error("Failed")
+                      }
+                    } catch {
+                      toast({
+                        variant: "destructive",
+                        title: language === "tr" ? "Hata" : "Error",
+                        description: language === "tr" ? "Bir şeyler yanlış gitti" : "Something went wrong",
+                      })
+                    } finally {
+                      setIsTogglingSearch(false)
+                    }
+                  }}
+                />
+              </div>
 
               <Separator />
 
