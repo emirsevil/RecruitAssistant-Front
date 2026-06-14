@@ -1,0 +1,168 @@
+@import "tailwindcss";
+
+/*
+ * Talent Hunter — Company Portal
+ * Design System: "Studio" — Clean, muted, professional
+ *
+ * NOT a flashy "AI" theme. This is a work tool.
+ * Think: Linear, Notion, Vercel Dashboard — understated sophistication.
+ * 
+ * Typography: Inter for body, system serif for headlines
+ * Color: Neutral dark base, single teal accent, warm text
+ * Spacing: Generous but not wasteful
+ */
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* ── Surfaces ─────────────────────────────────────────── */
+  --background: #FAFAFA;
+  --foreground: #171717;
+  --card: #FFFFFF;
+  --card-foreground: #171717;
+  --popover: #FFFFFF;
+  --popover-foreground: #171717;
+
+  /* ── Primary — teal (functional, not decorative) ─────── */
+  --primary: #0D9488;
+  --primary-foreground: #FFFFFF;
+
+  /* ── Secondary / Muted ───────────────────────────────── */
+  --secondary: #F5F5F5;
+  --secondary-foreground: #262626;
+  --muted: #F5F5F5;
+  --muted-foreground: #737373;
+
+  /* ── Accent — amber (sparingly, for key CTAs only) ───── */
+  --accent: #F5F5F5;
+  --accent-foreground: #262626;
+
+  /* ── Status ──────────────────────────────────────────── */
+  --destructive: #DC2626;
+  --destructive-foreground: #FFFFFF;
+
+  /* ── Borders / inputs ────────────────────────────────── */
+  --border: #E5E5E5;
+  --input: #E5E5E5;
+  --ring: #0D9488;
+
+  --radius: 0.5rem;
+
+  /* ── Chart palette ───────────────────────────────────── */
+  --chart-1: #0D9488;
+  --chart-2: #6366F1;
+  --chart-3: #F59E0B;
+  --chart-4: #EC4899;
+  --chart-5: #8B5CF6;
+}
+
+.dark {
+  --background: #0A0A0A;
+  --foreground: #EDEDED;
+  --card: #141414;
+  --card-foreground: #EDEDED;
+  --popover: #141414;
+  --popover-foreground: #EDEDED;
+
+  --primary: #2DD4BF;
+  --primary-foreground: #042F2E;
+
+  --secondary: #1C1C1C;
+  --secondary-foreground: #D4D4D4;
+  --muted: #1C1C1C;
+  --muted-foreground: #737373;
+
+  --accent: #1C1C1C;
+  --accent-foreground: #D4D4D4;
+
+  --destructive: #EF4444;
+  --destructive-foreground: #FFFFFF;
+
+  --border: #262626;
+  --input: #262626;
+  --ring: #2DD4BF;
+
+  --chart-1: #2DD4BF;
+  --chart-2: #818CF8;
+  --chart-3: #FBBF24;
+  --chart-4: #F472B6;
+  --chart-5: #A78BFA;
+}
+
+@theme inline {
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", monospace;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-sans);
+  }
+}
+
+/* ── Utility classes ────────────────────────────────────── */
+
+@layer utilities {
+  .eyebrow {
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 500;
+    color: var(--muted-foreground);
+  }
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* ── Scrollbar — thin and unobtrusive ───────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
